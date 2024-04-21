@@ -32,6 +32,10 @@ const typeDefs = `
       lastName: String!, 
       email: String!, 
       password: String!): Auth
+
+      changeProfilePicture(_id: ID!, profilePicture: String!): User!
+      changeAddress(_id: ID!, address: String!): User!
+      changeEmail(_id: ID!, email: String!): User!
   }
 `;
 
