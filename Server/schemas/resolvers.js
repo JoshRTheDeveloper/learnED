@@ -1,5 +1,5 @@
 const { signToken, AuthenticationError, UserInputError } = require('../utils/auth');
-const { User, Staff, Services, Booking } = require('../models');
+const { User } = require('../models');
 const bcrypt = require('bcrypt');
 
 const resolvers = {
