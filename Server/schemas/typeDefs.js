@@ -1,6 +1,5 @@
 const typeDefs = `
- 
-  
+
 
   type Auth {
     token: ID! # JWT 
@@ -18,14 +17,6 @@ const typeDefs = `
   }
 
   
-
-
-
-
-
-
-  
-
   type Query {
     getUsers: [User]
     getUser(_id: ID): User
