@@ -14,7 +14,7 @@ const typeDefs = `
     email: String!
     profilePicture: String 
     address: String 
-    bookings: [Booking]
+    
   }
 
   
