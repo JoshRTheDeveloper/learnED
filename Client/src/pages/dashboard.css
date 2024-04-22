@@ -1,0 +1,12 @@
+.total {
+ display: flex;
+ justify-content: center;
+ align-items: center;
+ margin-left: 20%;
+ height: 100vh;
+ text-align: center;
+}
+
+h2 {
+ font-size: xx-large !important;
+}
