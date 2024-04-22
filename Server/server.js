@@ -1,4 +1,4 @@
-// checkpoint 2
+// checkpoint 1.A
 
 const express = require('express');
 const { ApolloServer } = require('@apollo/server');

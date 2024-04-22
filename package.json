@@ -16,10 +16,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@apollo/server": "^4.10.4",
     "@google-cloud/storage": "^7.10.0",
     "@react-spring/parallax": "^9.7.3",
     "@react-spring/web": "^9.7.3",
     "apollo-server": "^3.13.0",
+    "apollo-server-express": "^3.13.0",
     "axios": "^1.6.8",
     "cloudinary-react": "^1.8.1",
     "concurrently": "^5.1.0",
