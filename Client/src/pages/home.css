@@ -1,0 +1,268 @@
+body {
+}
+
+header{
+  background-color: var(--accent-color);
+ }
+ 
+ 
+ h2{
+  font-size: 4rem !important;
+  font-weight: 500;
+  background-image: linear-gradient(180deg, #ff0000, #c90000, #ff2600 );
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+ }
+
+h5 {
+  color: black;
+}
+
+/* Animation */
+
+.animation_layer.parallax {
+height: 100vh !important;
+width: 100% !important;
+background-repeat: no-repeat;
+display: flex;
+align-items: center; 
+}
+
+
+#scenery1 {
+  background-color: #ffffff ;
+  background-repeat: no-repeat;
+  background-position: bottom right;
+}
+
+
+
+/* Heading */
+
+
+
+#main-tagline{
+ padding-top: 100px;
+ padding-bottom: 50px;
+}
+
+#heading {
+  color: aliceblue;
+  font-size: 90px;
+ }
+
+.app-button {
+ padding: 10px !important;
+ background-image: linear-gradient(90deg, #ff0000, #c90000, #ff2600 );
+ color: white;
+ text-decoration: none;
+ border-radius: 5px;
+}
+
+.app-button:hover {
+  padding: 10px !important;
+  background-image: none;
+  background-color: #ff0000;
+  color: white;
+  text-decoration: none;
+ }
+
+/* Collaborators */
+
+
+
+.heading-container {
+  padding-top: 10%;
+}
+
+.custom-h2{
+  font-size: 4rem !important;
+  font-weight: 500;
+  background-image: linear-gradient(180deg, #ff0000, #c90000, #ff2600 );
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-position: center 0;
+}
+
+
+.row-container {
+ display: flex;
+ justify-content: center;
+ align-items: center;
+}
+.row-container1 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+ }
+
+
+.row {
+ display: flex;
+ justify-content: center;
+ max-width: 800px;
+ width: 100%;
+}
+
+.row1 {
+  display: flex;
+  justify-content: center;
+  width: 380px;
+ }
+
+.column {
+ flex: 1;
+ margin: 10px;
+}
+
+.column-space {
+height: 200px;
+background-color: #e6e6e6;
+}
+
+
+ .app-button1 {
+  padding: 10px !important;
+  background-image: linear-gradient(90deg, #ff0000, #c90000, #ff2600 );
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  margin: 10px;
+  width: 150px;
+  display: block;
+  text-align: center;
+ }
+
+.column-container {
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+ border-radius: 20px;
+
+}
+
+/* NEW PARALLAX */
+#par-background {
+  background-position: right;
+  background-size: 100vh !important;
+}
+
+#par-background1 {
+  background-color: #ffffff;
+  width: 50vw !important;
+  
+}
+
+#par-background2 {
+  background-position: top !important;
+  background-image: url(../assets/comp.jpg);
+  width: 50vw !important;
+  background-size: 50vw 100vh !important;
+  margin-left: auto;
+}
+
+#par-heading {
+padding-left: 10%;
+padding-right: 10%;
+width: 50vw !important;
+}
+
+.mobile {
+  display: none;
+}
+.mobile-h2{
+  display: none;
+}
+
+
+.page2 {
+  height: fit-content !important;
+}
+
+.cust-btn {
+  background-color: #c90000;
+  color: white !important;
+}
+
+
+@media (max-width: 1369px) {
+#par-background1 {
+  width: 100vw !important;
+}
+#par-background {
+  width: 100vw !important;
+}
+#par-background2 {
+  width: 100vw !important;
+  background-size: 100vw 100vh !important;
+  opacity: 30%;
+  
+}
+#par-heading {
+  padding-left: 10%;
+  padding-right: 10%;
+  width: 100vw !important;
+  
+  }
+}
+
+@media (max-width: 768px) {
+  h2 {
+    font-size: 2rem !important;
+    font-weight: 500;
+    background-image: linear-gradient(180deg, #ff0000, #c90000, #ff2600 );
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-top: 100px;
+   }
+   
+  .custom-h2{
+    font-size: 2rem !important;
+    font-weight: 500;
+    background-image: linear-gradient(180deg, #ff0000, #c90000, #ff2600 );
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-top: 100px;
+    display: none;
+   }
+
+   .column-space {
+    height: 200px;
+    background-color: #ff260000;
+   }
+
+  .row {
+    width: 100vw;
+  }
+
+  .row-container{
+    padding-top: 10px;
+    height: 100%;
+  }
+
+  .column {
+    background-color: rgb(231, 231, 231);
+    width: 90vw;
+  }
+
+  .row-container1{
+    padding-top: 10px;
+    height: 100%;
+  }
+
+.page2 {
+  display: none;
+}
+
+.mobile{
+  display: block;
+}
+
+.mobile-h2{
+  display:block;
+  padding-top: 400px;
+  text-align: center;
+}
+  
+}
