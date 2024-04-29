@@ -26,7 +26,6 @@ function Nav() {
     const user = await Auth.getProfile();
     if (user && user.data) {
       setFirstName(user.data.firstName);
-      console.log('First name:', user.data.firstName); 
     }
   };
 

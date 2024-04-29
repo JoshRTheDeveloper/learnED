@@ -20,13 +20,10 @@ const Profile = () => {
   const userId = decodedToken.data._id;
 
 
-  // Query hook
   const { loading, error, data } = useQuery(GET_USER, {
     variables: { userId: userId || '' }, // Provide the user ID as a variable to the query
   });
-console.log("user:", userId)
-console.log("error:", error);
-console.log("data:", data);
+
 
 
 

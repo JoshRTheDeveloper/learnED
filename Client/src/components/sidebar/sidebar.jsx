@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import './sidebar.css'; // Import your CSS file for sidebar styling
+import './sidebar.css'; 
 import { Link } from "react-router-dom";
 import Auth from "../../utils/auth";
 
@@ -12,7 +12,6 @@ const Sidebar = () => {
 useEffect(() => {
  const fetchUserFirstName = async () => {
    const profile = Auth.getProfile();
-   console.log(profile)
    if (profile && profile.data.firstName) {
      setUserFirstName(profile.data.firstName);
    }
