@@ -47,11 +47,9 @@ const SignupModal = ({ isOpen, onClose }) => {
     const { name, value } = event.target;
     let updatedValue = value;
   
-   
     if (name === 'firstName' || name === 'lastName') {
       updatedValue = value.replace(/\b\w/g, (char) => char.toUpperCase());
     } else if (name === 'email') {
-    
       updatedValue = value.toLowerCase();
     }
   
@@ -81,6 +79,7 @@ const SignupModal = ({ isOpen, onClose }) => {
                 name="firstName"
                 type="text"
                 id="firstName"
+                value={formState.firstName}
                 onChange={handleChange}
                 required
               />
@@ -92,6 +91,7 @@ const SignupModal = ({ isOpen, onClose }) => {
                 name="lastName"
                 type="text" 
                 id="lastName"
+                value={formState.lastName}
                 onChange={handleChange}
                 required
               />
@@ -103,6 +103,7 @@ const SignupModal = ({ isOpen, onClose }) => {
                 name="email"
                 type="email"
                 id="email"
+                value={formState.email}
                 onChange={handleChange}
                 required
               />
@@ -114,6 +115,7 @@ const SignupModal = ({ isOpen, onClose }) => {
                 name="password"
                 type="password"
                 id="password"
+                value={formState.password}
                 onChange={handleChange}
                 required
               />
@@ -125,6 +127,7 @@ const SignupModal = ({ isOpen, onClose }) => {
                 name="confirmPassword"
                 type="password"
                 id="confirmPassword"
+                value={formState.confirmPassword}
                 onChange={handleChange}
                 required
               />

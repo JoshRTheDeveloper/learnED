@@ -37,7 +37,6 @@ const Profile = () => {
       setEmail(email);
       setAddress(address);
       setLogoUrl(profilePicture ? `http://localhost:3001${profilePicture}` : temporaryImage);
-      console.log(profilePicture)
       setUserData(data.getUser);
     }
   }, [loading, data]);
