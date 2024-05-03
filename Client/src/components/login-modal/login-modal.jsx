@@ -29,21 +29,20 @@ const LoginModal = ({ isOpen, onClose }) => {
     } catch (err) {
       console.error(err);
       setSubmitted(false);
-
-    
       if (err.message.includes('AuthenticationError')) {
-       
       }
     }
   };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    const updatedValue = name === 'email' ? value.toLowerCase() : value;
     setFormState({
       ...formState,
-      [name]: value,
+      [name]: updatedValue,
     });
   };
+  
 
   return (
     <div className={`modal ${isOpen ? 'open' : ''}`} id="LoginModal">

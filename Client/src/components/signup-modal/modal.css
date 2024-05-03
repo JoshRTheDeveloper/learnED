@@ -99,3 +99,12 @@ button:hover {
  padding: 10px;
  border-radius: 5px;
 }
+
+.confirm {
+    font-size: small;
+}
+
+.password {
+    font-size: smaller;
+    width: 250px;
+}

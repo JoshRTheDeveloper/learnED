@@ -5,7 +5,7 @@ import { CREATE_USER } from '../../utils/mutations';
 import './modal.css';
 
 const SignupModal = ({ isOpen, onClose }) => {
-  const [formState, setFormState] = useState({ email: '', password: '', firstName: '', lastName: '' });
+  const [formState, setFormState] = useState({ email: '', password: '', confirmPassword: '', firstName: '', lastName: '' });
   const [addUser, { error }] = useMutation(CREATE_USER); 
   const [successMessage, setSuccessMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -13,6 +13,17 @@ const SignupModal = ({ isOpen, onClose }) => {
   const handleFormSubmit = async (event) => {
     event.preventDefault();
     try {
+      if (formState.password !== formState.confirmPassword) {
+        throw new Error('Passwords do not match.');
+      }
+      
+      // Password validation regex
+      const passwordRegex = /^(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
+
+      if (!passwordRegex.test(formState.password)) {
+        throw new Error('Password must contain at least 8 characters and a special character.');
+      }
+
       const { data } = await addUser({
         variables: {
           email: formState.email,
@@ -34,9 +45,19 @@ const SignupModal = ({ isOpen, onClose }) => {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    let updatedValue = value;
+  
+   
+    if (name === 'firstName' || name === 'lastName') {
+      updatedValue = value.replace(/\b\w/g, (char) => char.toUpperCase());
+    } else if (name === 'email') {
+    
+      updatedValue = value.toLowerCase();
+    }
+  
     setFormState({
       ...formState,
-      [name]: value,
+      [name]: updatedValue,
     });
   };
 
@@ -97,6 +118,18 @@ const SignupModal = ({ isOpen, onClose }) => {
                 required
               />
             </div>
+            <div className="d-flex justify-content-end">
+              <label htmlFor="confirmPassword" className='mx-3 confirm light-text'>Confirm Password:</label>
+              <input
+                placeholder="******"
+                name="confirmPassword"
+                type="password"
+                id="confirmPassword"
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <p className='password'> Password must contain at least 8 characters and a special character.</p>
             <div className="my-2 d-flex justify-content-end">
               <button className='btn gold-background btn-dark' type="submit">Submit</button>
             </div>
