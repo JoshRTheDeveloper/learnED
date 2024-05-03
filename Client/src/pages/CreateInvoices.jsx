@@ -17,7 +17,7 @@ const CreateInvoices = () => {
   useEffect(() => {
    const fetchUserFirstName = async () => {
      const profile = Auth.getProfile();
-     console.log(profile)
+  
      if (profile && profile.data.firstName) {
        setUserFirstName(profile.data.firstName);
      }

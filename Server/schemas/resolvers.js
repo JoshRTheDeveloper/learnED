@@ -56,15 +56,28 @@ const resolvers = {
       }
     },
   
-  changeProfilePicture: async (_, { _id, profilePicture }, context) => {
-    // Logic to update user's profile picture
-    const user = await User.findByIdAndUpdate(_id, { profilePicture }, { new: true });
-    return user;
-  },
+    changeProfilePicture: async (_, { _id, profilePicture }, context) => {
+      try {
+      
+        const user = await User.findById(_id);
+    
+    
+        user.profilePicture = profilePicture;
+    
+        await user.save();
+    
+        return user;
+      } catch (error) {
+     
+        console.error('Error updating profile picture:', error);
+        throw new Error('Failed to update profile picture');
+      }
+    },
+    
 
   changeAddress: async (_, { _id, address }, context) => {
     try {
-        // Log the received parameters for debugging
+    
         console.log('Received parameters - _id:', _id, 'address:', address);
 
 
@@ -81,20 +94,20 @@ const resolvers = {
 
         return user;
     } catch (error) {
-        // Log the error for debugging purposes
+       
         console.error('Error updating user address:', error);
 
-        // Check if the error is a validation error
+     
         if (error.name === 'ValidationError') {
             throw new Error('Validation error: ' + error.message);
         }
 
-        // Check if the error is due to insufficient permissions
+       
         if (error.name === 'MongoError' && error.code === 13) {
             throw new Error('Insufficient permissions to update user address');
         }
 
-        // For other types of errors, throw a generic error message
+      
         throw new Error('Failed to update address');
     }
 },

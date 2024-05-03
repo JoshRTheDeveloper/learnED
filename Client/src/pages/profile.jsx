@@ -5,102 +5,128 @@ import './profile.css';
 import Sidebar from '../components/sidebar/sidebar';
 import temporaryImage from '../assets/noLogo.svg';
 import { CHANGE_PROFILE_PICTURE, CHANGE_ADDRESS, CHANGE_EMAIL } from '../utils/mutations';
-import {GET_USER} from '../utils/queries';
+import { GET_USER } from '../utils/queries';
+import axios from 'axios'; // Import axios for making HTTP requests
+
 
 const Profile = () => {
-  // State variables for user data, email, address, and logo
   const [userData, setUserData] = useState(null);
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [logo, setLogo] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  const [filename, setFilename] = useState('');
+  const [renamedFile, setRenamedFile] = useState(null); // Add renamedFile state
 
-  const token = localStorage.getItem('authToken'); // Assuming the token is stored in localStorage
+  const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
 
-
   const { loading, error, data } = useQuery(GET_USER, {
-    variables: { userId: userId || '' }, // Provide the user ID as a variable to the query
+    variables: { userId: userId || '' },
   });
 
-
-
-
-
-  // Mutation hooks
   const [changeProfilePicture] = useMutation(CHANGE_PROFILE_PICTURE);
   const [changeAddress] = useMutation(CHANGE_ADDRESS);
   const [changeEmail] = useMutation(CHANGE_EMAIL);
 
-  // Fetch user data when component mounts
   useEffect(() => {
     if (!loading && data && data.getUser) {
       const { email, address, profilePicture } = data.getUser;
+      
       setEmail(email);
       setAddress(address);
-      setLogoUrl(profilePicture ? profilePicture : temporaryImage);
+      setLogoUrl(profilePicture ? `http://localhost:3001${profilePicture}` : temporaryImage);
       setUserData(data.getUser);
     }
   }, [loading, data]);
 
-  // Function to handle email change
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
   };
 
-  // Function to handle address change
   const handleAddressChange = (e) => {
     setAddress(e.target.value);
   };
 
-  // Function to handle logo change
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
-    // Set the logo state
     setLogo(file);
-    // Generate a URL for the uploaded image and set it as the source for the logo preview
     setLogoUrl(URL.createObjectURL(file));
+    
+    
+    const filename = `${userId}_profile_picture.jpg`;
+    setFilename(filename);
+    
+    
+    const renamedFile = new File([file], filename, { type: file.type });
+    setRenamedFile(renamedFile); 
   };
+  
+  const uploadProfilePicture = async (file) => {
+    try {
+        const formData = new FormData();
+        
+      
+        formData.append('file', file);
+        
+        const token = localStorage.getItem('authToken');
+        const decodedToken = jwtDecode(token);
+        const userId = decodedToken.data._id; 
+        
+       
+        const response = await axios.post('http://localhost:3001/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'userId': userId 
+            },
+        });
+        return response.data.fileUrl; 
+    } catch (error) {
+        console.error('Error uploading profile picture:', error);
+        throw error;
+    }
+};
 
-  // Function to handle form submission
-// Function to handle form submission
-const handleSubmit = async (e) => {
+ const handleSubmit = async (e) => {
   e.preventDefault();
   try {
-    // Initialize an empty object to hold mutation variables
-    const variables = { userId };
+    const token = localStorage.getItem('authToken');
+    const decodedToken = jwtDecode(token);
+    const userId = decodedToken.data._id; 
 
-    
+    const variables = { userId }; 
 
-    // If address is changed, add it to the mutation variables
     if (address) {
       variables.address = address;
     }
-
-    // If email is changed, add it to the mutation variables
     if (email) {
       variables.email = email;
     }
-
-    // Perform mutations to update user's profile
-    await changeAddress({ variables });
-    await changeEmail({ variables });
-
-    // Refresh user data after mutation
-    setUserData({ ...userData, email, address, profilePicture: logo });
-
-    // Clear the form fields after submission
+    if (logo) {
+      const picturePath = await uploadProfilePicture(renamedFile); 
+ 
+      await changeProfilePicture({
+        variables: {
+          userId, 
+          profilePicture: picturePath,
+        },
+      });
+    }
+    await Promise.all([
+      changeAddress({ variables }),
+      changeEmail({ variables }),
+    ]);
+    setUserData({ ...userData, email, address, profilePicture: renamedFile });
     setEmail('');
     setAddress('');
     setLogo('');
     setLogoUrl('');
+    window.location.reload();
   } catch (error) {
     console.error('Error updating profile:', error);
   }
 };
-
-
 
   return (
     <div>

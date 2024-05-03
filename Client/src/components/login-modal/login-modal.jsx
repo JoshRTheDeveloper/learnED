@@ -19,7 +19,7 @@ const LoginModal = ({ isOpen, onClose }) => {
           password: formState.password,
         },
       });
-      console.log(mutationResponse.data);
+     
   
       const token = mutationResponse.data.loginUser.token;
       Auth.login(token);
