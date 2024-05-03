@@ -74,7 +74,7 @@ mutation ChangeAddress($userId: ID!, $address: String!) {
 
 `;
 
-// Mutation to change email
+
 export const CHANGE_EMAIL = gql`
   mutation ChangeEmail($userId: ID!, $email: String!) {
     changeEmail(_id: $userId, email: $email) {
@@ -89,15 +89,15 @@ export const CHANGE_EMAIL = gql`
 `;
 
 export const CHANGE_PROFILE_PICTURE = gql`
-mutation ChangeProfilePicture($userId: ID!, $profilePicture: Upload!) {
-  changeProfilePicture(_id: $userId, profilePicture: $profilePicture) {
-    _id
-    firstName
-    lastName
-    email
-    profilePicture
-    address
+  mutation ChangeProfilePicture($userId: ID!, $profilePicture: String!) {
+    changeProfilePicture(_id: $userId, profilePicture: $profilePicture) {
+      _id
+      firstName
+      lastName
+      email
+      profilePicture
+      address
+    }
   }
-}
 `;
 
