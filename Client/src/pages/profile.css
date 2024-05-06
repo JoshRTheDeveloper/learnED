@@ -30,3 +30,25 @@ margin: 20px;
  margin: 20px;
 
 }
+
+.form {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ margin-left: 300px;
+}
+
+.fields {
+ display: flex;
+ width: 100%;
+ align-items: center;
+}
+
+.labels {
+ width: 100px;
+}
+
+
+.inputs1 {
+ height: 100%;
+}

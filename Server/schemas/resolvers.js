@@ -75,47 +75,57 @@ const resolvers = {
     },
     
 
-  changeAddress: async (_, { _id, address }, context) => {
-    try {
-    
-        console.log('Received parameters - _id:', _id, 'address:', address);
-
-
-        if (!_id) {
-            throw new Error('User ID is required');
-        }
-        if (!address) {
-            throw new Error('Address is required');
-        }
-        const user = await User.findByIdAndUpdate(_id, { address }, { new: true });
-        if (!user) {
-            throw new Error('User not found');
-        }
-
-        return user;
-    } catch (error) {
-       
-        console.error('Error updating user address:', error);
-
-     
-        if (error.name === 'ValidationError') {
-            throw new Error('Validation error: ' + error.message);
-        }
-
-       
-        if (error.name === 'MongoError' && error.code === 13) {
-            throw new Error('Insufficient permissions to update user address');
-        }
-
-      
-        throw new Error('Failed to update address');
-    }
-},
-
+    changeStreetAddress: async (_, { _id, streetAddress }, context) => {
+      try {
+          console.log('Received parameters - _id:', _id, 'streetAddress:', streetAddress);
+  
+          if (!_id) {
+              throw new Error('User ID is required');
+          }
+  
+          if (!streetAddress) {
+              throw new Error('Street address is required');
+          }
+  
+          const user = await User.findByIdAndUpdate(_id, { streetAddress }, { new: true });
+          if (!user) {
+              throw new Error('User not found');
+          }
+  
+          return user;
+      } catch (error) {
+          console.error('Error updating user street address:', error);
+  
+          if (error.name === 'ValidationError') {
+              throw new Error('Validation error: ' + error.message);
+          }
+  
+          if (error.name === 'MongoError' && error.code === 13) {
+              throw new Error('Insufficient permissions to update user street address');
+          }
+  
+          throw new Error('Failed to update street address');
+      }
+  },
+  
 
   changeEmail: async (_, { _id, email }, context) => {
-    // Logic to update user's email
     const user = await User.findByIdAndUpdate(_id, { email }, { new: true });
+    return user;
+  },
+
+  changeCity: async (_, { _id, city }, context) => {
+      const user = await User.findByIdAndUpdate(_id, { city }, { new: true });
+    return user;
+  },
+  
+  changeState: async (_, { _id, state }, context) => {
+    const user = await User.findByIdAndUpdate(_id, { state }, { new: true });
+    return user;
+  },
+  
+  changeZip: async (_, { _id, zip }, context) => {
+    const user = await User.findByIdAndUpdate(_id, { zip }, { new: true });
     return user;
   },
 },

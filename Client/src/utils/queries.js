@@ -35,7 +35,10 @@ export const GET_USER = gql`
       lastName
       email
       profilePicture
-      address
+      streetAddress
+      city
+      state
+      zip
     }
   }
 `;
@@ -48,7 +51,10 @@ export const GET_USERS = gql`
       lastName
       email
       profilePicture
-      address
+      streetAddress
+      city
+      state
+      zip
     }
   }
 `;

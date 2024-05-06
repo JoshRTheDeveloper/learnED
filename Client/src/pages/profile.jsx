@@ -4,19 +4,21 @@ import jwtDecode from 'jwt-decode';
 import './profile.css';
 import Sidebar from '../components/sidebar/sidebar';
 import temporaryImage from '../assets/noLogo.svg';
-import { CHANGE_PROFILE_PICTURE, CHANGE_ADDRESS, CHANGE_EMAIL } from '../utils/mutations';
+import { CHANGE_PROFILE_PICTURE, CHANGE_STREET_ADDRESS, CHANGE_EMAIL, CHANGE_CITY, CHANGE_STATE, CHANGE_ZIP } from '../utils/mutations';
 import { GET_USER } from '../utils/queries';
-import axios from 'axios'; // Import axios for making HTTP requests
-
+import axios from 'axios'; 
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
   const [email, setEmail] = useState('');
-  const [address, setAddress] = useState('');
+  const [streetAddress, setStreetAddress] = useState(''); 
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [zip, setZip] = useState('');
   const [logo, setLogo] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [filename, setFilename] = useState('');
-  const [renamedFile, setRenamedFile] = useState(null); // Add renamedFile state
+  const [renamedFile, setRenamedFile] = useState(null); 
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -27,15 +29,21 @@ const Profile = () => {
   });
 
   const [changeProfilePicture] = useMutation(CHANGE_PROFILE_PICTURE);
-  const [changeAddress] = useMutation(CHANGE_ADDRESS);
+  const [changeStreetAddress] = useMutation(CHANGE_STREET_ADDRESS);
   const [changeEmail] = useMutation(CHANGE_EMAIL);
+  const [changeCity] = useMutation(CHANGE_CITY);
+  const [changeState] = useMutation(CHANGE_STATE);
+  const [changeZip] = useMutation(CHANGE_ZIP);
 
   useEffect(() => {
     if (!loading && data && data.getUser) {
-      const { email, address, profilePicture } = data.getUser;
+      const { email, streetAddress, city, state, zip, profilePicture } = data.getUser; 
       
       setEmail(email);
-      setAddress(address);
+      setStreetAddress(streetAddress);
+      setCity(city);
+      setState(state);
+      setZip(zip);
       setLogoUrl(profilePicture ? `http://localhost:3001${profilePicture}` : temporaryImage);
       setUserData(data.getUser);
     }
@@ -45,8 +53,20 @@ const Profile = () => {
     setEmail(e.target.value);
   };
 
-  const handleAddressChange = (e) => {
-    setAddress(e.target.value);
+  const handleStreetAddressChange = (e) => { 
+    setStreetAddress(e.target.value); 
+  };
+
+  const handleCityChange = (e) => {
+    setCity(e.target.value);
+  };
+
+  const handleStateChange = (e) => {
+    setState(e.target.value);
+  };
+
+  const handleZipChange = (e) => {
+    setZip(e.target.value);
   };
 
   const handleLogoChange = (e) => {
@@ -97,11 +117,20 @@ const Profile = () => {
 
     const variables = { userId }; 
 
-    if (address) {
-      variables.address = address;
+    if (streetAddress) { 
+      variables.streetAddress = streetAddress; 
     }
     if (email) {
       variables.email = email;
+    }
+    if (city) {
+      variables.city = city;
+    }
+    if (state) {
+      variables.state = state;
+    }
+    if (zip) {
+      variables.zip = zip;
     }
     if (logo) {
       const picturePath = await uploadProfilePicture(renamedFile); 
@@ -114,12 +143,18 @@ const Profile = () => {
       });
     }
     await Promise.all([
-      changeAddress({ variables }),
+      changeStreetAddress({ variables }), 
       changeEmail({ variables }),
+      changeCity({ variables }),
+      changeState({ variables }),
+      changeZip({ variables }),
     ]);
-    setUserData({ ...userData, email, address, profilePicture: renamedFile });
+    setUserData({ ...userData, email, streetAddress, city, state, zip, profilePicture: renamedFile }); 'streetAddress'
     setEmail('');
-    setAddress('');
+    setStreetAddress(''); 
+    setCity('');
+    setState('');
+    setZip('');
     setLogo('');
     setLogoUrl('');
     window.location.reload();
@@ -138,26 +173,43 @@ const Profile = () => {
           </div>
           <h2 id='profile-h2'>Edit Profile</h2>
           <div>
-            <p>Email: {userData?.email}</p>
-            <p>Address: {userData?.address}</p>
+            <br></br>
+            <p> {userData?.email}</p>
+            <br></br>
+            <p> {userData?.streetAddress}</p> 
+            <p> {userData?.city}, {userData?.state} {userData?.zip} </p>
           </div>
         </div>
+        <div className='form'>
         <form onSubmit={handleSubmit}>
-          <div>
-            <label>Email:</label>
-            <input type="email" value={email || ''} onChange={handleEmailChange} />
+          <div className='fields'>
+            <label className='labels'>Email:</label>
+            <input className='inputs' type="email" value={email || ''} onChange={handleEmailChange} />
           </div>
-          <div>
-            <label>Address:</label>
-            <input type="text" value={address || ''} onChange={handleAddressChange} />
+          <div className='fields'>
+            <label className='labels'>Address:</label>
+            <input className='inputs' type="text" value={streetAddress || ''} onChange={handleStreetAddressChange} /> 
           </div>
-          <div>
-            <label>Logo:</label>
-            <input type="file" accept="image/*" onChange={handleLogoChange} />
+          <div className='fields'>
+            <label className='labels'>City:</label>
+            <input className='inputs'  type="text" value={city || ''} onChange={handleCityChange} />
+          </div>
+          <div className='fields'>
+            <label className='labels'>State:</label>
+            <input className='inputs'  type="text" value={state || ''} onChange={handleStateChange} />
+          </div>
+          <div className='fields'>
+            <label className='labels'>Zip:</label>
+            <input className='inputs'  type="text" value={zip || ''} onChange={handleZipChange} />
+          </div>
+          <div className='fields'>
+            <label className='labels'>Logo:</label>
+            <input className='inputs1'  type="file" accept="image/*" onChange={handleLogoChange} />
           </div>
           <button type="submit">Submit</button>
         </form>
       </div>
+    </div>
     </div>
   );
 };

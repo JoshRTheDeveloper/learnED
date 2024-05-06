@@ -60,43 +60,101 @@ mutation loginUser($email: String!, $password: String!) {
 }
 `;
 
-export const CHANGE_ADDRESS = gql`
-mutation ChangeAddress($userId: ID!, $address: String!) {
-  changeAddress(_id: $userId, address: $address) {
-    _id
-    firstName
-    lastName
-    email
-    profilePicture
-    address
-  }
-}
-
-`;
-
-
-export const CHANGE_EMAIL = gql`
-  mutation ChangeEmail($userId: ID!, $email: String!) {
-    changeEmail(_id: $userId, email: $email) {
+export const CHANGE_STREET_ADDRESS = gql`
+  mutation ChangeStreetAddress($userId: ID!, $streetAddress: String!) {
+    changeStreetAddress(_id: $userId, streetAddress: $streetAddress) {
       _id
       firstName
       lastName
       email
       profilePicture
-      address
+      streetAddress
+      city
+      state
+      zip
     }
   }
 `;
 
-export const CHANGE_PROFILE_PICTURE = gql`
-  mutation ChangeProfilePicture($userId: ID!, $profilePicture: String!) {
-    changeProfilePicture(_id: $userId, profilePicture: $profilePicture) {
+
+
+export const CHANGE_EMAIL = gql`
+  mutation ChangeEmail($userId: ID!, $email: String!) {
+    changeEmail(_id: $userId, email: $email){
       _id
       firstName
       lastName
       email
       profilePicture
-      address
+      streetAddress
+      city
+      state
+      zip
+    }
+  }
+`;
+
+export const CHANGE_CITY = gql`
+  mutation ChangeCity($userId: ID!, $city: String!) {
+    changeCity(_id: $userId, city: $city) {
+      _id
+      firstName
+      lastName
+      email
+      profilePicture
+      streetAddress
+      city
+      state
+      zip
+    }
+  }
+`;
+
+export const CHANGE_STATE = gql`
+  mutation ChangeState($userId: ID!, $state: String!) {
+    changeState(_id: $userId, state: $state) {
+      _id
+      firstName
+      lastName
+      email
+      profilePicture
+      streetAddress
+      city
+      state
+      zip
+    }
+  }
+`;
+
+export const CHANGE_ZIP = gql`
+  mutation ChangeZip($userId: ID!, $zip: String!) {
+    changeZip(_id: $userId, zip: $zip) {
+      _id
+      firstName
+      lastName
+      email
+      profilePicture
+      streetAddress
+      city
+      state
+      zip
+    }
+  }
+`;
+
+
+export const CHANGE_PROFILE_PICTURE = gql`
+  mutation ChangeProfilePicture($userId: ID!, $profilePicture: String!) {
+    changeProfilePicture(_id: $userId, profilePicture: $profilePicture){
+      _id
+      firstName
+      lastName
+      email
+      profilePicture
+      streetAddress
+      city
+      state
+      zip
     }
   }
 `;

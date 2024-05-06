@@ -1,10 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
 import SignupModal from '../components/signup-modal/modal';
 import './CreateInvoices.css';
+import jwtDecode from 'jwt-decode';
 import Sidebar from '../components/sidebar/sidebar';
 import Auth from "../utils/auth";
+import { GET_USER } from '../utils/queries';
+import { useQuery } from '@apollo/client';
+
+
 
 const CreateInvoices = () => {
+  const [userData, setUserData] = useState(null);
+  const [email, setEmail] = useState('');
+  const [streetAddress, setStreetAddress] = useState(''); 
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [zip, setZip] = useState('');
+  const [logo, setLogo] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [filename, setFilename] = useState('');
+  const [renamedFile, setRenamedFile] = useState(null); 
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+
+  const token = localStorage.getItem('authToken');
+  const decodedToken = jwtDecode(token);
+  const userId = decodedToken.data._id;
+
+  const { loading, error, data } = useQuery(GET_USER, {
+    variables: { userId: userId || '' },
+  });
+
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const toggleSignupModal = () => {
     setIsSignupModalOpen(!isSignupModalOpen);
@@ -12,24 +38,29 @@ const CreateInvoices = () => {
 
 
 
+
   
-  const [userFirstName, setUserFirstName] = useState("");
   useEffect(() => {
-   const fetchUserFirstName = async () => {
-     const profile = Auth.getProfile();
-  
-     if (profile && profile.data.firstName) {
-       setUserFirstName(profile.data.firstName);
-     }
-   };
-   fetchUserFirstName();
-  }, []);
+    if (!loading && data && data.getUser) {
+      const { firstName, lastName, email, streetAddress, city, state, zip, profilePicture } = data.getUser; 
+      
+      setFirstName(firstName);
+      setLastName(lastName)
+      setEmail(email);
+      setStreetAddress(streetAddress);
+      setCity(city);
+      setState(state);
+      setZip(zip);
+      setLogoUrl(profilePicture ? `http://localhost:3001${profilePicture}` : temporaryImage);
+      setUserData(data.getUser);
+    }
+  }, [loading, data]);
 
   const user = {
-    email: userFirstName,
-    name: 'John Doe',
-    address: '123 Main Street',
-    city: 'Anytown, USA'
+    email: email,
+    name: firstName + " " + lastName,
+    streetAddress: streetAddress,
+    city: city + ", " + state + " " + zip
   };
 
 
@@ -78,7 +109,7 @@ const CreateInvoices = () => {
                   </div>
                   <div>
                     <label className="label-item" htmlFor="user-address"></label>
-                    <input type="text" placeholder="Address" id="user-address" value={user.address} required />
+                    <input type="text" placeholder="Address" id="user-address" value={user.streetAddress} required />
                   </div>
                   <div>
                     <label className="label-item" htmlFor="user-city"></label>
@@ -131,3 +162,4 @@ const CreateInvoices = () => {
 };
 
 export default CreateInvoices;
+

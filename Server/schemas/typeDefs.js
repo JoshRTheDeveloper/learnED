@@ -12,7 +12,10 @@ const typeDefs = `
     lastName: String!
     email: String!
     profilePicture: String 
-    address: String 
+    streetAddress: String
+    city: String
+    state: String
+    zip: String 
     
   }
 
@@ -34,7 +37,10 @@ const typeDefs = `
       password: String!): Auth
 
       changeProfilePicture(_id: ID!, profilePicture: String!): User!
-      changeAddress(_id: ID!, address: String!): User!
+      changeStreetAddress(_id: ID!, streetAddress: String!): User!
+      changeCity(_id: ID!, city: String!): User!
+      changeState(_id: ID!, state: String!): User!
+      changeZip(_id: ID!, zip: String!): User!
       changeEmail(_id: ID!, email: String!): User!
   }
 `;

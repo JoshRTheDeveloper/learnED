@@ -22,13 +22,28 @@ const userSchema = new Schema({
   password: {
     type: String,
     required: true,
-    minlength: 5,
+    minlength: 8,
   },
   profilePicture: {
     type: String,
   },
   
-  address: {
+  streetAddress: {
+    type: String,
+    trim: true,
+  },
+  
+  city: {
+    type: String,
+    trim: true,
+  },
+
+  state: {
+    type: String,
+    trim: true,
+  },
+
+  zip: {
     type: String,
     trim: true,
   },
