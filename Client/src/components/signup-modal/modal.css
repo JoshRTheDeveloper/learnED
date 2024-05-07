@@ -105,6 +105,20 @@ button:hover {
 }
 
 .password {
+    display: flex;
+    justify-content: center;
     font-size: smaller;
-    width: 250px;
+    width: 250px
+}
+
+.company-input {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: end;
+    padding-bottom: 10px;
+}
+
+.require {
+    font-size: smaller;
+    margin-right: 10px;
 }

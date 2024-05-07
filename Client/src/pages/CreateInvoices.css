@@ -4,60 +4,96 @@
   align-items: center;
   height: 100vh;
   width: 100vw;
-}
-
-.form {
+ }
+ 
+ .form {
  width: 60%;
  justify-content: center;
  align-items: center;
  padding: 20px;
-}
-
-.input {
+ }
+ 
+ .input {
  width: 100%;
  height: 30px;
  margin: 5px;
-}
-
-input {
+ }
+ 
+ input {
  height: 30px;
-}
-
-.label{
+ width: 200px;
+ }
+ 
+ .label{
  padding-right: 3%;
  font-weight: bolder;
-}
-
-.user-client {
+ width: 122px;
+ }
+ 
+ .user-client {
  padding-top: 3%;
-display: flex;
-gap: 100px;
-}
-
-.line {
+ display: flex;
+ gap: 100px;
+ }
+ 
+ .line {
  background-color: rgb(255, 0, 0);
  height: 8px;
- width: 50vw;
+ width: 100%;
  margin-bottom: 20px;
-}
-
-.invoice-bottom {
+ }
+ 
+ .invoice-bottom {
  padding-top: 5%;
  width: 20vw;
-}
-
-.details {
+ }
+ 
+ .details {
  width: 100%;
  height: 150px;
  margin: 20px;
-}
-
-.invoice-details{
+ }
+ 
+ .invoice-details{
  width: 100%;
-}
-
-.invoice-h3 {
+ }
+ 
+ .heading-invoices {
+  display: flex;
+  width: 100%;
+ }
+ 
+ .heading-title {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+ }
+ 
+ .invoice-h3 {
  color: rgb(0, 0, 0) !important;
  text-align: center;
  align-items: center;
-}
+ font-size: 30px;
+ }
+ 
+ .dash-button {
+ align-items: end;
+ }
+ 
+ .section1 {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+ }
+ 
+ .split {
+  display: flex;
+  width: 30%;
+ }
+ 
+ .split2 {
+  ;
+ }
+ 

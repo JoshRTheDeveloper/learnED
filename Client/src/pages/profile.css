@@ -51,4 +51,22 @@ margin: 20px;
 
 .inputs1 {
  height: 100%;
+ color: white;
+}
+
+
+.split3  {
+ width: 100px;
+}
+
+.split3 p {
+ font: bolder;
+ font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif
+}
+
+
+.columns-2 {
+ display: flex;
+ width: 100%;
+ gap: 20px;
 }

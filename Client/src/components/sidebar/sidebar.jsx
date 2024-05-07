@@ -30,8 +30,11 @@ const Sidebar = () => {
   }, [loading, data]);
 
   return (
+  <div className='content'>
     <div className="sidebar">
+      <div className='profile-picture-div'>
       {profilePicture && <img src={`http://localhost:3001${profilePicture}`} className='profile-picture' alt="Profile" />}
+      </div>
       {userFirstName && <h2>Welcome, {userFirstName}!</h2>}
       <ul>
         <li><Link to="/dashboard">Dashboard</Link></li>
@@ -39,7 +42,7 @@ const Sidebar = () => {
         <li><a href="/Profile">Profile</a></li>
         <li><a href="#">Invoice History</a></li>
       </ul>
-     
+    </div>
     </div>
   );
 }

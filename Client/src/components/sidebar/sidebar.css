@@ -17,7 +17,7 @@
 
 .sidebar ul {
  list-style-type: none;
- padding: 0;
+ padding-left: 10px;
 }
 
 .sidebar ul li {
@@ -41,4 +41,41 @@
  border-radius: 50%; 
  object-fit: cover;
  margin-bottom: 10px; 
+}
+
+
+@media (max-width: 1180px) {
+
+.content {
+
+}
+
+.sidebar {
+
+}
+
+.sidebar h2 {
+ font-size: medium !important;
+}
+
+.sidebar ul {
+
+}
+
+.sidebar ul li {
+
+}
+
+.profile-picture {
+ 
+}
+
+
+
+}
+
+@media (max-width: 845px) {
+ .content {
+  display: none;
+ }
 }

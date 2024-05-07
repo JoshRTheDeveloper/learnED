@@ -8,6 +8,7 @@ const typeDefs = `
 
   type User {
     _id: ID
+    company: String
     firstName: String!
     lastName: String!
     email: String!
@@ -31,12 +32,14 @@ const typeDefs = `
     logout: String! # Logout mutation
   
     createUser(
+      company: String,
       firstName: String!, 
       lastName: String!, 
       email: String!, 
       password: String!): Auth
 
       changeProfilePicture(_id: ID!, profilePicture: String!): User!
+      changeCompany(_id: ID!, company: String!): User!
       changeStreetAddress(_id: ID!, streetAddress: String!): User!
       changeCity(_id: ID!, city: String!): User!
       changeState(_id: ID!, state: String!): User!

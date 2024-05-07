@@ -4,7 +4,7 @@ import jwtDecode from 'jwt-decode';
 import './profile.css';
 import Sidebar from '../components/sidebar/sidebar';
 import temporaryImage from '../assets/noLogo.svg';
-import { CHANGE_PROFILE_PICTURE, CHANGE_STREET_ADDRESS, CHANGE_EMAIL, CHANGE_CITY, CHANGE_STATE, CHANGE_ZIP } from '../utils/mutations';
+import {  CHANGE_COMPANY, CHANGE_PROFILE_PICTURE, CHANGE_STREET_ADDRESS, CHANGE_EMAIL, CHANGE_CITY, CHANGE_STATE, CHANGE_ZIP } from '../utils/mutations';
 import { GET_USER } from '../utils/queries';
 import axios from 'axios'; 
 
@@ -17,8 +17,9 @@ const Profile = () => {
   const [zip, setZip] = useState('');
   const [logo, setLogo] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
-  const [filename, setFilename] = useState('');
+  const [company, setCompany] = useState('');
   const [renamedFile, setRenamedFile] = useState(null); 
+
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -34,10 +35,11 @@ const Profile = () => {
   const [changeCity] = useMutation(CHANGE_CITY);
   const [changeState] = useMutation(CHANGE_STATE);
   const [changeZip] = useMutation(CHANGE_ZIP);
+  const [changeCompany] = useMutation(CHANGE_COMPANY);
 
   useEffect(() => {
     if (!loading && data && data.getUser) {
-      const { email, streetAddress, city, state, zip, profilePicture } = data.getUser; 
+      const {company, email, streetAddress, city, state, zip, profilePicture } = data.getUser; 
       
       setEmail(email);
       setStreetAddress(streetAddress);
@@ -46,6 +48,7 @@ const Profile = () => {
       setZip(zip);
       setLogoUrl(profilePicture ? `http://localhost:3001${profilePicture}` : temporaryImage);
       setUserData(data.getUser);
+      setCompany(company);
     }
   }, [loading, data]);
 
@@ -60,6 +63,11 @@ const Profile = () => {
   const handleCityChange = (e) => {
     setCity(e.target.value);
   };
+
+  const handleCompanyChange = (e) => {
+    setCompany(e.target.value);
+  };
+
 
   const handleStateChange = (e) => {
     setState(e.target.value);
@@ -123,6 +131,11 @@ const Profile = () => {
     if (email) {
       variables.email = email;
     }
+
+    if (company) {
+      variables.company = company;
+    }
+
     if (city) {
       variables.city = city;
     }
@@ -148,6 +161,7 @@ const Profile = () => {
       changeCity({ variables }),
       changeState({ variables }),
       changeZip({ variables }),
+      changeCompany({ variables })
     ]);
     setUserData({ ...userData, email, streetAddress, city, state, zip, profilePicture: renamedFile }); 'streetAddress'
     setEmail('');
@@ -157,6 +171,7 @@ const Profile = () => {
     setZip('');
     setLogo('');
     setLogoUrl('');
+    setCompany('');
     window.location.reload();
   } catch (error) {
     console.error('Error updating profile:', error);
@@ -172,16 +187,34 @@ const Profile = () => {
             <img src={logoUrl} alt='Uploaded Logo' className='logo-preview' />
           </div>
           <h2 id='profile-h2'>Edit Profile</h2>
-          <div>
+          <div className='columns-2'>
+          <div className='split3'>
             <br></br>
-            <p> {userData?.email}</p>
+            <p>Company:</p>
             <br></br>
-            <p> {userData?.streetAddress}</p> 
-            <p> {userData?.city}, {userData?.state} {userData?.zip} </p>
+            <p>Email:</p>
+            <br></br>
+            <p>Address:</p>
+          </div>
+          <div className='split4'>
+            <br></br>
+          <p>{userData?.company}</p>
+          <br></br>
+
+          <p> {userData?.email}</p>
+          <br></br>
+
+          <p> {userData?.streetAddress}</p> 
+          <p> {userData?.city}, {userData?.state} {userData?.zip} </p>
+          </div>
           </div>
         </div>
         <div className='form'>
         <form onSubmit={handleSubmit}>
+          <div className='fields'>
+            <label className='labels'>Company::</label>
+            <input className='inputs' type="company" value={company || ''} onChange={handleCompanyChange} />
+          </div>
           <div className='fields'>
             <label className='labels'>Email:</label>
             <input className='inputs' type="email" value={email || ''} onChange={handleEmailChange} />

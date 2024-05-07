@@ -119,6 +119,11 @@ const resolvers = {
     return user;
   },
   
+  changeCompany: async (_, { _id, company }, context) => {
+    const user = await User.findByIdAndUpdate(_id, { company }, { new: true });
+  return user;
+},
+
   changeState: async (_, { _id, state }, context) => {
     const user = await User.findByIdAndUpdate(_id, { state }, { new: true });
     return user;

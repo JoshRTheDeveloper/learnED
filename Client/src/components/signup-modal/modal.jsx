@@ -5,7 +5,7 @@ import { CREATE_USER } from '../../utils/mutations';
 import './modal.css';
 
 const SignupModal = ({ isOpen, onClose }) => {
-  const [formState, setFormState] = useState({ email: '', password: '', confirmPassword: '', firstName: '', lastName: '' });
+  const [formState, setFormState] = useState({ company: '', email: '', password: '', confirmPassword: '', firstName: '', lastName: '' });
   const [addUser, { error }] = useMutation(CREATE_USER); 
   const [successMessage, setSuccessMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -26,6 +26,7 @@ const SignupModal = ({ isOpen, onClose }) => {
 
       const { data } = await addUser({
         variables: {
+          company: formState.company,
           email: formState.email,
           password: formState.password,
           firstName: formState.firstName,
@@ -72,6 +73,24 @@ const SignupModal = ({ isOpen, onClose }) => {
         )}
         {!submitted && (
           <form onSubmit={handleFormSubmit}>
+               <div className="d-flex justify-content-end">
+                <div className='company-input'>
+                <label htmlFor="company" className='me-3 light-text'>Company:</label>
+              <p className='require'> (Not Required)</p>
+              </div>
+              <input
+                placeholder="Company"
+                name="company"
+                type="text"
+                id="company"
+                value={formState.company}
+                onChange={handleChange}
+                required
+              />
+                
+              
+            </div>
+          
             <div className="d-flex justify-content-end">
               <label htmlFor="firstName" className='me-3 light-text'>First Name:</label>
               <input

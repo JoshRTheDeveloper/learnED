@@ -2,12 +2,14 @@ import { gql } from '@apollo/client';
 
 export const CREATE_USER = gql`
   mutation createUser(
+    $company: String
     $firstName: String!
     $lastName: String!
     $email: String!
     $password: String!
   ) {
     createUser(
+      company: $company
       firstName: $firstName
       lastName: $lastName
       email: $email
@@ -159,3 +161,19 @@ export const CHANGE_PROFILE_PICTURE = gql`
   }
 `;
 
+export const CHANGE_COMPANY= gql`
+  mutation ChangeCompany($userId: ID!, $company: String!) {
+    changeCompany(_id: $userId, company: $company){
+      _id
+      company
+      firstName
+      lastName
+      email
+      profilePicture
+      streetAddress
+      city
+      state
+      zip
+    }
+  }
+`;
