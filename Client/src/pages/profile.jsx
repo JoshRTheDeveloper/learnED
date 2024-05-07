@@ -12,6 +12,7 @@ const Profile = () => {
   const [userData, setUserData] = useState(null);
   const [email, setEmail] = useState('');
   const [streetAddress, setStreetAddress] = useState(''); 
+  const [fileName, setFilename] = useState ('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
