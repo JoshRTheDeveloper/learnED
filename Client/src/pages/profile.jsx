@@ -210,7 +210,7 @@ const Profile = () => {
           </div>
           </div>
         </div>
-        <div className='form'>
+        <div className='form1'>
         <form onSubmit={handleSubmit}>
           <div className='fields'>
             <label className='labels'>Company::</label>

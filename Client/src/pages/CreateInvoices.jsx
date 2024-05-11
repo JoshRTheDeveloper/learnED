@@ -81,9 +81,11 @@ console.log(data)
               <div className='heading-invoices'>
                 <div className='heading-title'>
                   <h3 className='invoice-h3'>Create Invoice</h3>
+                  <div className='back-link'>
                   <a href="/dashboard">
-                  <b>← to Dashboard</b>
-                  </a>
+                     ← to Dashboard
+                 </a>
+                  </div>
                 </div>
               </div>
 
@@ -179,7 +181,10 @@ console.log(data)
                     <textarea className='details' type="text" placeholder="Details of work provided" id="invoice-details"></textarea>
                   </div>
 
-                  <button type="submit" id="send-invoice-button">Send Invoice</button>
+                  <div className='invoice-button'>
+                     <button type="submit" id="send-invoice-button">Send Invoice</button>
+                  </div>
+          
                 </div>
             </form>
             {/* Include the Popup component here */}
