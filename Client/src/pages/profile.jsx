@@ -213,7 +213,7 @@ const Profile = () => {
         <div className='form1'>
         <form onSubmit={handleSubmit}>
           <div className='fields'>
-            <label className='labels'>Company::</label>
+            <label className='labels'>Company:</label>
             <input className='inputs' type="company" value={company || ''} onChange={handleCompanyChange} />
           </div>
           <div className='fields'>
@@ -240,7 +240,7 @@ const Profile = () => {
             <label className='labels'>Logo:</label>
             <input className='inputs1'  type="file" accept="image/*" onChange={handleLogoChange} />
           </div>
-          <button type="submit">Submit</button>
+          <button className='submit-button' type="submit">Submit</button>
         </form>
       </div>
     </div>

@@ -203,3 +203,20 @@ align-content: end;
 }
 
   }
+
+  @media (max-width: 615px) {
+   .container {
+    margin-top: 200px !important;
+   }
+  }
+
+  @media (max-width: 300px) {
+    
+    .heading-title {
+      justify-content: center;
+    }
+
+    .invoice-h3 {
+      font-size: larger;
+    }
+  }

@@ -96,20 +96,28 @@ function Nav() {
                 <ul className="navbar-nav me-auto mb-2 mb-md-0">
                 
                 </ul>
+
+                <div className='mobile-container'>
                 <ul className='mobile-sidebar'>
             <li><Link to="/dashboard">Dashboard</Link></li>
             <li><Link to="/CreateInvoices">Create Invoice</Link></li>
             <li><a href="/Profile">Profile</a></li>
             <li><a href="#">Invoice History</a></li>
+            <button className="mobile-logout" onClick={handleLogout}>Logout</button>
             </ul>
+            </div>
+            <div className='width'>
                 <div className="navbar-text mx-3">
 
                   {firstName && <span>Welcome, {firstName}! </span>} 
 
                 </div>
-                <ul className="navbar-nav mb-2 mb-md-0">
+                </div>
+                <ul className="navbar-nav mb-md-0">
                   <li className="nav-item">
+                    <div className='logout-button'>
                     <button className="nav-link active mx-3" onClick={handleLogout}>Logout</button>
+                    </div>
                   </li>
                 </ul>
               </div>
