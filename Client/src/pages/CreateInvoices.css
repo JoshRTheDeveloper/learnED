@@ -102,6 +102,7 @@
   width: 30%;
  }
  
+
  @media (max-width: 992px) {
  .form {
   width: 100%;
@@ -220,3 +221,7 @@ align-content: end;
       font-size: larger;
     }
   }
+
+
+ 
+

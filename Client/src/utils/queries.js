@@ -1,32 +1,5 @@
 import { gql } from '@apollo/client';
 
-export const GET_STAFF = gql`
-  query GetStaff {
-    getStaff {
-      _id
-      firstName
-      lastName
-      hours
-      availability { 
-        _id
-        dayOfWeek
-        hour
-        available
-      }
-      services {
-        _id
-        serviceName
-        servicePrice
-        addOns {
-          addOnName
-          addOnPrice
-          _id
-        }
-      }
-    }
-  }
-`;
-
 export const GET_USER = gql`
   query GetUser($userId: ID!) {
     getUser(_id: $userId) {
@@ -61,75 +34,83 @@ export const GET_USERS = gql`
   }
 `;
 
-export const GET_STAFFMEMBER = gql`
-query GetStaffMember($staffId: ID!) {
-  getStaffMember(staffId: $staffId) {
-    firstName
-    lastName
-    hours
-    services {
+export const GET_INVOICES = gql`
+  query getInvoices {
+    getInvoices {
       _id
-      serviceName
-      servicePrice
-      addOns {
-        addOnName
-        addOnPrice
+      invoiceAmount
+      paidStatus
+      invoiceNumber
+      companyName
+      companyStreetAddress
+      companyCityAddress
+      companyEmail
+      clientName
+      clientStreetAddress
+      clientCityAddress
+      clientEmail
+      dateCreated
+      dueDate
+      user {
         _id
+        firstName
+        lastName
       }
-    }
-  }
-}
-`;
-
-export const GET_SINGLE_SERVICE = gql`
-query GetSingleService($serviceId: ID!) {
-  getSingleService(serviceId: $serviceId) {
-    _id
-    serviceName
-    servicePrice
-    addOns {
-      addOnName
-      addOnPrice
-      _id
-    }
-  }
-}
-`;
-
-export const GET_SERVICES = gql`
-  query GetServices {
-    getServices {
-      _id
-      serviceName
-      servicePrice
+      invoice_details
     }
   }
 `;
 
-export const GET_USER_BOOKINGS = gql`
-query GetUserBookings($userId: ID!) {
-  getUserBookings(userId: $userId) {
-  date
-  time
-  service {
-    serviceName
-    servicePrice
+export const GET_INVOICE = gql`
+  query getInvoice($id: ID!) {
+    getInvoice(_id: $id) {
+      _id
+      invoiceAmount
+      paidStatus
+      invoiceNumber
+      companyName
+      companyStreetAddress
+      companyCityAddress
+      companyEmail
+      clientName
+      clientStreetAddress
+      clientCityAddress
+      clientEmail
+      dateCreated
+      dueDate
+      user {
+        _id
+        firstName
+        lastName
+      }
+      invoice_details
+    }
   }
-  staff {
-    firstName
-    lastName
-  }
-}
-}
 `;
 
-export const GET_AVAILABILITY = gql`
-  query GetAvailability($dayOfWeek: Int!, $hour: Int!) {
-    availability(dayOfWeek: $dayOfWeek, hour: $hour) {
+export const GET_USER_INVOICES = gql`
+  query getUserInvoices($userId: ID!) {
+    getUserInvoices(userId: $userId) {
       _id
-      dayOfWeek
-      hour
-      available
+      invoiceAmount
+      paidStatus
+      invoiceNumber
+      companyName
+      companyStreetAddress
+      companyCityAddress
+      companyEmail
+      clientName
+      clientStreetAddress
+      clientCityAddress
+      clientEmail
+      dateCreated
+      dueDate
+      user {
+        _id
+        firstName
+        lastName
+      }
+      invoice_details
     }
   }
 `;

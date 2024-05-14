@@ -17,13 +17,36 @@ const typeDefs = `
     city: String
     state: String
     zip: String 
-    
+    invoices: [Invoice]
   }
+
+  type Invoice {
+    _id: ID
+    invoiceAmount: Float!
+    paidStatus: Boolean!
+    invoiceNumber: String!
+    companyName: String!
+    companyStreetAddress: String
+    companyCityAddress: String
+    companyEmail: String!
+    clientName: String!
+    clientStreetAddress: String
+    clientCityAddress: String
+    clientEmail: String!
+    dateCreated: String!
+    dueDate: String!
+    user: User! # Reference to the user who created the invoice
+    invoice_details: String!
+  }
+
 
   
   type Query {
     getUsers: [User]
     getUser(_id: ID): User
+    getInvoices: [Invoice]
+    getInvoice(_id: ID): Invoice
+    getUserInvoices(userId: ID!): [Invoice]
   }
 
   type Mutation {
@@ -45,6 +68,42 @@ const typeDefs = `
       changeState(_id: ID!, state: String!): User!
       changeZip(_id: ID!, zip: String!): User!
       changeEmail(_id: ID!, email: String!): User!
+
+      createInvoice(
+        invoiceAmount: Float!,
+        paidStatus: Boolean!,
+        invoiceNumber: String!,
+        companyName: String!,
+        companyStreetAddress: String,
+        companyCityAddress: String,
+        companyEmail: String!,
+        clientName: String!,
+        clientStreetAddress: String,
+        clientCityAddress: String,
+        clientEmail: String!,
+        dueDate: String!,
+        userId: ID!,
+        invoice_details: String!
+      ): Invoice!
+  
+      updateInvoice(
+        _id: ID!,
+        invoiceAmount: Float,
+        paidStatus: Boolean,
+        invoiceNumber: String,
+        companyName: String,
+        companyStreetAddress: String,
+        companyCityAddress: String,
+        companyEmail: String,
+        clientName: String,
+        clientStreetAddress: String,
+        clientCityAddress: String,
+        clientEmail: String,
+        dueDate: String,
+        invoice_details: String
+      ): Invoice!
+
+      deleteInvoice(_id: ID!): Invoice!
   }
 `;
 

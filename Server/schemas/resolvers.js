@@ -23,6 +23,19 @@ const resolvers = {
         throw new Error('Failed to fetch users');
       }
     },
+
+    getInvoices: async () => {
+      return await Invoice.find().populate('user');
+    },
+
+    getInvoice: async (parent, { _id }) => {
+      return await Invoice.findById(_id).populate('user');
+    },
+
+    getUserInvoices: async (parent, { userId }) => {
+      return await Invoice.find({ user: userId }).populate('user');
+    },
+
   },
     
   Mutation: {
@@ -132,6 +145,20 @@ const resolvers = {
   changeZip: async (_, { _id, zip }, context) => {
     const user = await User.findByIdAndUpdate(_id, { zip }, { new: true });
     return user;
+  },
+
+  createInvoice: async (parent, args) => {
+    const invoice = await Invoice.create(args);
+    return await invoice.populate('user').execPopulate();
+  },
+
+  updateInvoice: async (parent, args) => {
+    const { _id, ...updateData } = args;
+    return await Invoice.findByIdAndUpdate(_id, updateData, { new: true }).populate('user');
+  },
+  
+  deleteInvoice: async (parent, { _id }) => {
+    return await Invoice.findByIdAndDelete(_id).populate('user');
   },
 },
 };
