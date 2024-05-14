@@ -53,6 +53,10 @@ const userSchema = new Schema({
     type: String,
     trim: true,
   },
+  invoices: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Invoice',
+  }],
   
 });
 

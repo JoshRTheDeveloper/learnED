@@ -82,7 +82,7 @@ const typeDefs = `
         clientCityAddress: String,
         clientEmail: String!,
         dueDate: String!,
-        userId: ID!,
+        userID: ID!
         invoice_details: String!
       ): Invoice!
   
