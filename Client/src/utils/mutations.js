@@ -23,29 +23,7 @@ export const CREATE_USER = gql`
   }
 `;
 
-export const CREATE_BOOKING = gql`
-  mutation 
-  createBooking(
-    $userId: ID!, 
-    $serviceId: ID!, 
-    $staffId: ID!, 
-    $addOnId: ID,
-    $phoneNumber: String
-    $date: String!, 
-    $time: String!
-    ) {
-    createBooking
-    (userId: $userId, 
-      serviceId: $serviceId, 
-      addOnId: $addOnId,
-      phoneNumber: $phoneNumber
-      staffId: $staffId, 
-      date: $date, 
-      time: $time) {
-      _id
-    }
-  }
-`;
+
 
 
 
@@ -179,8 +157,38 @@ export const CHANGE_COMPANY= gql`
 `;
 
 export const CREATE_INVOICE = gql`
-  mutation createInvoice($invoiceAmount: Decimal!, $paidStatus: Boolean!, $invoiceNumber: String!, $companyName: String!, $companyStreetAddress: String, $companyCityAddress: String, $companyEmail: String!, $clientName: String!, $clientStreetAddress: String, $clientCityAddress: String, $clientEmail: String!, $dueDate: Date!, $userId: ID!, $invoice_details: String!) {
-    createInvoice(invoiceAmount: $invoiceAmount, paidStatus: $paidStatus, invoiceNumber: $invoiceNumber, companyName: $companyName, companyStreetAddress: $companyStreetAddress, companyCityAddress: $companyCityAddress, companyEmail: $companyEmail, clientName: $clientName, clientStreetAddress: $clientStreetAddress, clientCityAddress: $clientCityAddress, clientEmail: $clientEmail, dueDate: $dueDate, userId: $userId, invoice_details: $invoice_details) {
+  mutation createInvoice(
+    $invoiceAmount: Float!, 
+    $paidStatus: Boolean!, 
+    $invoiceNumber: String!, 
+    $companyName: String!, 
+    $companyStreetAddress: String, 
+    $companyCityAddress: String, 
+    $companyEmail: String!, 
+    $clientName: String!, 
+    $clientStreetAddress: String, 
+    $clientCityAddress: String, 
+    $clientEmail: String!, 
+    $dueDate: String!, 
+    $userID: ID!, 
+    $invoice_details: String!
+  ) {
+    createInvoice(
+      invoiceAmount: $invoiceAmount, 
+      paidStatus: $paidStatus, 
+      invoiceNumber: $invoiceNumber, 
+      companyName: $companyName, 
+      companyStreetAddress: $companyStreetAddress, 
+      companyCityAddress: $companyCityAddress, 
+      companyEmail: $companyEmail, 
+      clientName: $clientName, 
+      clientStreetAddress: $clientStreetAddress, 
+      clientCityAddress: $clientCityAddress, 
+      clientEmail: $clientEmail, 
+      dueDate: $dueDate, 
+      userID: $userID, 
+      invoice_details: $invoice_details
+    ) {
       _id
       invoiceAmount
       paidStatus
@@ -197,13 +205,12 @@ export const CREATE_INVOICE = gql`
       dueDate
       user {
         _id
-        firstName
-        lastName
       }
       invoice_details
     }
   }
 `;
+
 
 export const UPDATE_INVOICE = gql`
   mutation updateInvoice($id: ID!, $invoiceAmount: Decimal, $paidStatus: Boolean, $invoiceNumber: String, $companyName: String, $companyStreetAddress: String, $companyCityAddress: String, $companyEmail: String, $clientName: String, $clientStreetAddress: String, $clientCityAddress: String, $clientEmail: String, $dueDate: Date, $invoice_details: String) {

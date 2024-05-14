@@ -1,15 +1,12 @@
-
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import SignupModal from '../components/signup-modal/modal';
 import './CreateInvoices.css';
 import jwtDecode from 'jwt-decode';
 import Sidebar from '../components/sidebar/sidebar';
+import { useQuery, useMutation } from '@apollo/client';
 import Auth from "../utils/auth";
 import { GET_USER } from '../utils/queries';
-import { useQuery } from '@apollo/client';
-
-
+import { CREATE_INVOICE } from '../utils/mutations';
 
 const CreateInvoices = () => {
   const [userData, setUserData] = useState(null);
@@ -18,37 +15,34 @@ const CreateInvoices = () => {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
-  const [logo, setLogo] = useState('');
-  const [logoUrl, setLogoUrl] = useState('');
-  const [filename, setFilename] = useState('');
-  const [renamedFile, setRenamedFile] = useState(null); 
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [profilePicture, setProfilePicture] = useState("")
+  const [profilePicture, setProfilePicture] = useState('');
+  
+  // Client-related state variables
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [clientAddress, setClientAddress] = useState('');
+  const [clientCity, setClientCity] = useState('');
+  const [invoiceDetails, setInvoiceDetails] = useState('');
+  const [invoiceAmount, setInvoiceAmount] = useState('');
+  const [paidStatus, setPaidStatus] = useState(false);
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [dueDate, setDueDate] = useState('');
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
+ 
 
   const { loading, error, data } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
   });
-console.log(data)
-  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
-  const toggleSignupModal = () => {
-    setIsSignupModalOpen(!isSignupModalOpen);
-  };
 
+  const [createInvoice] = useMutation(CREATE_INVOICE);
 
-
-
-  
   useEffect(() => {
     if (!loading && data && data.getUser) {
       const { firstName, lastName, email, streetAddress, city, state, zip, profilePicture } = data.getUser; 
       
-      setFirstName(firstName);
-      setLastName(lastName)
       setEmail(email);
       setStreetAddress(streetAddress);
       setCity(city);
@@ -59,14 +53,60 @@ console.log(data)
     }
   }, [loading, data]);
 
+  const name = `${userData?.firstName || ''} ${userData?.lastName || ''}`;
+
   const user = {
     email: email,
-    name: firstName + " " + lastName,
+    name: name,
     streetAddress: streetAddress,
-    city: city + ", " + state + " " + zip,
+    city: city + (state ? `, ${state}` : '') + (zip ? ` ${zip}` : ''),
     profilePicture: profilePicture,
   };
 
+  const handleFormSubmit = async (event) => {
+    event.preventDefault();
+
+  
+    const invoiceAmountFloat = parseFloat(invoiceAmount);
+   
+    const dueDateISO = new Date(dueDate).toISOString();
+
+  
+    const variables = {
+        invoiceAmount: invoiceAmountFloat,
+        paidStatus: paidStatus,
+        invoiceNumber: invoiceNumber,
+        companyName: user.name,
+        companyStreetAddress: user.streetAddress,
+        companyCityAddress: user.city,
+        companyEmail: user.email,
+        clientName: clientName,
+        clientStreetAddress: clientAddress,
+        clientCityAddress: clientCity,
+        clientEmail: clientEmail,
+        dueDate: dueDateISO,
+        userID: userId,
+        invoice_details: invoiceDetails,
+    };
+
+    try {
+        const response = await createInvoice({ variables });
+
+        // Reset form fields
+        setInvoiceAmount('');
+        setPaidStatus(false);
+        setInvoiceNumber('');
+        setClientEmail('');
+        setClientName('');
+        setClientAddress('');
+        setClientCity('');
+        setInvoiceDetails('');
+        setDueDate('');
+
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+    }
+};
 
 
 
@@ -76,7 +116,7 @@ console.log(data)
         <Sidebar />
         <div className="center-content">
           <div className="container center-content bg-app-grey" id="main-create-container">
-            <form className="form">
+            <form className="form" onSubmit={handleFormSubmit}>
 
               <div className='heading-invoices'>
                 <div className='heading-title'>
@@ -90,112 +130,90 @@ console.log(data)
               <div className='line'></div>
                 <div className='section1'>
 
-                  
                   <div className='split'>
-
                     <div>
-                    {profilePicture && <img src={`http://localhost:3001${profilePicture}`} className='profile-picture' alt="Profile" />}
+                      {profilePicture && <img src={`http://localhost:3001${profilePicture}`} className='profile-picture' alt="Profile" />}
                     </div>
-
                   </div>
 
                   <div className='split2'>
-
                     <div className='input'>
                       <label className="label font-casmono" htmlFor="invoice-num">Invoice#:</label>
-                      <input type="text" placeholder="1234ABCD" id="invoice-num" maxLength="8" required />
+                      <input type="text" placeholder="1234ABCD" id="invoice-num" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} maxLength="8" required />
                     </div>
-
 
                     <div className='input'> 
                       <label className="label font-casmono" htmlFor="payment-due">Payment Due:</label>
-                      <input type="date" id="payment-due" required />
+                      <input type="date" id="payment-due" value={dueDate} onChange={(e) => setDueDate(e.target.value)} required />
                     </div>
 
                     <div className='input'>
                       <label className="label font-casmono" htmlFor="amount-due">Amount Due:</label>
-                      <input type="text" placeholder="$00.00" id="amount-due" required />
+                      <input type="text" placeholder="$00.00" id="amount-due" value={invoiceAmount} onChange={(e) => setInvoiceAmount(e.target.value)} required />
                     </div>
-
                   </div>
                 </div>
               
                 <div className='user-client'>
-
                   <div id="invoice-user-container">
-                    
                     <label className="label font-casmono" htmlFor="user-email">User:</label>
-                    
                     <div>
-                      <input type="email" placeholder="Your Email" id="user-email" value={user.email} required />
+                      <input type="email" placeholder="Your Email" id="user-email" value={user.email} readOnly />
                     </div>
 
                     <div>
                       <label className="label-item" htmlFor="company-name"></label>
-                      <input type="text" placeholder="Your Name/Company" id="company-name" value={user.name} required />
+                      <input type="text" placeholder="Your Name/Company" id="company-name" value={user.name} readOnly />
                     </div>
 
                     <div>
                       <label className="label-item" htmlFor="user-address"></label>
-                      <input type="text" placeholder="Address" id="user-address" value={user.streetAddress} required />
+                      <input type="text" placeholder="Address" id="user-address" value={user.streetAddress} readOnly />
                     </div>
                     
                     <div>
                       <label className="label-item" htmlFor="user-city"></label>
-                      <input type="text" placeholder="City, State, Zip" id="user-city" value={user.city} required />
+                      <input type="text" placeholder="City, State, Zip" id="user-city" value={user.city} readOnly />
                     </div>
                   </div>
                 
                   <div id="invoice-client-container">
-
                     <label className="label font-casmono" htmlFor="client-email">Client:</label>
-
                     <div>
-                      <input type="email" placeholder="Client Email" id="client-email" required />
+                      <input type="email" placeholder="Client Email" id="client-email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} required />
                     </div>
                   
                     <div>
                       <label className="label-item-right" htmlFor="client-name"></label>
-                      <input type="text" placeholder="Client Name/Company" id="client-name" required />
+                      <input type="text" placeholder="Client Name/Company" id="client-name" value={clientName} onChange={(e) => setClientName(e.target.value)} required />
                     </div>
                   
                     <div>
                       <label className="label-item-right" htmlFor="client-address"></label>
-                      <input type="text" placeholder="Billing Address" id="client-address" required />
+                      <input type="text" placeholder="Billing Address" id="client-address" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} required />
                     </div>
                   
                     <div>
                       <label className="label-item-right" htmlFor="client-city"></label>
-                      <input type="text" placeholder="City, State, Zip" id="client-city" required />
+                      <input type="text" placeholder="City, State, Zip" id="client-city" value={clientCity} onChange={(e) => setClientCity(e.target.value)} required />
                     </div>
                   </div>
                 </div>
         
                 <div className="invoice-bottom">
-                  
                   <label className="label-item font-casmono" htmlFor="invoice-details">Invoice&nbsp; Details:</label>
-                  
                   <div id="details-container">
-                    <textarea className='details' type="text" placeholder="Details of work provided" id="invoice-details"></textarea>
+                    <textarea className='details' type="text" placeholder="Details of work provided" id="invoice-details" value={invoiceDetails} onChange={(e) => setInvoiceDetails(e.target.value)}></textarea>
                   </div>
 
                   <button type="submit" id="send-invoice-button">Send Invoice</button>
                 </div>
             </form>
-            {/* Include the Popup component here */}
-            {/* <Popup /> */}
-            {/* Include the script file */}
-            {/* <script src="/js/create-invoice/invoice.js"></script> */}
           </div>
         </div>
       </div>
-
-     
     </>
   );
 };
 
 export default CreateInvoices;
-
-
-

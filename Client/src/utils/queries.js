@@ -13,6 +13,23 @@ export const GET_USER = gql`
       city
       state
       zip
+      invoices {
+        _id
+        invoiceNumber
+        invoiceAmount
+        paidStatus
+        companyName
+        companyStreetAddress
+        companyCityAddress
+        companyEmail
+        clientName
+        clientStreetAddress
+        clientCityAddress
+        clientEmail
+        dateCreated
+        dueDate
+        invoice_details
+      }
     }
   }
 `;
@@ -30,6 +47,23 @@ export const GET_USERS = gql`
       city
       state
       zip
+      invoices {
+        _id
+        invoiceNumber
+        invoiceAmount
+        paidStatus
+        companyName
+        companyStreetAddress
+        companyCityAddress
+        companyEmail
+        clientName
+        clientStreetAddress
+        clientCityAddress
+        clientEmail
+        dateCreated
+        dueDate
+        invoice_details
+      }
     }
   }
 `;
@@ -53,8 +87,6 @@ export const GET_INVOICES = gql`
       dueDate
       user {
         _id
-        firstName
-        lastName
       }
       invoice_details
     }
@@ -80,8 +112,6 @@ export const GET_INVOICE = gql`
       dueDate
       user {
         _id
-        firstName
-        lastName
       }
       invoice_details
     }
@@ -107,8 +137,6 @@ export const GET_USER_INVOICES = gql`
       dueDate
       user {
         _id
-        firstName
-        lastName
       }
       invoice_details
     }
