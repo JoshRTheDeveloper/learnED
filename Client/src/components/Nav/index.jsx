@@ -90,24 +90,34 @@ function Nav() {
                 <img className="navbar-brand" src={Logo} alt=""  />
               </Link>
 
-              <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
-                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-                <span className="navbar-toggler-icon"></span>
-                
-              </button>
+             
 
-              <div className="collapse navbar-collapse" id="navbarCollapse">
+              <div className="navbar-collapse" id="navbarCollapse">
                 <ul className="navbar-nav me-auto mb-2 mb-md-0">
                 
                 </ul>
+
+                <div className='mobile-container'>
+                <ul className='mobile-sidebar'>
+            <li><Link to="/dashboard">Dashboard</Link></li>
+            <li><Link to="/CreateInvoices">Create Invoice</Link></li>
+            <li><a href="/Profile">Profile</a></li>
+            <li><a href="#">Invoice History</a></li>
+            <button className="mobile-logout" onClick={handleLogout}>Logout</button>
+            </ul>
+            </div>
+            <div className='width'>
                 <div className="navbar-text mx-3">
 
                   {firstName && <span>Welcome, {firstName}! </span>} 
 
                 </div>
-                <ul className="navbar-nav mb-2 mb-md-0">
+                </div>
+                <ul className="navbar-nav mb-md-0">
                   <li className="nav-item">
+                    <div className='logout-button'>
                     <button className="nav-link active mx-3" onClick={handleLogout}>Logout</button>
+                    </div>
                   </li>
                 </ul>
               </div>
@@ -125,15 +135,15 @@ function Nav() {
               <Link to="/" className="navbar-brand">
                 <img className="navbar-brand" src={Logo} alt="" width="45" height="50" />
               </Link>
-              <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
-                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-                <span className="navbar-toggler-icon"></span>
-              </button>
+             
               <div className="collapse navbar-collapse" id="navbarCollapse">
                 <ul className="navbar-nav me-auto mb-2 mb-md-0">
                 </ul>
                 <ul className="navbar-nav mb-2 mb-md-0">
-                  
+
+        
+
+
                   <li className="nav-item">
                     <button className="nav-link active mx-3 small-font" onClick={() => setIsLoginModalOpen(true)}>Login</button>
                   </li>
@@ -141,6 +151,7 @@ function Nav() {
                     <button className="nav-link active mx-3 small-font" onClick={() => setIsSignupModalOpen(true)}>Sign Up</button>
                   </li>
                 </ul>
+                
               </div>
             </div>
           </nav>
