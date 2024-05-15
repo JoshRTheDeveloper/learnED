@@ -100,6 +100,30 @@ const resolvers = {
     throw new Error(`Failed to fetch invoices: ${error.message}`);
   }
 },
+
+getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
+  try {
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+   
+    const filter = { userId };
+    if (invoiceNumber) {
+      filter.invoiceNumber = invoiceNumber;
+    }
+
+    
+    const invoices = await Invoice.find(filter);
+
+    return invoices;
+  } catch (error) {
+    throw new Error(error);
+  }
+},
+
   },
     
   Mutation: {
@@ -286,6 +310,7 @@ const resolvers = {
   deleteInvoice: async (parent, { _id }) => {
     return await Invoice.findByIdAndDelete(_id).populate('user');
   },
+
 },
 };
 

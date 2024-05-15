@@ -213,28 +213,16 @@ export const CREATE_INVOICE = gql`
 
 
 export const UPDATE_INVOICE = gql`
-  mutation updateInvoice($id: ID!, $invoiceAmount: Decimal, $paidStatus: Boolean, $invoiceNumber: String, $companyName: String, $companyStreetAddress: String, $companyCityAddress: String, $companyEmail: String, $clientName: String, $clientStreetAddress: String, $clientCityAddress: String, $clientEmail: String, $dueDate: Date, $invoice_details: String) {
-    updateInvoice(_id: $id, invoiceAmount: $invoiceAmount, paidStatus: $paidStatus, invoiceNumber: $invoiceNumber, companyName: $companyName, companyStreetAddress: $companyStreetAddress, companyCityAddress: $companyCityAddress, companyEmail: $companyEmail, clientName: $clientName, clientStreetAddress: $clientStreetAddress, clientCityAddress: $clientCityAddress, clientEmail: $clientEmail, dueDate: $dueDate, invoice_details: $invoice_details) {
+  mutation updateInvoice(
+    $id: ID!,
+    $paidStatus: Boolean!
+  ) {
+    updateInvoice(
+      _id: $id,
+      paidStatus: $paidStatus
+    ) {
       _id
-      invoiceAmount
       paidStatus
-      invoiceNumber
-      companyName
-      companyStreetAddress
-      companyCityAddress
-      companyEmail
-      clientName
-      clientStreetAddress
-      clientCityAddress
-      clientEmail
-      dateCreated
-      dueDate
-      user {
-        _id
-        firstName
-        lastName
-      }
-      invoice_details
     }
   }
 `;

@@ -142,3 +142,12 @@ export const GET_USER_INVOICES = gql`
     }
   }
 `;
+
+export const GET_INVOICES_BY_NUMBER = gql`
+  query getInvoicesByNumber($userId: ID!, $invoiceNumber: String!) {
+    getInvoicesByNumber(userId: $userId, invoiceNumber: $invoiceNumber) {
+      _id
+      invoiceNumber
+    }
+  }
+`;
