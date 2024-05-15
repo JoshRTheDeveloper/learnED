@@ -47,6 +47,7 @@ const typeDefs = `
     getInvoices: [Invoice]
     getInvoice(_id: ID): Invoice
     getUserInvoices(userId: ID!): [Invoice]
+   getInvoicesByNumber(userId: ID!, invoiceNumber: String): [Invoice] 
   }
 
   type Mutation {
@@ -85,22 +86,10 @@ const typeDefs = `
         userID: ID!
         invoice_details: String!
       ): Invoice!
-  
+
       updateInvoice(
         _id: ID!,
-        invoiceAmount: Float,
-        paidStatus: Boolean,
-        invoiceNumber: String,
-        companyName: String,
-        companyStreetAddress: String,
-        companyCityAddress: String,
-        companyEmail: String,
-        clientName: String,
-        clientStreetAddress: String,
-        clientCityAddress: String,
-        clientEmail: String,
-        dueDate: String,
-        invoice_details: String
+        paidStatus: Boolean!
       ): Invoice!
 
       deleteInvoice(_id: ID!): Invoice!
