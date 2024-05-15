@@ -8,18 +8,33 @@ const resolvers = {
   Query: {
     getUser: async (_, { _id }) => {
       try {
-        const user = await User.findById(_id).populate('invoices'); 
+        if (!mongoose.Types.ObjectId.isValid(_id)) {
+          throw new Error('Invalid User ID format.');
+        }
+    
+        const user = await User.findById(_id).populate('invoices');
         if (!user) {
           throw new Error('User not found');
         }
-        console.log(user.invoices);
-        console.log(user._id)
-        return user;
+    
+        // Convert invoiceAmount from Decimal128 to Float
+        const userWithConvertedInvoices = {
+          ...user.toObject(),
+          invoices: user.invoices.map(invoice => ({
+            ...invoice.toObject(),
+            invoiceAmount: parseFloat(invoice.invoiceAmount.toString())
+          }))
+        };
+    
+        console.log('Fetched user:', userWithConvertedInvoices);
+        return userWithConvertedInvoices;
       } catch (error) {
+        console.error('Failed to fetch user:', error.message);
         throw new Error('Failed to fetch user');
       }
     },
-
+    
+    
     getUsers: async () => {
       try {
         return await User.find().populate('invoices');
@@ -196,42 +211,72 @@ const resolvers = {
     return user;
   },
 
- createInvoice:  async (_, args) => {
+  createInvoice: async (_, args) => {
     try {
       console.log('Received arguments:', args);
   
+      // Check if userID is provided
       if (!args.userID) {
         throw new Error('User ID is required to create an invoice.');
       }
   
+      // Validate the format of userID
       if (!mongoose.Types.ObjectId.isValid(args.userID)) {
         throw new Error('Invalid User ID format.');
       }
   
-      const invoiceAmountDecimal = mongoose.Types.Decimal128.fromString(args.invoiceAmount.toString());
+      // Validate and convert invoiceAmount to Decimal128
+      let invoiceAmountDecimal;
+      try {
+        invoiceAmountDecimal = mongoose.Types.Decimal128.fromString(args.invoiceAmount.toString());
+      } catch (error) {
+        throw new Error('Invalid invoice amount format.');
+      }
   
+      // Create a new invoice instance
       const invoice = new Invoice({
         ...args,
         invoiceAmount: invoiceAmountDecimal,
         user: args.userID,
       });
   
-      await invoice.save();
+      // Save the invoice to the database
+      let savedInvoice;
+      try {
+        savedInvoice = await invoice.save();
+        console.log('Saved invoice:', savedInvoice);
+      } catch (error) {
+        console.error('Error saving invoice:', error.message);
+        throw new Error('Failed to save invoice.');
+      }
   
-      await User.findByIdAndUpdate(args.userID, { $push: { invoices: invoice._id } });
+      // Update the user with the new invoice
+      let user;
+      try {
+        user = await User.findByIdAndUpdate(
+          args.userID,
+          { $push: { invoices: savedInvoice._id } },
+          { new: true }
+        );
+        if (!user) {
+          throw new Error('User not found.');
+        }
+        console.log('Updated user:', user);
+      } catch (error) {
+        console.error('Error updating user with invoice:', error.message);
+        throw new Error('Failed to update user with the new invoice.');
+      }
   
-      console.log('Created invoice:', invoice);
-  
+      // Return the saved invoice with the correct amount format
       return {
-        ...invoice.toObject(),
-        invoiceAmount: parseFloat(invoice.invoiceAmount.toString()),
+        ...savedInvoice.toObject(),
+        invoiceAmount: parseFloat(savedInvoice.invoiceAmount.toString()),
       };
     } catch (error) {
       console.error('Error creating invoice:', error.message);
       throw new Error(`Failed to create invoice: ${error.message}`);
     }
   },
-  
 
   updateInvoice: async (parent, args) => {
     const { _id, ...updateData } = args;

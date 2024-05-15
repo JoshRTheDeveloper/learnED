@@ -10,6 +10,7 @@ const invoiceSchema = new Schema({
   paidStatus: {
     type: Boolean,
     required: true,
+    default: false,
   },
   invoiceNumber: {
     type: String,

@@ -1,7 +1,5 @@
 .total {
  display: flex;
- justify-content: center;
- align-items: center;
  margin-left: 20%;
  height: 100vh;
  text-align: center;
@@ -9,4 +7,51 @@
 
 h2 {
  font-size: xx-large !important;
+}
+
+.row li  {
+ flex-direction: column;
+margin: 5px;
+width: 100%;
+border: 1px solid black;
+}
+
+.row li p {
+ display: flex;
+ font-size: 12px !important;
+margin: 5px;
+padding: 2px;
+}
+
+.due-date-container {
+ display: flex;
+ width: 100% !important;
+justify-content: space-between;
+}
+
+.due-date {
+justify-content: center;
+padding: 2px;
+background-color: yellow;
+font-size: 15px !important;
+}
+
+.invoice-number {
+ display: flex;
+ padding: 2px;
+ font-size: 12px !important;
+}
+
+.invoice-info {
+ display: flex;
+ flex-direction: column;
+ width: 75%;
+}
+
+.total {
+ justify-content: space-around;
+}
+
+.row {
+ width: 300px;
 }
