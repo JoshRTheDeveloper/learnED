@@ -117,7 +117,9 @@ const CreateInvoices = () => {
         <div className="center-content">
           <div className="container center-content bg-app-grey" id="main-create-container">
             <form className="form" onSubmit={handleFormSubmit}>
+        <div className='spacing' >
 
+        </div>
               <div className='heading-invoices'>
                 <div className='heading-title'>
                   <h3 className='invoice-h3'>Create Invoice</h3>

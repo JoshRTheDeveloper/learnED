@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import './dashboard.css';
 import Sidebar from '../components/sidebar/sidebar';
 import jwtDecode from 'jwt-decode';
-import { GET_USER, GET_INVOICES_BY_NUMBER } from '../utils/queries';
-import { UPDATE_INVOICE } from '../utils/mutations';
+import { GET_USER } from '../utils/queries';
+import { UPDATE_INVOICE, DELETE_INVOICE } from '../utils/mutations'; // Import DELETE_INVOICE
 import InvoiceModal from '../components/invoice-modal/invoice-modal'; // Import the InvoiceModal component
 
 const Home = () => {
@@ -12,19 +12,22 @@ const Home = () => {
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
 
-  const { loading: userLoading, error: userError, data: userData } = useQuery(GET_USER, {
+  const { loading: userLoading, error: userError, data: userData, refetch } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
-
   });
 
-
   const [markAsPaidMutation] = useMutation(UPDATE_INVOICE);
+  const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE); // Add delete mutation
   const [searchInvoiceNumber, setSearchInvoiceNumber] = useState('');
   const [searchResult, setSearchResult] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false); 
   const [searchError, setSearchError] = useState(null); 
   const [selectedInvoice, setSelectedInvoice] = useState(null); // Add state for selected invoice
   const [isModalOpen, setIsModalOpen] = useState(false); // Add state for modal visibility
+
+  useEffect(() => {
+    refetch();
+  }, []);
 
   const handleSearch = async () => {
     try {
@@ -54,6 +57,35 @@ const Home = () => {
   const closeModal = () => {
     setSelectedInvoice(null);
     setIsModalOpen(false);
+  };
+
+  const handleDeleteInvoice = async (invoiceId) => {
+    try {
+      await deleteInvoiceMutation({
+        variables: { id: invoiceId },
+        update: (cache) => {
+          const existingInvoices = cache.readQuery({
+            query: GET_USER,
+            variables: { userId: userId || '' },
+          });
+
+          cache.writeQuery({
+            query: GET_USER,
+            data: {
+              getUser: {
+                ...existingInvoices.getUser,
+                invoices: existingInvoices.getUser.invoices.filter(
+                  (invoice) => invoice._id !== invoiceId
+                ),
+              },
+            },
+            variables: { userId: userId || '' },
+          });
+        },
+      });
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+    }
   };
 
   if (userLoading) return <p>Loading user data...</p>;
@@ -123,7 +155,9 @@ const Home = () => {
                 </div>
                 <div className='mark-button'>
                   {!invoice.paidStatus && <button onClick={() => markAsPaid(invoice._id)}>Mark as Paid</button>}
+                  <button onClick={() => handleDeleteInvoice(invoice._id)}>Delete</button> {/* Add delete button */}
                 </div>
+                <div className='hover-more1' >Click for full information</div>
               </li>
             ))}
           </ul>
@@ -152,6 +186,7 @@ const Home = () => {
                     {!invoice.paidStatus && (
                       <button onClick={() => markAsPaid(invoice._id)}>Mark as Paid</button>
                     )}
+                    <button onClick={() => handleDeleteInvoice(invoice._id)}>Delete</button> {/* Add delete button */}
                   </div>
                 </li>
               ))}
@@ -172,6 +207,8 @@ const Home = () => {
                     <p>Client: {invoice.clientName}</p>
                     <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
                     <p>Paid Status: Paid</p>
+                    <button onClick={() => handleDeleteInvoice(invoice._id)}>Delete</button> {/* Add delete button */}
+                    <div className='hover-more' >Click for full information</div>
                   </div>
                 </li>
               ))}
