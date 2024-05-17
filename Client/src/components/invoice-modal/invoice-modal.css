@@ -1,4 +1,4 @@
-.modal-overlay {
+.modal-overlay-invoices {
  position: fixed;
  top: 0;
  left: 0;
@@ -10,31 +10,52 @@
  justify-content: center;
 }
 
-.modal-content {
+.modal-content-invoices {
  background: white;
  margin: 20px;
  border-radius: 8px;
  width: 80%;
  max-width: 600px;
  border: black solid 1px;
+
 }
 
+.close-button-invoices-div {
+display: flex;
+ width: 100%;
+ justify-content: end;
+}
 
-
-.close-button {
- position: absolute;
- top: 10px;
- right: 10px;
- background: none;
- border: none;
+.close-button-invoices {
+display: flex;
  font-size: 20px;
  cursor: pointer;
+ margin: 0px !important;
+ color: red !important;
+ background-color: transparent !important;
 }
 
-/* for the top of modal */
-.spacing {
- height: 40px;
+.close-button-invoices:hover {
+ display: flex;
+  font-size: 20px;
+  cursor: pointer;
+  margin: 0px !important;
+  color: black !important;
+  background-color: transparent !important;
+ }
+
+.content-invoices-div {
+ display: flex;
+ flex-direction: column;
+margin: 20px;
+ border: black solid 1px !important;
+ height: 300px;
+ justify-content: space-between;
+ padding: 5px;
 }
+
+
+
 
 /* comes after element */
 .spacing-small {
