@@ -61,32 +61,45 @@ const Home = () => {
 
   const handleDeleteInvoice = async (invoiceId) => {
     try {
-      await deleteInvoiceMutation({
+      const { data } = await deleteInvoiceMutation({
         variables: { id: invoiceId },
-        update: (cache) => {
-          const existingInvoices = cache.readQuery({
+        update: (cache, { data: { deleteInvoice } }) => {
+          if (!deleteInvoice.success) {
+            console.error('Error deleting invoice:', deleteInvoice.message);
+            return;
+          }
+  
+          // Read the current user data from the cache
+          const existingUser = cache.readQuery({
             query: GET_USER,
             variables: { userId: userId || '' },
           });
-
+  
+          // Write the new user data to the cache
           cache.writeQuery({
             query: GET_USER,
             data: {
               getUser: {
-                ...existingInvoices.getUser,
-                invoices: existingInvoices.getUser.invoices.filter(
+                ...existingUser.getUser,
+                invoices: existingUser.getUser.invoices.filter(
                   (invoice) => invoice._id !== invoiceId
                 ),
               },
             },
             variables: { userId: userId || '' },
           });
+  
+          // Optionally, you can display a success message
+          console.log(deleteInvoice.message);
         },
       });
     } catch (error) {
       console.error('Error deleting invoice:', error);
     }
   };
+  
+
+  
 
   if (userLoading) return <p>Loading user data...</p>;
   if (userError) return <p>Error loading user data: {userError.message}</p>;

@@ -230,26 +230,8 @@ export const UPDATE_INVOICE = gql`
 export const DELETE_INVOICE = gql`
   mutation deleteInvoice($id: ID!) {
     deleteInvoice(_id: $id) {
-      _id
-      invoiceAmount
-      paidStatus
-      invoiceNumber
-      companyName
-      companyStreetAddress
-      companyCityAddress
-      companyEmail
-      clientName
-      clientStreetAddress
-      clientCityAddress
-      clientEmail
-      dateCreated
-      dueDate
-      user {
-        _id
-        firstName
-        lastName
-      }
-      invoice_details
+      success
+      message
     }
   }
 `;
