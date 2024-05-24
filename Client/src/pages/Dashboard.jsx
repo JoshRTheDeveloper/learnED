@@ -146,7 +146,7 @@ const Home = () => {
       ) : searchError ? (
         <p>Error: {searchError.message}</p>
       ) : searchResult.length === 0 ? (
-        <p>No invoices found.</p>
+        <p></p>
       ) : (
         <div className='search-results'>
           <h3>Search Results</h3>
