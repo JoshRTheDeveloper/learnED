@@ -4,8 +4,8 @@ import './dashboard.css';
 import Sidebar from '../components/sidebar/sidebar';
 import jwtDecode from 'jwt-decode';
 import { GET_USER } from '../utils/queries';
-import { UPDATE_INVOICE, DELETE_INVOICE } from '../utils/mutations'; // Import DELETE_INVOICE
-import InvoiceModal from '../components/invoice-modal/invoice-modal'; // Import the InvoiceModal component
+import { UPDATE_INVOICE, DELETE_INVOICE } from '../utils/mutations';
+import InvoiceModal from '../components/invoice-modal/invoice-modal';
 
 const Home = () => {
   const token = localStorage.getItem('authToken');
@@ -17,31 +17,29 @@ const Home = () => {
   });
 
   const [markAsPaidMutation] = useMutation(UPDATE_INVOICE);
-  const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE); // Add delete mutation
+  const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
   const [searchInvoiceNumber, setSearchInvoiceNumber] = useState('');
   const [searchResult, setSearchResult] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false); 
-  const [searchError, setSearchError] = useState(null); 
-  const [selectedInvoice, setSelectedInvoice] = useState(null); // Add state for selected invoice
-  const [isModalOpen, setIsModalOpen] = useState(false); // Add state for modal visibility
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     refetch();
   }, []);
-
 
   const handleSearch = async () => {
     try {
       setSearchLoading(true);
       setSearchError(null);
 
-      // Filter invoices based on the searchInvoiceNumber
       const filteredInvoices = userData?.getUser?.invoices.filter(
         invoice => invoice.invoiceNumber.includes(searchInvoiceNumber)
       ) || [];
 
       setSearchResult(filteredInvoices);
-      return filteredInvoices; 
+      return filteredInvoices;
     } catch (error) {
       setSearchError(error);
     } finally {
@@ -69,14 +67,12 @@ const Home = () => {
             console.error('Error deleting invoice:', deleteInvoice.message);
             return;
           }
-  
-          // Read the current user data from the cache
+
           const existingUser = cache.readQuery({
             query: GET_USER,
             variables: { userId: userId || '' },
           });
-  
-          // Write the new user data to the cache
+
           cache.writeQuery({
             query: GET_USER,
             data: {
@@ -89,18 +85,16 @@ const Home = () => {
             },
             variables: { userId: userId || '' },
           });
-  
-          // Optionally, you can display a success message
-          console.log(deleteInvoice.message);
+
+          setSearchResult(prevSearchResult => prevSearchResult.filter(invoice => invoice._id !== invoiceId));
+
+          refetch();
         },
       });
     } catch (error) {
       console.error('Error deleting invoice:', error);
     }
   };
-  
-
-  
 
   if (userLoading) return <p>Loading user data...</p>;
   if (userError) return <p>Error loading user data: {userError.message}</p>;
@@ -116,7 +110,7 @@ const Home = () => {
         paidStatus: true,
       },
       update: (cache, { data: { updateInvoice } }) => {
-        
+        // Handle cache update if necessary
       },
     });
   };
@@ -143,7 +137,7 @@ const Home = () => {
           placeholder="Search by Invoice Number"
         />
         <div className='search-button-div'>
-          <button onClick={handleSearch}>Search</button> 
+          <button onClick={handleSearch}>Search</button>
         </div>
       </div>
 
@@ -166,12 +160,12 @@ const Home = () => {
                 <div className='invoice-info'>
                   <p>Client: {invoice.clientName}</p>
                   <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
+                  <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
                 </div>
                 <div className='mark-button'>
-                  {!invoice.paidStatus && <button onClick={() => markAsPaid(invoice._id)}>Mark as Paid</button>}
-                  <button onClick={() => handleDeleteInvoice(invoice._id)}>Delete</button> {/* Add delete button */}
+                  {!invoice.paidStatus && <button onClick={(e) => { e.stopPropagation(); markAsPaid(invoice._id); }}>Mark as Paid</button>}
+                  <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
                 </div>
-                <div className='hover-more1' >Click for full information</div>
               </li>
             ))}
           </ul>
@@ -198,9 +192,9 @@ const Home = () => {
                   </div>
                   <div className='mark-button'>
                     {!invoice.paidStatus && (
-                      <button onClick={() => markAsPaid(invoice._id)}>Mark as Paid</button>
+                      <button onClick={(e) => { e.stopPropagation(); markAsPaid(invoice._id); }}>Mark as Paid</button>
                     )}
-                    <button onClick={() => handleDeleteInvoice(invoice._id)}>Delete</button> {/* Add delete button */}
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
                   </div>
                 </li>
               ))}
@@ -217,15 +211,15 @@ const Home = () => {
               {invoicesPaid.map(invoice => (
                 <li key={invoice._id} onClick={() => handleInvoiceClick(invoice)}>
                   <div className='due-date-container'>
-                  <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
+                    <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
                     <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
-                    </div>
-                    <div className='invoice-info'>
+                  </div>
+                  <div className='invoice-info'>
                     <p>Client: {invoice.clientName}</p>
                     <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
                     <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
                   </div>
-                    <button onClick={() => handleDeleteInvoice(invoice._id)}>Delete</button> {/* Add delete button */}
+                  <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
                 </li>
               ))}
             </ul>
