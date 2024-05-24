@@ -274,7 +274,7 @@ width: 50vw !important;
 
   .column-home {
     background-color: rgb(231, 231, 231);
-    width: 50vw;
+    width: 300px !important;
   }
 
   .row-home-container1{
@@ -295,6 +295,7 @@ width: 50vw !important;
   padding-top: 400px;
   text-align: center;
 }
-  
+
+
 
 }

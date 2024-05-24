@@ -216,14 +216,16 @@ const Home = () => {
             <ul>
               {invoicesPaid.map(invoice => (
                 <li key={invoice._id} onClick={() => handleInvoiceClick(invoice)}>
-                  <div className='invoice-info'>
-                    <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
+                  <div className='due-date-container'>
+                  <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
+                    <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
+                    </div>
+                    <div className='invoice-info'>
                     <p>Client: {invoice.clientName}</p>
                     <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
-                    <p>Paid Status: Paid</p>
-                    <button onClick={() => handleDeleteInvoice(invoice._id)}>Delete</button> {/* Add delete button */}
-                    <div className='hover-more' >Click for full information</div>
+                    <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
                   </div>
+                    <button onClick={() => handleDeleteInvoice(invoice._id)}>Delete</button> {/* Add delete button */}
                 </li>
               ))}
             </ul>
