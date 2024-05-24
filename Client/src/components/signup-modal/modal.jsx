@@ -17,7 +17,7 @@ const SignupModal = ({ isOpen, onClose }) => {
         throw new Error('Passwords do not match.');
       }
       
-      // Password validation regex
+
       const passwordRegex = /^(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
 
       if (!passwordRegex.test(formState.password)) {
@@ -151,7 +151,7 @@ const SignupModal = ({ isOpen, onClose }) => {
                 required
               />
             </div>
-            <p className='password'> Password must contain at least 8 characters and a special character.</p>
+            <p className='password'> Password must contain at least a capital, 8 characters and a special character.</p>
             <div className="my-2 d-flex justify-content-end">
               <button className='btn gold-background btn-dark' type="submit">Submit</button>
             </div>

@@ -49,20 +49,6 @@ function Nav() {
 
 
   }
-  
-
-  // const handleLogin = async () => {
-  //   await fetchFirstName(); 
-  //   setIsLoggedIn(true);
-  //   setIsLoginModalOpen(false); 
-  // }
-
-  // const handleSignup = async () => {
-  //   await fetchFirstName(); 
-  //   setIsLoggedIn(true);
-  //   setIsLoginModalOpen(false); 
-  //   setIsSignupModalOpen(false); 
-  // }
 
   const handleLoginModalClose = async () => {
     setIsLoginModalOpen(false);
@@ -80,7 +66,7 @@ function Nav() {
     }
   };
 
-//add
+
   if (Auth.loggedIn()) {
 
     return (

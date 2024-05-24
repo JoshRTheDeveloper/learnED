@@ -48,7 +48,7 @@ const Home = () => {
   };
 
   const handleInvoiceClick = (invoice) => {
-    console.log('Paid Status:', invoice.paidStatus);
+   
     setSelectedInvoice(invoice);
     setIsModalOpen(true);
   };
@@ -124,7 +124,7 @@ const Home = () => {
       <div className="app">
         <Sidebar />
         <div className="main-content">
-          {/* Your main content goes here */}
+       
         </div>
       </div>
 

@@ -14,7 +14,7 @@ const Sidebar = () => {
 
   const userId = profile?.data?._id || '';
 
-  // Query to fetch user profile
+
   const { loading, error, data } = useQuery(GET_USER, {
     variables: { 'userId' : userId },
   });

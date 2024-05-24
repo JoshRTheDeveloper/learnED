@@ -17,7 +17,7 @@ const CreateInvoices = () => {
   const [zip, setZip] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
   
-  // Client-related state variables
+
   const [clientEmail, setClientEmail] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientAddress, setClientAddress] = useState('');

@@ -17,7 +17,7 @@ const resolvers = {
           throw new Error('User not found');
         }
     
-        // Convert invoiceAmount from Decimal128 to Float
+        
         const userWithConvertedInvoices = {
           ...user.toObject(),
           invoices: user.invoices.map(invoice => ({
@@ -26,7 +26,7 @@ const resolvers = {
           }))
         };
     
-        console.log('Fetched user:', userWithConvertedInvoices);
+        
         return userWithConvertedInvoices;
       } catch (error) {
         console.error('Failed to fetch user:', error.message);
@@ -178,7 +178,7 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
 
     changeStreetAddress: async (_, { _id, streetAddress }, context) => {
       try {
-          console.log('Received parameters - _id:', _id, 'streetAddress:', streetAddress);
+        
   
           if (!_id) {
               throw new Error('User ID is required');
@@ -237,19 +237,19 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
 
   createInvoice: async (_, args) => {
     try {
-      console.log('Received arguments:', args);
+   
   
-      // Check if userID is provided
+
       if (!args.userID) {
         throw new Error('User ID is required to create an invoice.');
       }
   
-      // Validate the format of userID
+     
       if (!mongoose.Types.ObjectId.isValid(args.userID)) {
         throw new Error('Invalid User ID format.');
       }
   
-      // Validate and convert invoiceAmount to Decimal128
+  
       let invoiceAmountDecimal;
       try {
         invoiceAmountDecimal = mongoose.Types.Decimal128.fromString(args.invoiceAmount.toString());
@@ -257,24 +257,24 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
         throw new Error('Invalid invoice amount format.');
       }
   
-      // Create a new invoice instance
+    
       const invoice = new Invoice({
         ...args,
         invoiceAmount: invoiceAmountDecimal,
         user: args.userID,
       });
   
-      // Save the invoice to the database
+     
       let savedInvoice;
       try {
         savedInvoice = await invoice.save();
-        console.log('Saved invoice:', savedInvoice);
+      
       } catch (error) {
         console.error('Error saving invoice:', error.message);
         throw new Error('Failed to save invoice.');
       }
   
-      // Update the user with the new invoice
+     
       let user;
       try {
         user = await User.findByIdAndUpdate(
@@ -285,13 +285,13 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
         if (!user) {
           throw new Error('User not found.');
         }
-        console.log('Updated user:', user);
+        
       } catch (error) {
         console.error('Error updating user with invoice:', error.message);
         throw new Error('Failed to update user with the new invoice.');
       }
   
-      // Return the saved invoice with the correct amount format
+      
       return {
         ...savedInvoice.toObject(),
         invoiceAmount: parseFloat(savedInvoice.invoiceAmount.toString()),
@@ -309,24 +309,24 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
 
   deleteInvoice: async (parent, { _id }) => {
     try {
-      // Find and delete the invoice
+
       const deletedInvoice = await Invoice.findByIdAndDelete(_id).populate('user');
   
       if (!deletedInvoice) {
-        // If the invoice is not found, return an error message
+       
         return { success: false, message: 'Invoice not found' };
       }
   
-      // Remove the invoice reference from the user's invoices array
+    
       await User.updateOne(
         { _id: deletedInvoice.user._id },
         { $pull: { invoices: _id } }
       );
   
-      // Return a success message
+    
       return { success: true, message: 'Invoice deleted successfully' };
     } catch (error) {
-      // If there's an error during deletion, return an error message
+    
       console.error('Error deleting invoice:', error);
       return { success: false, message: 'An error occurred while deleting the invoice' };
     }

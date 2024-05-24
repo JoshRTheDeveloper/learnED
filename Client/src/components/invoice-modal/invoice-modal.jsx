@@ -1,16 +1,15 @@
 import React from 'react';
-import './invoice-modal.css'; // Create and import CSS for styling the modal
+import './invoice-modal.css'; 
 
 const InvoiceModal = ({ invoice, onClose }) => {
   if (!invoice) return null;
 
   return (
     <div className="modal-overlay-invoices">
-      <div className="modal-content-invoices">
-           {/* Div for invoice button */}
-           <div className='close-button-invoices-div' >
-             <button className="close-button-invoices" onClick={onClose}>Close</button>
-           </div>
+      <div className="modal-content-invoices"> 
+        <div className='close-button-invoices-div' >
+          <button className="close-button-invoices" onClick={onClose}>Close</button>
+        </div>
         <div className='content-invoices-div' >
           <div className='top-invoices-modal' >
               <div className='row-modal spacing-small'>

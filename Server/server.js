@@ -31,24 +31,24 @@ const startApolloServer = async () => {
         return res.status(400).send('No file uploaded.');
     }
     
-    // Here you can save the file with the desired name
-    const userId = req.headers.userid; // Extract userId from request headers
-    const filename = `${userId}_profile_picture.jpg`; // Construct the desired filename
+ 
+    const userId = req.headers.userid; 
+    const filename = `${userId}_profile_picture.jpg`;
     
-    // Save the file with the desired filename
+   
     const filePath = path.join(__dirname, 'uploads', filename);
     fs.renameSync(file.path, filePath);
 
-    // Construct the URL path for the uploaded image
+   
     const fileUrl = `/uploads/${filename}`;
   
     res.send({ fileUrl });
 });
 
-  // Serve uploaded images with appropriate CORS headers
+ 
   app.use('/uploads', (req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*'); // Allow requests from any origin
-    res.header('Access-Control-Allow-Methods', 'GET'); // Allow only GET requests
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
   }, express.static(path.join(__dirname, 'uploads')));
