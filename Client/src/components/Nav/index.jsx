@@ -64,20 +64,22 @@ function Nav() {
   //   setIsSignupModalOpen(false); 
   // }
 
-  const handleLoginModalClose = () => {
+  const handleLoginModalClose = async () => {
     setIsLoginModalOpen(false);
-     fetchFirstName(); 
-    setIsLoginModalOpen(false);
-    navigate("/dashboard");
-  }
+    await fetchFirstName();
+    if (Auth.loggedIn()) {
+      navigate("/dashboard");
+    }
+  };
 
-  const handleSignUpModalClose = () => {
-    setIsSignupModalOpen(false); 
-    fetchFirstName(); 
-    setIsLoggedIn(true);
-    setIsSignupModalOpen(false); 
-    navigate("/dashboard");
-  }
+ const handleSignUpModalClose = async () => {
+    setIsSignupModalOpen(false);
+    await fetchFirstName();
+    if (Auth.loggedIn()) {
+      navigate("/dashboard");
+    }
+  };
+
 //add
   if (Auth.loggedIn()) {
 
@@ -130,30 +132,33 @@ function Nav() {
     return (
       <>
         <header>
-          <nav className="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-            <div className="container-fluid">
-              <Link to="/" className="navbar-brand">
-                <img className="navbar-brand" src={Logo} alt="" width="45" height="50" />
+        <nav className="navbar navbar-expand-md navbar-light fixed-top ">
+            <div className="container-fluid-mobile container-fluid">
+              <Link to="/" className="navbar-brand-mobile navbar-brand">
+                <img className="navbar-brand-mobile navbar-brand" src={Logo} alt=""  />
               </Link>
+
              
-              <div className="collapse navbar-collapse" id="navbarCollapse">
-                <ul className="navbar-nav me-auto mb-2 mb-md-0">
-                </ul>
-                <ul className="navbar-nav mb-2 mb-md-0">
 
-        
+         
+            <div className='width'>
+                <div className="navbar-text mx-3">
 
+                  {firstName && <span>Welcome, {firstName}! </span>} 
 
+                </div>
+                </div>
+                <ul className="navbar-nav navbar-nav-mobile mb-md-0">
+               
                   <li className="nav-item">
-                    <button className="nav-link active mx-3 small-font" onClick={() => setIsLoginModalOpen(true)}>Login</button>
+                    <button className="nav-link-mobile nav-link active mx-3 small-font" onClick={() => setIsLoginModalOpen(true)}>Login</button>
                   </li>
                   <li className="nav-item">
-                    <button className="nav-link active mx-3 small-font" onClick={() => setIsSignupModalOpen(true)}>Sign Up</button>
+                    <button className="nav-link-mobile  nav-link active mx-3 small-font" onClick={() => setIsSignupModalOpen(true)}>Sign Up</button>
                   </li>
                 </ul>
-                
               </div>
-            </div>
+        
           </nav>
           
           

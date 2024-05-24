@@ -85,37 +85,37 @@ align-items: center;
 }
 
 
-.row-container {
+.row-home-container {
  display: flex;
  justify-content: center;
  align-items: center;
 }
-.row-container1 {
+.row-home-container1 {
   display: flex;
   justify-content: center;
   align-items: center;
  }
 
 
-.row {
+.row-home {
  display: flex;
  justify-content: center;
  max-width: 800px;
  width: 100%;
 }
 
-.row1 {
+.row-home-1 {
   display: flex;
   justify-content: center;
   width: 380px;
  }
 
-.column {
+.column-home {
  flex: 1;
  margin: 10px;
 }
 
-.column-space {
+.column-home-space {
 height: 200px;
 background-color: #e6e6e6;
 }
@@ -133,7 +133,7 @@ background-color: #e6e6e6;
   text-align: center;
  }
 
-.column-container {
+.column-home-container {
  display: flex;
  flex-direction: column;
  align-items: center;
@@ -189,7 +189,9 @@ width: 50vw !important;
 @media (max-width: 1369px) {
 #par-background1 {
   width: 100vw !important;
+
 }
+
 #par-background {
   width: 100vw !important;
 }
@@ -197,14 +199,20 @@ width: 50vw !important;
   width: 100vw !important;
   background-size: 100vw 100vh !important;
   opacity: 30%;
-  
 }
+
 #par-heading {
   padding-left: 10%;
   padding-right: 10%;
   width: 100vw !important;
-  
   }
+
+.nav-link-mobile {
+  padding: 5px !important;
+  width: 100px !important;
+}
+
+
 }
 
 @media (max-width: 768px) {
@@ -216,6 +224,24 @@ width: 50vw !important;
     -webkit-text-fill-color: transparent;
     margin-top: 100px;
    }
+
+   #par-background1 {
+    width: 100vw !important;
+  
+  }
+  
+  #par-background {
+    width: 100vw !important;
+  }
+
+  #par-background2 {
+    width: 100vw !important;
+    height: 100vh; 
+    opacity: 30%;
+    background-size: 800px !important; 
+    background-position: center; 
+    background-repeat: no-repeat; 
+  }
    
   .custom-h2{
     font-size: 2rem !important;
@@ -227,26 +253,31 @@ width: 50vw !important;
     display: none;
    }
 
-   .column-space {
+   .column-home-space {
     height: 200px;
+    padding: 20px;
     background-color: #ff260000;
    }
 
-  .row {
+  .row-home  {
+    display: flex;
     width: 100vw;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
 
-  .row-container{
+  .row-home-container{
     padding-top: 10px;
     height: 100%;
   }
 
-  .column {
+  .column-home {
     background-color: rgb(231, 231, 231);
-    width: 90vw;
+    width: 50vw;
   }
 
-  .row-container1{
+  .row-home-container1{
     padding-top: 10px;
     height: 100%;
   }
@@ -265,4 +296,5 @@ width: 50vw !important;
   text-align: center;
 }
   
+
 }

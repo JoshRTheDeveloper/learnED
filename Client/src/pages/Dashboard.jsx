@@ -29,6 +29,7 @@ const Home = () => {
     refetch();
   }, []);
 
+
   const handleSearch = async () => {
     try {
       setSearchLoading(true);

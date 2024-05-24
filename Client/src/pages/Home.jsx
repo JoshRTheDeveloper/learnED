@@ -46,7 +46,7 @@ const Home = () => {
                   </h5>
                 </div>
                 <div className="py-5">
-                <button className="nav-link active mx-3 small-font cust-btn" onClick={toggleSignupModal}>Get Started</button>
+                <button className="nav-link nav-link-mobile active mx-3 small-font cust-btn" onClick={toggleSignupModal}>Get Started</button>
                 </div>
                 <div>
                   <p>Scroll down to see Collaborators...</p>
@@ -70,22 +70,22 @@ const Home = () => {
                   
 <div >
 
-                  <div className="row-container1">
-        <div className="row">
-          <div className="column column-container column-space ">
+                  <div className="row-home-container1">
+        <div className="row-home">
+          <div className="column-home column-home-container column-home-space ">
             <h3>Joshua Roth</h3>
             <p>Role: Developer</p>
-            <div className='row'> 
+            <div className='row-home'> 
             <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
             <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
             </div>
           </div>
           
-          <div className="column column-container column-space">
+          <div className="column-home column-home-container column-home-space">
             
             <h3>Anothny Buffill</h3>
             <p>Role: Developer</p>
-            <div className='row'> 
+            <div className='row-home'> 
             <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
             <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
             </div>
@@ -93,13 +93,13 @@ const Home = () => {
         </div>
       </div>
 
-      <div className="row-container">
+      <div className="row-home-container">
         <div className="row1">
           
-          <div className="column column-container column-space">
+          <div className="column-home column-home-container column-home-space">
             <h3>Brian Doherty</h3>
             <p>Role: Developer</p>
-            <div className='row'> 
+            <div className='row-home'> 
             <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
             <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
             </div>
@@ -107,22 +107,22 @@ const Home = () => {
         </div>
       </div>
 
-                  <div className="row-container">
+                  <div className="row-home-container">
 
-        <div className="row">
-          <div className="column column-container column-space">
+        <div className="row-home">
+          <div className="column-home column-home-container column-home-space">
             <h3>Michale Graham</h3>
             <p>Role: Developer</p>
-            <div className='row'> 
+            <div className='row-home'> 
             <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
             <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
             </div>
           </div>
 
-          <div className="column column-container column-space">
+          <div className="column-home column-home-container column-home-space">
             <h3>Luke Garnsey</h3>
             <p>Role: Developer</p>
-            <div className='row'> 
+            <div className='row-home'> 
             <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
             <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
             </div>
@@ -135,23 +135,23 @@ const Home = () => {
                   
                   <h2 className="mobile-h2"> Our Collaborators</h2>
                   <div className='mobile'>
-                  <div className="row-container1">
-        <div className="row">
-          <div className="column column-container column-space ">
+                  <div className="row-home-container1">
+        <div className="row-home">
+          <div className="column-home column-home-container column-home-space ">
             
             <h3>Joshua Roth</h3>
             <p>Role: Developer</p>
-            <div className='row '> 
+            <div className='row-home '> 
             <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
             <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
             </div>
           </div>
           
-          <div className="column column-container column-space">
+          <div className="column-home column-home-container column-home-space">
             
             <h3>Anothny Buffill</h3>
             <p>Role: Developer</p>
-            <div className='row'> 
+            <div className='row-home'> 
             <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
             <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
             </div>
@@ -159,13 +159,13 @@ const Home = () => {
         </div>
       </div>
 
-      <div className="row-container">
-        <div className="row1">
+      <div className="row-home-container">
+        <div className="row-home1">
           
-          <div className="column column-container column-space">
+          <div className="column-home column-home-container column-home-space">
             <h3>Brian Doherty</h3>
             <p>Role: Developer</p>
-            <div className='row'> 
+            <div className='row-home'> 
             <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
             <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
             </div>
@@ -173,22 +173,22 @@ const Home = () => {
         </div>
       </div>
 
-                  <div className="row-container">
+                  <div className="row-home-container">
 
-        <div className="row">
-          <div className="column column-container column-space">
+        <div className="row-home">
+          <div className="column-home column-home-container column-home-space">
             <h3>Michale Graham</h3>
             <p>Role: Developer</p>
-            <div className='row'> 
+            <div className='row-home'> 
             <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
             <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
             </div>
           </div>
 
-          <div className="column column-container column-space">
+          <div className="column-home column-home-container column-home-space">
             <h3>Luke Garnsey</h3>
             <p>Role: Developer</p>
-            <div className='row'> 
+            <div className='row-home'> 
             <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
             <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
             </div>
