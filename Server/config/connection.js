@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
-
+require('dotenv').config();
 // Check if MONGODB_URI environment variable is set
 if (!process.env.MONGODB_URI) {
     console.error('MONGODB_URI environment variable is not set.');
-    process.exit(1); // Exit process if MONGODB_URI is not set
+    process.exit(1); 
 }
 
 // Connect to MongoDB using the provided URI
