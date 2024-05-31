@@ -110,7 +110,7 @@ const Home = () => {
         paidStatus: true,
       },
       update: (cache, { data: { updateInvoice } }) => {
-        // Handle cache update if necessary
+       
       },
     });
   };

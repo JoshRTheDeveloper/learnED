@@ -33,7 +33,7 @@ const Sidebar = () => {
   <div className='content'>
     <div className="sidebar">
       <div className='profile-picture-div'>
-      {profilePicture && <img src={`http://localhost:3001${profilePicture}`} className='profile-picture' alt="Profile" />}
+      {profilePicture && <img src={profilePicture} className='profile-picture' alt="Profile" />}
       </div>
       {userFirstName && <h2>Welcome, {userFirstName}!</h2>}
       <ul>

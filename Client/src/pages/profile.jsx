@@ -4,7 +4,7 @@ import jwtDecode from 'jwt-decode';
 import './profile.css';
 import Sidebar from '../components/sidebar/sidebar';
 import temporaryImage from '../assets/noLogo.svg';
-import {  CHANGE_COMPANY, CHANGE_PROFILE_PICTURE, CHANGE_STREET_ADDRESS, CHANGE_EMAIL, CHANGE_CITY, CHANGE_STATE, CHANGE_ZIP } from '../utils/mutations';
+import { CHANGE_COMPANY, CHANGE_PROFILE_PICTURE, CHANGE_STREET_ADDRESS, CHANGE_EMAIL, CHANGE_CITY, CHANGE_STATE, CHANGE_ZIP } from '../utils/mutations';
 import { GET_USER } from '../utils/queries';
 import axios from 'axios'; 
 
@@ -12,7 +12,7 @@ const Profile = () => {
   const [userData, setUserData] = useState(null);
   const [email, setEmail] = useState('');
   const [streetAddress, setStreetAddress] = useState(''); 
-  const [fileName, setFilename] = useState ('');
+  const [fileName, setFilename] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
@@ -20,7 +20,6 @@ const Profile = () => {
   const [logoUrl, setLogoUrl] = useState('');
   const [company, setCompany] = useState('');
   const [renamedFile, setRenamedFile] = useState(null); 
-
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -40,14 +39,14 @@ const Profile = () => {
 
   useEffect(() => {
     if (!loading && data && data.getUser) {
-      const {company, email, streetAddress, city, state, zip, profilePicture } = data.getUser; 
+      const { company, email, streetAddress, city, state, zip, profilePicture } = data.getUser; 
       
       setEmail(email);
       setStreetAddress(streetAddress);
       setCity(city);
       setState(state);
       setZip(zip);
-      setLogoUrl(profilePicture ? `http://localhost:3001${profilePicture}` : temporaryImage);
+      setLogoUrl(profilePicture ? profilePicture : temporaryImage);
       setUserData(data.getUser);
       setCompany(company);
     }
@@ -69,7 +68,6 @@ const Profile = () => {
     setCompany(e.target.value);
   };
 
-
   const handleStateChange = (e) => {
     setState(e.target.value);
   };
@@ -83,10 +81,8 @@ const Profile = () => {
     setLogo(file);
     setLogoUrl(URL.createObjectURL(file));
     
-    
     const filename = `${userId}_profile_picture.jpg`;
     setFilename(filename);
-    
     
     const renamedFile = new File([file], filename, { type: file.type });
     setRenamedFile(renamedFile); 
@@ -95,15 +91,12 @@ const Profile = () => {
   const uploadProfilePicture = async (file) => {
     try {
         const formData = new FormData();
-        
-      
         formData.append('file', file);
         
         const token = localStorage.getItem('authToken');
         const decodedToken = jwtDecode(token);
         const userId = decodedToken.data._id; 
         
-       
         const response = await axios.post('http://localhost:3001/upload', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
@@ -117,13 +110,9 @@ const Profile = () => {
     }
 };
 
- const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
   try {
-    const token = localStorage.getItem('authToken');
-    const decodedToken = jwtDecode(token);
-    const userId = decodedToken.data._id; 
-
     const variables = { userId }; 
 
     if (streetAddress) { 
@@ -132,11 +121,9 @@ const Profile = () => {
     if (email) {
       variables.email = email;
     }
-
     if (company) {
       variables.company = company;
     }
-
     if (city) {
       variables.city = city;
     }
@@ -148,7 +135,6 @@ const Profile = () => {
     }
     if (logo) {
       const picturePath = await uploadProfilePicture(renamedFile); 
- 
       await changeProfilePicture({
         variables: {
           userId, 
@@ -164,7 +150,7 @@ const Profile = () => {
       changeZip({ variables }),
       changeCompany({ variables })
     ]);
-    setUserData({ ...userData, email, streetAddress, city, state, zip, profilePicture: renamedFile }); 'streetAddress'
+    setUserData({ ...userData, email, streetAddress, city, state, zip, profilePicture: renamedFile });
     setEmail('');
     setStreetAddress(''); 
     setCity('');

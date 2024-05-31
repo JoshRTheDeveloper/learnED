@@ -1,15 +1,18 @@
+// backend/server.js
 const express = require('express');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4');
 const path = require('path');
 const { authMiddleware } = require('./utils/auth');
-const multer = require('./utils/multer'); 
+const { upload } = require('./utils/cloudinary'); 
 const { typeDefs, resolvers } = require('./schemas');
 const db = require('./config/connection');
 const cors = require('cors');
+const fs = require('fs');
+require('dotenv').config();
+
 const PORT = process.env.PORT || 3001;
 const app = express();
-const fs = require('fs');
 const server = new ApolloServer({
   typeDefs,
   resolvers,
@@ -20,32 +23,22 @@ const startApolloServer = async () => {
   await server.start();
 
   app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'], // Allow requests from these origins
+    origin: ['http://localhost:3000', 'http://localhost:3001'],
   }));
   app.use(express.urlencoded({ extended: false }));
   app.use(express.json());
   
-  app.post('/upload', multer.single('file'), (req, res) => {
+  app.post('/upload', upload.single('file'), (req, res) => {
     const file = req.file;
     if (!file) {
-        return res.status(400).send('No file uploaded.');
+      return res.status(400).send('No file uploaded.');
     }
-    
- 
-    const userId = req.headers.userid; 
-    const filename = `${userId}_profile_picture.jpg`;
-    
-   
-    const filePath = path.join(__dirname, 'uploads', filename);
-    fs.renameSync(file.path, filePath);
 
-   
-    const fileUrl = `/uploads/${filename}`;
-  
+    const fileUrl = file.path; // Cloudinary URL
+
     res.send({ fileUrl });
-});
+  });
 
- 
   app.use('/uploads', (req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET');
