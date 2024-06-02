@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
-import { VitePWA } from 'vite-plugin-pwa';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   plugins: [
@@ -19,24 +19,24 @@ export default defineConfig({
         theme_color: '#000000',
         icons: [
           {
-            src: './src/assets/invoicinator192.png',
+            src: 'assets/invoicinator192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: './src/assets/invoicinator512.png',
+            src: 'assets/invoicinator512.png',
             sizes: '512x512',
             type: 'image/png'
           }
         ],
         screenshots: [
           {
-            src: './src/assets/longScreenshot.png',
+            src: 'assets/longScreenshot.png', 
             sizes: '1080x1920',
             type: 'image/png'
           },
           {
-            src: './src/assets/screenshot1.png',
+            src: 'assets/screenshot1.png', 
             sizes: '1920x1080',
             type: 'image/png',
             form_factor: 'wide'
@@ -57,6 +57,8 @@ export default defineConfig({
     }
   },
   build: {
+    assetsDir: 'assets', // Specify the directory name for built assets
+    outDir: 'dist', // Specify the output directory for the built files
     rollupOptions: {
       output: {
         manualChunks: {
