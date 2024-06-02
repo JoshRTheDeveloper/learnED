@@ -19,24 +19,24 @@ export default defineConfig({
         theme_color: '#000000',
         icons: [
           {
-            src: 'src/assets/invoicinator192.png',
+            src: '/src/assets/invoicinator192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'src/assets/invoicinator512.png',
+            src: '/src/assets/invoicinator512.png',
             sizes: '512x512',
             type: 'image/png'
           }
         ],
         screenshots: [
           {
-            src: 'src/assets/longScreenshot.png',
+            src: '/src/assets/longScreenshot.png',
             sizes: '1080x1920',
             type: 'image/png'
           },
           {
-            src: 'src/assets/screenshot1.png',
+            src: '/src/assets/screenshot1.png',
             sizes: '1920x1080',
             type: 'image/png',
             form_factor: 'wide'
