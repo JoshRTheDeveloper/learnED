@@ -51,11 +51,13 @@ const startApolloServer = async () => {
   }));
 
   if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../Client/dist')));
+app.use('/assets', express.static(path.join(__dirname, '../Client/dist/assets')));
 
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, '../Client/dist/index.html'));
-    });
+// For all other routes, serve the index.html file
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../Client/dist/index.html'));
+});
+
   }
 
   db.once('open', () => {
