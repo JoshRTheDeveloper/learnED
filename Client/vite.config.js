@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import path from 'path';
 
 export default defineConfig({
   base: '/',
@@ -41,7 +42,8 @@ export default defineConfig({
       "form_factor": "wide"
     }
         ]
-      }
+      },
+      swSrc: path.resolve(__dirname, 'dist/registerSW.js'),
     })
   ],
   server: {
