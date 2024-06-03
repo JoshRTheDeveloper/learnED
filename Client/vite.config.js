@@ -10,11 +10,11 @@ export default defineConfig({
       manifest: {
         name: 'Invoicinator',
         short_name: 'Invoicinator',
-        start_url: 'https://invoicinator3000-d580657ecca9.herokuapp.com/',
+        start_url: '.',
         display: 'standalone',
         background_color: '#ffffff',
         lang: 'en',
-        scope: 'https://invoicinator3000-d580657ecca9.herokuapp.com/',
+        scope: '.',
         description: 'A simple app for invoices',
         theme_color: '#000000',
         icons: [
