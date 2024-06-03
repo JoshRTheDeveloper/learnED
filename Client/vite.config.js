@@ -10,11 +10,9 @@ export default defineConfig({
       manifest: {
         name: 'Invoicinator',
         short_name: 'Invoicinator',
-        start_url: '.',
         display: 'standalone',
         background_color: '#ffffff',
         lang: 'en',
-        scope: '.',
         description: 'A simple app for invoices',
         theme_color: '#000000',
         icons: [
