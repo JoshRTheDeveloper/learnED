@@ -42,8 +42,8 @@ export default defineConfig({
       "form_factor": "wide"
     }
         ]
-      },
-      swSrc: path.resolve(__dirname, 'dist/registerSW.js'),
+      }
+      
     })
   ],
   server: {
