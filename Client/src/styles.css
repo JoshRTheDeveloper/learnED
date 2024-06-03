@@ -97,16 +97,7 @@ h5 {
         display: none !important;
     }
 
-    .bookingPage {
-        display: flex;
-        justify-content: center;
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-        background-image: url(./assets/flower.jpg);
-        background-repeat: no-repeat;
-        background-size: cover;
-        background-position: center;
-    }
+
 
     #bookNow,
     #confirmationTitle {
@@ -117,13 +108,6 @@ h5 {
         width: 325px;
     }
 
-    #confirmationBg {
-        height: 100vh;
-        background-image: url(./assets/candle.jpg);
-        background-repeat: no-repeat;
-        background-size: cover;
-        background-position: center;
-    }
 
     #historyImages {
         display: none !important;
