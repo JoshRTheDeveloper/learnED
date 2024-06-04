@@ -97,7 +97,7 @@ const Profile = () => {
         const decodedToken = jwtDecode(token);
         const userId = decodedToken.data._id; 
         
-        const response = await axios.post('http://localhost:3001/upload', formData, {
+        const response = await axios.post('https://invoicinator3000-d580657ecca9.herokuapp.com/upload', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
                 'userId': userId 
