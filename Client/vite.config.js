@@ -4,11 +4,12 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 export default defineConfig({
-  base: '/',
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      base: './',
+      
       manifest: {
         name: 'Invoicinator',
         short_name: 'Invoicinator',
@@ -58,8 +59,6 @@ export default defineConfig({
     }
   },
   build: {
-    assetsDir: 'assets', // Specify the directory name for built assets
-    outDir: 'dist', // Specify the output directory for the built files
     rollupOptions: {
       output: {
         manualChunks: {
