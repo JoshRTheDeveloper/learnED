@@ -17,8 +17,6 @@ margin: 20px;
 }
 
 
-
-
 .profile-container {
  justify-content: center;
  align-items: center;
@@ -69,6 +67,12 @@ margin: 20px;
  display: flex;
  width: 100%;
  gap: 20px;
+}
+
+.logo-preview {
+ height: 150px !important;
+ width: 150px !important;
+
 }
 
 @media (max-width: 845px) {

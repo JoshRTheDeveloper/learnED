@@ -103,6 +103,12 @@
   display: flex;
   width: 30%;
  }
+
+ .profile-picture1 {
+height: 150px;
+width: 150px;
+ 
+ }
  
 
  @media (max-width: 992px) {

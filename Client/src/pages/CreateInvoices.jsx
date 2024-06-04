@@ -136,7 +136,7 @@ const CreateInvoices = () => {
 
                   <div className='split'>
                     <div>
-                    {profilePicture && <img src={profilePicture} className='profile-picture' alt="Profile" />}
+                    {profilePicture && <img src={profilePicture} className='profile-picture1' alt="Profile" />}
                     </div>
                   </div>
 
