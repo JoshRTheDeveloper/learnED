@@ -25,7 +25,11 @@ export default defineConfig({
         }
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    // Use the copy plugin to copy the manifest.json file to the dist directory
+    assetsInlineLimit: 0,
+    assetsInclude: ['**/*.svg', '**/*.png', '**/*.jpg', '**/*.gif', '**/*.json', '**/*.xml', '**/*.webmanifest'],
+    outDir: 'dist', // This is the default value, but explicitly setting it for clarity
   },
   test: {
     globals: true,
