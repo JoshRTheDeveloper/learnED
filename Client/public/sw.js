@@ -55,7 +55,16 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request).then(response => {
-      return response || fetch(event.request);
+      if (response) {
+        console.log('Cache hit for', event.request.url);
+        return response;
+      }
+      console.log('Cache miss for', event.request.url);
+      return fetch(event.request);
+    }).catch(error => {
+      console.error('Cache match error:', error);
+      // If an error occurs while fetching from cache, try fetching from network
+      return fetch(event.request);
     })
   );
 });
