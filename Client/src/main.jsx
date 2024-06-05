@@ -40,13 +40,11 @@ const router = createBrowserRouter([
   }
 ]);
 
-// Register service worker with the application's base URL
+// Register service worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    const baseUrl = 'https://invoicinator3000-d580657ecca9.herokuapp.com/';
-    const swUrl = `${baseUrl}sw.js`;
     navigator.serviceWorker
-      .register(swUrl)
+      .register('/sw.js')
       .then(registration => {
         console.log('ServiceWorker registration successful with scope: ', registration.scope);
       })
