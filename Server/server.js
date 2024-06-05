@@ -39,6 +39,11 @@ const startApolloServer = async () => {
     res.send({ fileUrl });
   });
 
+  app.get('/sw.js', (req, res) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.sendFile(path.join(__dirname, '../client/dist/sw.js'));
+  });
+  
   app.use('/uploads', (req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET');
