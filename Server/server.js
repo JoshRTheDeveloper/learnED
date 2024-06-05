@@ -39,12 +39,11 @@ const startApolloServer = async () => {
     res.send({ fileUrl });
   });
 
-  app.get('/sw.js', (req, res) => {
-    const swPath = path.resolve(__dirname, '../client/dist/sw.js');
-    console.log('Absolute path to sw.js:', swPath);
-    res.setHeader('Content-Type', 'application/javascript');
-    res.sendFile(swPath);
-  });
+// Define route to serve sw.js file
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, 'client', 'dist', 'sw.js'));
+});
 
   app.use('/uploads', (req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
