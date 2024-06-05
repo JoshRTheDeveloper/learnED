@@ -11,9 +11,8 @@ const assetsToCache = [
   '/assets/noLogo.svg',
   '/assets/screenshot1.png',
   '/assets/index-819f58vf.css',
-'/assets/index-c4501783.js',
-'/assets/vendor-9c95d55e.js',
-  
+  '/assets/index-c4501783.js',
+  '/assets/vendor-9c95d55e.js',
 ];
 
 self.addEventListener('install', event => {
@@ -47,11 +46,22 @@ self.addEventListener('fetch', event => {
         return response;
       }
       console.log('No cache match found. Fetching from network:', event.request.url);
-      return fetch(event.request);
-    }).catch(error => {
-      console.error('Cache match error:', error);
-      // You can handle errors here, such as returning a custom offline page
+      return fetch(event.request).then(networkResponse => {
+        // Add fetched assets to the cache
+        if (networkResponse && networkResponse.status === 200) {
+          const clonedResponse = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, clonedResponse);
+          });
+        }
+        return networkResponse;
+      }).catch(error => {
+        console.error('Fetch error:', error);
+        // You can handle fetch errors here, such as displaying a custom offline page
+      });
+    }).catch(cacheError => {
+      console.error('Cache match error:', cacheError);
+      // You can handle cache match errors here
     })
   );
 });
-
