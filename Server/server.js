@@ -43,7 +43,7 @@ const startApolloServer = async () => {
   });
 
 
-  app.get('/sw.js', (req, res) => {
+  app.get('/client/dist/sw.js', (req, res) => {
     const filePath = path.join(__dirname, '../Client/dist/sw.js');
     console.log('Path to sw.js:', filePath);
     res.setHeader('Content-Type', 'application/javascript');
