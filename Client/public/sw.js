@@ -24,6 +24,9 @@ const assetsToCache = [
   '/pages/home.jsx',
   '/pages/profile.css',
   '/pages/profile.jsx',
+  '/assets/index-819f58vf.css',
+'/assets/index-c4501783.js',
+'/assets/vendor-9c95d55e.js',
   
 ];
 
