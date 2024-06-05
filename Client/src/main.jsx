@@ -40,8 +40,8 @@ const router = createBrowserRouter([
   }
 ]);
 
+// Register service worker
 if ('serviceWorker' in navigator) {
-  console.log('Attempting to register service worker...');
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('../client/dist/sw.js')
@@ -52,8 +52,6 @@ if ('serviceWorker' in navigator) {
         console.log('ServiceWorker registration failed: ', error);
       });
   });
-} else {
-  console.log('Service workers are not supported in this browser.');
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
