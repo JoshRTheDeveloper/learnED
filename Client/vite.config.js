@@ -25,7 +25,12 @@ export default defineConfig({
         }
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    root: path.resolve(__dirname, 'Client'), // Specify the root directory of your source files
+    base: '', // Specify the base URL for your application
+    outDir: path.resolve(__dirname, 'dist'), // Specify the output directory
+    assetsDir: '.', // Specify the directory for static assets (e.g., images, fonts)
+    cssCodeSplit: false, 
   },
   test: {
     globals: true,
