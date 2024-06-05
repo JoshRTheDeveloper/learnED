@@ -16,6 +16,7 @@ const assetsToCache = [
 ];
 
 self.addEventListener('install', event => {
+  console.info("Service Worker: Installed");
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       return cache.addAll(assetsToCache);
@@ -24,6 +25,7 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
+  console.info("Service Worker: Activated");
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
