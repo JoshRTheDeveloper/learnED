@@ -42,7 +42,7 @@ const startApolloServer = async () => {
 
 app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.sendFile(path.join(__dirname, '../client/dist/sw.js'));
+  res.sendFile(path.join(__dirname, '../Client/dist/sw.js'));
 });
 
   app.use('/uploads', (req, res, next) => {
