@@ -39,10 +39,10 @@ const startApolloServer = async () => {
     res.send({ fileUrl });
   });
 
-// Define route to serve sw.js file
+
 app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.sendFile(path.join(__dirname, 'client', 'dist', 'sw.js'));
+  res.sendFile(path.join(__dirname, '../client/dist/sw.js'));
 });
 
   app.use('/uploads', (req, res, next) => {
