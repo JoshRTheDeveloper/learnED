@@ -45,7 +45,7 @@ const startApolloServer = async () => {
 
 app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.sendFile(path.join(__dirname, '../../Client/dist/sw.js'));
+  res.sendFile(path.join(__dirname, '../Client/dist/sw.js'));
 });
 
   app.use('/uploads', (req, res, next) => {
@@ -60,12 +60,12 @@ app.get('/sw.js', (req, res) => {
   }));
 
   if (process.env.NODE_ENV === 'production') {
-app.use('/assets', express.static(path.join(__dirname, '../../Client/dist/assets')));
+app.use('/assets', express.static(path.join(__dirname, '../Client/dist/assets')));
 
 
 // For all other routes, serve the index.html file
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../Client/dist/index.html'));
+  res.sendFile(path.join(__dirname, '../Client/dist/index.html'));
 });
 
   }
