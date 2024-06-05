@@ -19,6 +19,7 @@ const server = new ApolloServer({
   context: authMiddleware
 });
 
+console.log('__dirname:', __dirname);
 
 
 const startApolloServer = async () => {
@@ -42,20 +43,10 @@ const startApolloServer = async () => {
   });
 
 
-  app.get('/sw.js', (req, res) => {
-    const filePath = path.join(__dirname, '../client/dist/sw.js');
-    console.log('Resolved path:', filePath); 
-  
-    res.setHeader('Content-Type', 'application/javascript');
-    res.sendFile(filePath, (err) => {
-      if (err) {
-        console.error('Error sending file:', err); 
-        res.status(err.status).end();
-      } else {
-        console.log('File sent successfully.'); 
-      }
-    });
-  });
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, '../Client/dist/sw.js'));
+});
 
   app.use('/uploads', (req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
@@ -70,6 +61,7 @@ const startApolloServer = async () => {
 
   if (process.env.NODE_ENV === 'production') {
 app.use('/assets', express.static(path.join(__dirname, '../Client/dist/assets')));
+
 
 // For all other routes, serve the index.html file
 app.get('*', (req, res) => {
