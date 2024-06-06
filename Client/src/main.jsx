@@ -40,17 +40,6 @@ const router = createBrowserRouter([
   }
 ]);
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-      navigator.serviceWorker.register('../client/dist/sw.js', { scope: '/' })
-          .then(registration => {
-              console.log('ServiceWorker registration successful with scope: ', registration.scope);
-          })
-          .catch(error => {
-              console.log('ServiceWorker registration failed: ', error);
-          });
-  });
-}
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
