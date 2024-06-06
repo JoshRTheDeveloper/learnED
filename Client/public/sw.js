@@ -19,7 +19,10 @@ self.addEventListener('install', event => {
   console.info("Service Worker: Installed");
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
+      console.info("Caching assets");
       return cache.addAll(assetsToCache);
+    }).catch(error => {
+      console.error("Error caching assets during install:", error);
     })
   );
 });
@@ -31,21 +34,36 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
+            console.info(`Deleting old cache: ${cacheName}`);
             return caches.delete(cacheName);
           }
         })
       );
+    }).catch(error => {
+      console.error("Error during activation:", error);
     })
   );
 });
 
-self.addEventListener("fetch", function (event) {
+self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(function (response) {
+    caches.match(event.request).then(response => {
       if (response) {
+        console.info(`Serving from cache: ${event.request.url}`);
         return response;
       }
-      return fetch(event.request);
+      console.info(`Fetching from network: ${event.request.url}`);
+      return fetch(event.request).then(fetchResponse => {
+        return caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, fetchResponse.clone());
+          return fetchResponse;
+        });
+      }).catch(error => {
+        console.error("Fetch error:", error);
+        // Optionally return a fallback offline page here
+      });
+    }).catch(error => {
+      console.error("Cache match error:", error);
     })
   );
 });
