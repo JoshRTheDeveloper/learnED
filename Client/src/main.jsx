@@ -42,7 +42,7 @@ const router = createBrowserRouter([
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-      navigator.serviceWorker.register('../client/dist/sw.js')
+      navigator.serviceWorker.register('../client/dist/sw.js', { scope: '/' })
           .then(registration => {
               console.log('ServiceWorker registration successful with scope: ', registration.scope);
           })
