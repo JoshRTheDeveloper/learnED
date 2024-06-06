@@ -39,31 +39,13 @@ self.addEventListener('activate', event => {
   );
 });
 
-self.addEventListener('fetch', event => {
-  console.log('Fetch event triggered:', event.request.url);
+self.addEventListener("fetch", function (event) {
   event.respondWith(
-    caches.match(event.request).then(response => {
+    caches.match(event.request).then(function (response) {
       if (response) {
-        console.log('Cache match found for:', event.request.url);
         return response;
       }
-      console.log('No cache match found. Fetching from network:', event.request.url);
-      return fetch(event.request).then(networkResponse => {
-        // Add fetched assets to the cache
-        if (networkResponse && networkResponse.status === 200) {
-          const clonedResponse = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, clonedResponse);
-          });
-        }
-        return networkResponse;
-      }).catch(error => {
-        console.error('Fetch error:', error);
-        // You can handle fetch errors here, such as displaying a custom offline page
-      });
-    }).catch(cacheError => {
-      console.error('Cache match error:', cacheError);
-      // You can handle cache match errors here
+      return fetch(event.request);
     })
   );
 });
