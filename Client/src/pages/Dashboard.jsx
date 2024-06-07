@@ -18,8 +18,6 @@ const Home = () => {
     onCompleted: async (data) => {
       await saveInvoices(data.getUser.invoices);
     },
-    fetchPolicy: 'cache-first', // Use cached data if available when offline
-    errorPolicy: 'all' // Prevent throwing an error when offline
   });
 
   const [markAsPaidMutation] = useMutation(UPDATE_INVOICE);
@@ -62,10 +60,6 @@ const Home = () => {
   }, [isOffline]);
 
   const handleSearch = async () => {
-    if (isOffline) {
-      // Handle search logic for offline mode
-      return;
-    }
     try {
       setSearchLoading(true);
       setSearchError(null);
@@ -132,7 +126,7 @@ const Home = () => {
   };
 
   if (userLoading) return <p>Loading user data...</p>;
-  if (userError && !isOffline) return <p>Error loading user data: {userError.message}</p>;
+  if (userError) return <p>Error loading user data: {userError.message}</p>;
 
   const user = userData?.getUser;
   const invoicesDue = user?.invoices.filter(invoice => !invoice.paidStatus) || [];
