@@ -1,4 +1,3 @@
-// backend/server.js
 const express = require('express');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4');
@@ -8,7 +7,6 @@ const { upload } = require('./utils/cloudinary');
 const { typeDefs, resolvers } = require('./schemas');
 const db = require('./config/connection');
 const cors = require('cors');
-const fs = require('fs');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3001;
@@ -20,7 +18,6 @@ const server = new ApolloServer({
 });
 
 console.log('__dirname:', __dirname);
-
 
 const startApolloServer = async () => {
   await server.start();
@@ -42,21 +39,6 @@ const startApolloServer = async () => {
     res.send({ fileUrl });
   });
 
-
-  app.get('/client/dist/sw.js', (req, res) => {
-    const filePath = path.join(__dirname, '../Client/dist/sw.js');
-    console.log('Path to sw.js:', filePath);
-    res.setHeader('Content-Type', 'application/javascript');
-    res.sendFile(filePath, (err) => {
-      if (err) {
-        console.error('Error sending sw.js:', err);
-        res.status(500).send('Internal Server Error');
-      } else {
-        console.log('Successfully sent sw.js');
-      }
-    });
-  });
-
   app.use('/uploads', (req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET');
@@ -69,14 +51,16 @@ const startApolloServer = async () => {
   }));
 
   if (process.env.NODE_ENV === 'production') {
-app.use('/assets', express.static(path.join(__dirname, '../Client/dist/assets')));
+    // Serve static files from the React app (Vite build output)
+    app.use(express.static(path.join(__dirname, '../Client/dist')));
+    
+    // Serve assets from the dist/assets directory
+    app.use('/assets', express.static(path.join(__dirname, '../Client/dist/assets')));
 
-
-// For all other routes, serve the index.html file
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../Client/dist/index.html'));
-});
-
+    // For all other routes, serve the index.html file
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, '../Client/dist/index.html'));
+    });
   }
 
   db.once('open', () => {
