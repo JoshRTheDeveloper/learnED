@@ -191,7 +191,7 @@ const Home = () => {
       ) : searchError ? (
         <p>Error: {searchError.message}</p>
       ) : searchResult.length === 0 ? (
-        <p></p>
+        <p>No results found.</p>
       ) : (
         <div className='search-results'>
           <h3>Search Results</h3>
@@ -208,9 +208,9 @@ const Home = () => {
                   <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
                 </div>
                 <div className='mark-button'>
-                  {!invoice.paidStatus && <button onClick={(e) => { e.stopPropagation(); markAsPaid(invoice._id); }}>Mark as Paid</button>}
-                </div>
-                <div className='delete-button'>
+                  {!invoice.paidStatus && (
+                    <button onClick={(e) => { e.stopPropagation(); markAsPaid(invoice._id); }}>Mark as Paid</button>
+                  )}
                   <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
                 </div>
               </li>
@@ -218,6 +218,61 @@ const Home = () => {
           </ul>
         </div>
       )}
+
+      <div className="total">
+        <div className="row">
+          <h2>Invoices Due</h2>
+          {filteredInvoicesDue.length === 0 ? (
+            <p>No invoices due.</p>
+          ) : (
+            <ul>
+              {filteredInvoicesDue.map(invoice => (
+                <li key={invoice._id} onClick={() => handleInvoiceClick(invoice)}>
+                  <div className='due-date-container'>
+                    <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
+                    <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
+                  </div>
+                  <div className='invoice-info'>
+                    <p>Client: {invoice.clientName}</p>
+                    <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
+                    <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
+                  </div>
+                  <div className='mark-button'>
+                    {!invoice.paidStatus && (
+                      <button onClick={(e) => { e.stopPropagation(); markAsPaid(invoice._id); }}>Mark as Paid</button>
+                    )}
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="row">
+          <h2>Invoices Paid</h2>
+          {invoicesPaid.length === 0 ? (
+            <p>No paid invoices.</p>
+          ) : (
+            <ul>
+              {invoicesPaid.map(invoice => (
+                <li key={invoice._id} onClick={() => handleInvoiceClick(invoice)}>
+                  <div className='due-date-container'>
+                    <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
+                    <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
+                  </div>
+                  <div className='invoice-info'>
+                    <p>Client: {invoice.clientName}</p>
+                    <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
+                    <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
 
       {isModalOpen && (
         <InvoiceModal
