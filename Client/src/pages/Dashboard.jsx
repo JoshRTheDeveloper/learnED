@@ -7,33 +7,15 @@ import { GET_USER } from '../utils/queries';
 import { UPDATE_INVOICE, DELETE_INVOICE } from '../utils/mutations';
 import InvoiceModal from '../components/invoice-modal/invoice-modal';
 
-const saveDataToLocalStorage = (key, data) => {
-  localStorage.setItem(key, JSON.stringify(data));
-};
-
-const getDataFromLocalStorage = (key) => {
-  const data = localStorage.getItem(key);
-  return data ? JSON.parse(data) : null;
-};
-
 const Home = () => {
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
 
-  const { loading: userLoading, error: userError, data: queryUserData, refetch } = useQuery(GET_USER, {
+  const { loading: userLoading, error: userError, data: userData, refetch } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
-    fetchPolicy: 'cache-and-network',
-    onError: () => {
-      const cachedUserData = getDataFromLocalStorage('userData');
-      if (cachedUserData) {
-        console.log('Using cached user data');
-        setLocalUserData(cachedUserData);
-      }
-    }
   });
 
-  const [localUserData, setLocalUserData] = useState(null);
   const [markAsPaidMutation] = useMutation(UPDATE_INVOICE);
   const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
   const [searchInvoiceNumber, setSearchInvoiceNumber] = useState('');
@@ -47,19 +29,12 @@ const Home = () => {
     refetch();
   }, []);
 
-  useEffect(() => {
-    if (queryUserData) {
-      setLocalUserData(queryUserData);
-      saveDataToLocalStorage('userData', queryUserData);
-    }
-  }, [queryUserData]);
-
   const handleSearch = async () => {
     try {
       setSearchLoading(true);
       setSearchError(null);
 
-      const filteredInvoices = localUserData?.getUser?.invoices.filter(
+      const filteredInvoices = userData?.getUser?.invoices.filter(
         invoice => invoice.invoiceNumber.includes(searchInvoiceNumber)
       ) || [];
 
@@ -73,6 +48,7 @@ const Home = () => {
   };
 
   const handleInvoiceClick = (invoice) => {
+   
     setSelectedInvoice(invoice);
     setIsModalOpen(true);
   };
@@ -123,7 +99,7 @@ const Home = () => {
   if (userLoading) return <p>Loading user data...</p>;
   if (userError) return <p>Error loading user data: {userError.message}</p>;
 
-  const user = localUserData?.getUser;
+  const user = userData?.getUser;
   const invoicesDue = user?.invoices.filter(invoice => !invoice.paidStatus) || [];
   const invoicesPaid = user?.invoices.filter(invoice => invoice.paidStatus) || [];
 
@@ -134,7 +110,7 @@ const Home = () => {
         paidStatus: true,
       },
       update: (cache, { data: { updateInvoice } }) => {
-        // Update cache
+       
       },
     });
   };
@@ -148,7 +124,7 @@ const Home = () => {
       <div className="app">
         <Sidebar />
         <div className="main-content">
-          {/* Main content */}
+       
         </div>
       </div>
 
@@ -170,7 +146,7 @@ const Home = () => {
       ) : searchError ? (
         <p>Error: {searchError.message}</p>
       ) : searchResult.length === 0 ? (
-        <p>No results found.</p>
+        <p></p>
       ) : (
         <div className='search-results'>
           <h3>Search Results</h3>
