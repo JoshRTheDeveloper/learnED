@@ -15,11 +15,16 @@ const Home = () => {
 
   const { loading: userLoading, error: userError, data: userData, refetch } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
+    fetchPolicy: isOffline ? 'cache-only' : 'cache-first', // Use cached data if available when offline
+    onError: (error) => {
+      console.error('Error fetching user data:', error);
+      if (!isOffline) {
+        throw error;
+      }
+    },
     onCompleted: async (data) => {
       await saveInvoices(data.getUser.invoices);
-    },
-    fetchPolicy: 'cache-first', // Use cached data if available when offline
-    errorPolicy: 'all' // Prevent throwing an error when offline
+    }
   });
 
   const [markAsPaidMutation] = useMutation(UPDATE_INVOICE);
