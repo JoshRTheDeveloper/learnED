@@ -90,7 +90,6 @@ function Nav() {
             <li><Link to="/dashboard">Dashboard</Link></li>
             <li><Link to="/CreateInvoices">Create Invoice</Link></li>
             <li><a href="/Profile">Profile</a></li>
-            <li><a href="#">Invoice History</a></li>
             <button className="mobile-logout" onClick={handleLogout}>Logout</button>
             </ul>
             </div>

@@ -40,7 +40,6 @@ const Sidebar = () => {
         <li><Link to="/dashboard">Dashboard</Link></li>
         <li><Link to="/CreateInvoices">Create Invoice</Link></li>
         <li><a href="/Profile">Profile</a></li>
-        <li><a href="#">Invoice History</a></li>
       </ul>
     </div>
     </div>
