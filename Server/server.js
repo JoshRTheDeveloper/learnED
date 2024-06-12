@@ -8,6 +8,7 @@ const { typeDefs, resolvers } = require('./schemas');
 const db = require('./config/connection');
 const cors = require('cors');
 const sendInvoiceEmail = require('./utils/mailjet');
+const Invoice = require('../Server/models/invoice');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3001;
@@ -18,8 +19,6 @@ const server = new ApolloServer({
   context: authMiddleware
 });
 
-console.log('__dirname:', __dirname);
-
 const startApolloServer = async () => {
   await server.start();
 
@@ -28,14 +27,14 @@ const startApolloServer = async () => {
   }));
   app.use(express.urlencoded({ extended: false }));
   app.use(express.json());
-  
+
   app.post('/upload', upload.single('file'), (req, res) => {
     const file = req.file;
     if (!file) {
       return res.status(400).send('No file uploaded.');
     }
 
-    const fileUrl = file.path; // Cloudinary URL
+    const fileUrl = file.path;
 
     res.send({ fileUrl });
   });
@@ -51,6 +50,16 @@ const startApolloServer = async () => {
     context: authMiddleware
   }));
 
+  
+  app.get('/api/invoices', async (req, res) => {
+    try {
+      const invoices = await Invoice.find();
+      res.json(invoices);
+    } catch (error) {
+      console.error('Failed to fetch invoices:', error);
+      res.status(500).send('Failed to fetch invoices');
+    }
+  });
 
   app.post('/send-invoice', async (req, res) => {
     const invoiceDetails = req.body;
@@ -66,13 +75,8 @@ const startApolloServer = async () => {
   });
 
   if (process.env.NODE_ENV === 'production') {
-    // Serve static files from the React app (Vite build output)
     app.use(express.static(path.join(__dirname, '../Client/dist')));
-    
-    // Serve assets from the dist/assets directory
     app.use('/assets', express.static(path.join(__dirname, '../Client/dist/assets')));
-
-    // For all other routes, serve the index.html file
     app.get('*', (req, res) => {
       res.sendFile(path.join(__dirname, '../Client/dist/index.html'));
     });

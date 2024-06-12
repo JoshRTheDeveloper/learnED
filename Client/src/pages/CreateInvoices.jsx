@@ -8,6 +8,7 @@ import Auth from "../utils/auth";
 import { GET_USER } from '../utils/queries';
 import { CREATE_INVOICE } from '../utils/mutations';
 import axios from 'axios';
+import db, { addInvoiceToIndexedDB, getInvoicesFromIndexedDB, clearIndexedDB } from '../utils/indexedDB'; // Import IndexedDB functions
 
 const CreateInvoices = () => {
   const [userData, setUserData] = useState(null);
@@ -18,7 +19,6 @@ const CreateInvoices = () => {
   const [zip, setZip] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
   
-
   const [clientEmail, setClientEmail] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientAddress, setClientAddress] = useState('');
@@ -32,7 +32,6 @@ const CreateInvoices = () => {
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
- 
 
   const { loading, error, data } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
@@ -66,12 +65,9 @@ const CreateInvoices = () => {
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
-
   
     const invoiceAmountFloat = parseFloat(invoiceAmount);
-   
     const dueDateISO = new Date(dueDate).toISOString();
-
   
     const variables = {
         invoiceAmount: invoiceAmountFloat,
@@ -92,25 +88,53 @@ const CreateInvoices = () => {
     };
 
     try {
+      if (navigator.onLine) {
+        // Online: Send invoice to server
         const response = await createInvoice({ variables });
         await axios.post('/send-invoice', variables);
-        
-        setInvoiceAmount('');
-        setPaidStatus(false);
-        setInvoiceNumber('');
-        setClientEmail('');
-        setClientName('');
-        setClientAddress('');
-        setClientCity('');
-        setInvoiceDetails('');
-        setDueDate('');
+      } else {
+        // Offline: Save invoice to IndexedDB
+        await addInvoiceToIndexedDB(variables);
+        alert('Invoice saved locally. It will be sent when you are back online.');
+      }
 
+      // Clear form fields after submission
+      setInvoiceAmount('');
+      setPaidStatus(false);
+      setInvoiceNumber('');
+      setClientEmail('');
+      setClientName('');
+      setClientAddress('');
+      setClientCity('');
+      setInvoiceDetails('');
+      setDueDate('');
     } catch (error) {
-        console.error('Error creating invoice:', error);
+      console.error('Error creating invoice:', error);
     }
-};
+  };
 
+  useEffect(() => {
+    const syncInvoicesWithServer = async () => {
+      if (navigator.onLine) {
+        const localInvoices = await getInvoicesFromIndexedDB();
+        for (const invoice of localInvoices) {
+          try {
+            await createInvoice({ variables: invoice });
+            await axios.post('http://localhost:3001/send-invoice', invoice);
+          } catch (error) {
+            console.error('Error syncing invoice with server:', error);
+          }
+        }
+        await clearIndexedDB();
+      }
+    };
 
+    window.addEventListener('online', syncInvoicesWithServer);
+
+    return () => {
+      window.removeEventListener('online', syncInvoicesWithServer);
+    };
+  }, [createInvoice]);
 
   return (
     <>
@@ -119,104 +143,84 @@ const CreateInvoices = () => {
         <div className="center-content">
           <div className="container center-content bg-app-grey" id="main-create-container">
             <form className="form" onSubmit={handleFormSubmit}>
-        <div className='spacing' >
-
-        </div>
+              <div className='spacing'></div>
               <div className='heading-invoices'>
                 <div className='heading-title'>
                   <h3 className='invoice-h3'>Create Invoice</h3>
                   <div className='back-link'>
-                  <a href="/dashboard">
-                     ← to Dashboard
-                 </a>
+                    <a href="/dashboard">← to Dashboard</a>
                   </div>
                 </div>
               </div>
-
               <div className='line'></div>
-                <div className='section1'>
-
-                  <div className='split'>
-                    <div>
+              <div className='section1'>
+                <div className='split'>
+                  <div>
                     {profilePicture && <img src={profilePicture} className='profile-picture1' alt="Profile" />}
-                    </div>
-                  </div>
-
-                  <div className='split2'>
-                    <div className='input'>
-                      <label className="label font-casmono" htmlFor="invoice-num">Invoice#:</label>
-                      <input type="text" placeholder="1234ABCD" id="invoice-num" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} maxLength="8" required />
-                    </div>
-
-                    <div className='input'> 
-                      <label className="label font-casmono" htmlFor="payment-due">Payment Due:</label>
-                      <input type="date" id="payment-due" value={dueDate} onChange={(e) => setDueDate(e.target.value)} required />
-                    </div>
-
-                    <div className='input'>
-                      <label className="label font-casmono" htmlFor="amount-due">Amount Due:</label>
-                      <input type="text" placeholder="$00.00" id="amount-due" value={invoiceAmount} onChange={(e) => setInvoiceAmount(e.target.value)} required />
-                    </div>
                   </div>
                 </div>
-              
-                <div className='user-client'>
-                  <div id="invoice-user-container">
-                    <label className="label font-casmono" htmlFor="user-email">User:</label>
-                    <div>
-                      <input type="email" placeholder="Your Email" id="user-email" value={user.email} readOnly />
-                    </div>
-
-                    <div>
-                      <label className="label-item" htmlFor="company-name"></label>
-                      <input type="text" placeholder="Your Name/Company" id="company-name" value={user.name} readOnly />
-                    </div>
-
-                    <div>
-                      <label className="label-item" htmlFor="user-address"></label>
-                      <input type="text" placeholder="Address" id="user-address" value={user.streetAddress} readOnly />
-                    </div>
-                    
-                    <div>
-                      <label className="label-item" htmlFor="user-city"></label>
-                      <input type="text" placeholder="City, State, Zip" id="user-city" value={user.city} readOnly />
-                    </div>
+                <div className='split2'>
+                  <div className='input'>
+                    <label className="label font-casmono" htmlFor="invoice-num">Invoice#:</label>
+                    <input type="text" placeholder="1234ABCD" id="invoice-num" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} maxLength="8" required />
                   </div>
-                
-                  <div id="invoice-client-container">
-                    <label className="label font-casmono" htmlFor="client-email">Client:</label>
-                    <div>
-                      <input type="email" placeholder="Client Email" id="client-email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} required />
-                    </div>
-                  
-                    <div>
-                      <label className="label-item-right" htmlFor="client-name"></label>
-                      <input type="text" placeholder="Client Name/Company" id="client-name" value={clientName} onChange={(e) => setClientName(e.target.value)} required />
-                    </div>
-                  
-                    <div>
-                      <label className="label-item-right" htmlFor="client-address"></label>
-                      <input type="text" placeholder="Billing Address" id="client-address" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} required />
-                    </div>
-                  
-                    <div>
-                      <label className="label-item-right" htmlFor="client-city"></label>
-                      <input type="text" placeholder="City, State, Zip" id="client-city" value={clientCity} onChange={(e) => setClientCity(e.target.value)} required />
-                    </div>
+                  <div className='input'> 
+                    <label className="label font-casmono" htmlFor="payment-due">Payment Due:</label>
+                    <input type="date" id="payment-due" value={dueDate} onChange={(e) => setDueDate(e.target.value)} required />
+                  </div>
+                  <div className='input'>
+                    <label className="label font-casmono" htmlFor="amount-due">Amount Due:</label>
+                    <input type="text" placeholder="$00.00" id="amount-due" value={invoiceAmount} onChange={(e) => setInvoiceAmount(e.target.value)} required />
                   </div>
                 </div>
-        
-                <div className="invoice-bottom">
-                  <label className="label-item font-casmono" htmlFor="invoice-details">Invoice&nbsp; Details:</label>
-                  <div id="details-container">
-                    <textarea className='details' type="text" placeholder="Details of work provided" id="invoice-details" value={invoiceDetails} onChange={(e) => setInvoiceDetails(e.target.value)}></textarea>
+              </div>
+              <div className='user-client'>
+                <div id="invoice-user-container">
+                  <label className="label font-casmono" htmlFor="user-email">User:</label>
+                  <div>
+                    <input type="email" placeholder="Your Email" id="user-email" value={user.email} readOnly />
                   </div>
-
-                  <div className='invoice-button'>
-                     <button type="submit" id="send-invoice-button">Send Invoice</button>
+                  <div>
+                    <label className="label-item" htmlFor="company-name"></label>
+                    <input type="text" placeholder="Your Name/Company" id="company-name" value={user.name} readOnly />
                   </div>
-          
+                  <div>
+                    <label className="label-item" htmlFor="user-address"></label>
+                    <input type="text" placeholder="Address" id="user-address" value={user.streetAddress} readOnly />
+                  </div>
+                  <div>
+                    <label className="label-item" htmlFor="user-city"></label>
+                    <input type="text" placeholder="City, State, Zip" id="user-city" value={user.city} readOnly />
+                  </div>
                 </div>
+                <div id="invoice-client-container">
+                  <label className="label font-casmono" htmlFor="client-email">Client:</label>
+                  <div>
+                    <input type="email" placeholder="Client Email" id="client-email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} required />
+                  </div>
+                  <div>
+                    <label className="label-item-right" htmlFor="client-name"></label>
+                    <input type="text" placeholder="Client Name/Company" id="client-name" value={clientName} onChange={(e) => setClientName(e.target.value)} required />
+                  </div>
+                  <div>
+                    <label className="label-item-right" htmlFor="client-address"></label>
+                    <input type="text" placeholder="Billing Address" id="client-address" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} required />
+                  </div>
+                  <div>
+                    <label className="label-item-right" htmlFor="client-city"></label>
+                    <input type="text" placeholder="City, State, Zip" id="client-city" value={clientCity} onChange={(e) => setClientCity(e.target.value)} required />
+                  </div>
+                </div>
+              </div>
+              <div className="invoice-bottom">
+                <label className="label-item font-casmono" htmlFor="invoice-details">Invoice&nbsp; Details:</label>
+                <div id="details-container">
+                  <textarea className='details' type="text" placeholder="Details of work provided" id="invoice-details" value={invoiceDetails} onChange={(e) => setInvoiceDetails(e.target.value)}></textarea>
+                </div>
+                <div className='invoice-button'>
+                  <button type="submit" id="send-invoice-button">Send Invoice</button>
+                </div>
+              </div>
             </form>
           </div>
         </div>
