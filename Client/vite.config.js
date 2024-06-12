@@ -85,11 +85,6 @@ export default defineConfig({
               }
             }
           }
-        ],
-        precacheManifestFilename: 'precache-manifest.[manifestHash].js',
-        globDirectory: 'dist',
-        globPatterns: [
-          '**/*.{js,css,html,png,jpg,jpeg,svg,gif,webp}'
         ]
       }
     })
