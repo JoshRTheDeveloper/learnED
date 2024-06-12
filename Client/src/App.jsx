@@ -33,121 +33,36 @@ function App() {
   const [loginCredentials, setLoginCredentials] = useState([]);
 
   useEffect(() => {
-    db.open().catch(err => {
-      console.error(`Failed to open IndexedDB: ${err}`);
-    });
-
-    const fetchAndStoreInvoices = async () => {
+    const initializeData = async () => {
       try {
-        const response = await fetch('/api/invoices');
-        const data = await response.json();
-        await db.invoices.bulkPut(data);
-        setInvoices(data);
-      } catch (error) {
-        console.error('Failed to fetch invoices:', error);
-      }
-    };
+        
+        await db.open();
 
-    const getAndSetUserData = async () => {
-      try {
-        const userData = await getUserData();
-        setUserData(userData);
-      } catch (error) {
-        console.error('Failed to get user data:', error);
-      }
-    };
-
-    const getAndSetAuthData = async () => {
-      try {
-        const authData = await getAuthData();
-        setAuthData(authData);
-      } catch (error) {
-        console.error('Failed to get authentication data:', error);
-      }
-    };
-
-    const getAndSetLoginCredentials = async () => {
-      try {
-        const credentials = await getLoginCredentials();
-        setLoginCredentials(credentials);
-      } catch (error) {
-        console.error('Failed to get login credentials:', error);
-      }
-    };
-
-    const getInvoicesFromIndexedDB = async () => {
-      try {
-        const localInvoices = await db.invoices.toArray();
-        setInvoices(localInvoices);
-      } catch (error) {
-        console.error('Failed to get invoices from IndexedDB:', error);
-      }
-    };
-
-    const syncLocalChangesWithServer = async () => {
-      try {
-        const unsyncedInvoices = await db.invoices.toArray();
-        for (const invoice of unsyncedInvoices) {
-          if (invoice.synced === false) {
-            const response = await fetch('/api/invoices', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(invoice),
-            });
-            if (response.ok) {
-              await db.invoices.update(invoice.id, { synced: true });
-            } else {
-              console.error('Failed to sync new invoice with server');
-            }
-          } else if (invoice.synced === true && invoice.updatedLocally === true) {
-            const response = await fetch(`/api/invoices/${invoice.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(invoice),
-            });
-            if (response.ok) {
-              await db.invoices.update(invoice.id, { updatedLocally: false });
-            } else {
-              console.error('Failed to sync updated invoice with server');
-            }
-          } else if (invoice.synced === true && invoice.deletedLocally === true) {
-            const response = await fetch(`/api/invoices/${invoice.id}`, {
-              method: 'DELETE',
-            });
-            if (response.ok) {
-              await db.invoices.delete(invoice.id);
-            } else {
-              console.error('Failed to sync deleted invoice with server');
-            }
-          }
+        
+        if (navigator.onLine) {
+          await fetchAndStoreInvoices();
+        } else {
+         
+          await getInvoicesFromIndexedDB();
         }
+
+      
+        await Promise.all([
+          getAndSetUserData(),
+          getAndSetAuthData(),
+          getAndSetLoginCredentials()
+        ]);
       } catch (error) {
-        console.error('Failed to sync invoices with server:', error);
+        console.error('Failed to initialize data:', error);
       }
     };
 
-    // Fetch and store invoices
-    if (!navigator.onLine) {
-      getInvoicesFromIndexedDB();
-    } else {
-      fetchAndStoreInvoices();
-      syncLocalChangesWithServer();
-    }
+    initializeData();
 
-    // Fetch user data, authentication data, and login credentials
-    getAndSetUserData();
-    getAndSetAuthData();
-    getAndSetLoginCredentials();
-
-    // Event listeners for online/offline status
+   
     const handleOnline = () => {
       setIsOnline(true);
-      fetchAndStoreInvoices();
-      syncLocalChangesWithServer();
+      syncWithServer();
     };
 
     const handleOffline = () => {
@@ -158,31 +73,158 @@ function App() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Cleanup event listeners
+   
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
+  const fetchAndStoreInvoices = async () => {
+    try {
+      const response = await fetch('/api/invoices');
+      const data = await response.json();
+      await db.invoices.bulkPut(data);
+      setInvoices(data);
+    } catch (error) {
+      console.error('Failed to fetch invoices:', error);
+    }
+  };
+
+  const getAndSetUserData = async () => {
+    try {
+      const userData = await getUserData();
+      setUserData(userData);
+    } catch (error) {
+      console.error('Failed to get user data:', error);
+    }
+  };
+
+  const getAndSetAuthData = async () => {
+    try {
+      const authData = await getAuthData();
+      setAuthData(authData);
+    } catch (error) {
+      console.error('Failed to get authentication data:', error);
+    }
+  };
+
+  const getAndSetLoginCredentials = async () => {
+    try {
+      const credentials = await getLoginCredentials();
+      setLoginCredentials(credentials);
+    } catch (error) {
+      console.error('Failed to get login credentials:', error);
+    }
+  };
+
+  const getInvoicesFromIndexedDB = async () => {
+    try {
+      const localInvoices = await db.invoices.toArray();
+      setInvoices(localInvoices);
+    } catch (error) {
+      console.error('Failed to get invoices from IndexedDB:', error);
+    }
+  };
+
+  const syncWithServer = async () => {
+    if (isOnline) {
+      try {
+        const unsyncedInvoices = await db.invoices.toArray();
+        for (const invoice of unsyncedInvoices) {
+          if (invoice.synced === false) {
+            await syncNewInvoice(invoice);
+          } else if (invoice.synced === true && invoice.updatedLocally === true) {
+            await syncUpdatedInvoice(invoice);
+          } else if (invoice.synced === true && invoice.deletedLocally === true) {
+            await syncDeletedInvoice(invoice);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to sync invoices with server:', error);
+      }
+    }
+  };
+
+  const syncNewInvoice = async (invoice) => {
+    try {
+      const response = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(invoice),
+      });
+      if (response.ok) {
+        await db.invoices.update(invoice.id, { synced: true });
+      } else {
+        console.error('Failed to sync new invoice with server');
+      }
+    } catch (error) {
+      console.error('Failed to sync new invoice with server:', error);
+    }
+  };
+
+  const syncUpdatedInvoice = async (invoice) => {
+    try {
+      const response = await fetch(`/api/invoices/${invoice.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(invoice),
+      });
+      if (response.ok) {
+        await db.invoices.update(invoice.id, { updatedLocally: false });
+      } else {
+        console.error('Failed to sync updated invoice with server');
+      }
+    } catch (error) {
+      console.error('Failed to sync updated invoice with server:', error);
+    }
+  };
+
+  const syncDeletedInvoice = async (invoice) => {
+    try {
+      const response = await fetch(`/api/invoices/${invoice.id}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        await db.invoices.delete(invoice.id);
+      } else {
+        console.error('Failed to sync deleted invoice with server');
+      }
+    } catch (error) {
+      console.error('Failed to sync deleted invoice with server:', error);
+    }
+  };
+
   const addInvoice = async (invoice) => {
     if (isOnline) {
       try {
         const response = await fetch('/api/invoices', {
-          method: 'POST',
+          method:'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(invoice),
         });
-        const newInvoice = await response.json();
-        setInvoices([...invoices, newInvoice]);
+        if (response.ok) {
+          const newInvoice = await response.json();
+          setInvoices([...invoices, newInvoice]);
+        } else {
+          console.error('Failed to add invoice to server:', response.status);
+        }
       } catch (error) {
         console.error('Failed to add invoice to server:', error);
       }
     } else {
-      await addInvoiceToIndexedDB(invoice);
-      setInvoices([...invoices, invoice]);
+      try {
+        await addInvoiceToIndexedDB(invoice);
+        setInvoices([...invoices, invoice]);
+      } catch (error) {
+        console.error('Failed to add invoice to IndexedDB:', error);
+      }
     }
   };
 
@@ -196,30 +238,46 @@ function App() {
           },
           body: JSON.stringify(invoice),
         });
-        const updatedInvoice = await response.json();
-        setInvoices(invoices.map(inv => (inv.id === updatedInvoice.id ? updatedInvoice : inv)));
+        if (response.ok) {
+          const updatedInvoice = await response.json();
+          setInvoices(invoices.map(inv => (inv.id === updatedInvoice.id ? updatedInvoice : inv)));
+        } else {
+          console.error('Failed to update invoice on server:', response.status);
+        }
       } catch (error) {
         console.error('Failed to update invoice on server:', error);
       }
     } else {
-      await updateInvoiceInIndexedDB(invoice);
-      setInvoices(invoices.map(inv => (inv.id === invoice.id ? invoice : inv)));
+      try {
+        await updateInvoiceInIndexedDB(invoice);
+        setInvoices(invoices.map(inv => (inv.id === invoice.id ? invoice : inv)));
+      } catch (error) {
+        console.error('Failed to update invoice in IndexedDB:', error);
+      }
     }
   };
 
   const deleteInvoice = async (id) => {
     if (isOnline) {
       try {
-        await fetch(`/api/invoices/${id}`, {
+        const response = await fetch(`/api/invoices/${id}`, {
           method: 'DELETE',
         });
-        setInvoices(invoices.filter(inv => inv.id !== id));
+        if (response.ok) {
+          setInvoices(invoices.filter(inv => inv.id !== id));
+        } else {
+          console.error('Failed to delete invoice from server:', response.status);
+        }
       } catch (error) {
         console.error('Failed to delete invoice from server:', error);
       }
     } else {
-      await deleteInvoiceFromIndexedDB(id);
-      setInvoices(invoices.filter(inv => inv.id !== id));
+      try {
+        await deleteInvoiceFromIndexedDB(id);
+        setInvoices(invoices.filter(inv => inv.id !== id));
+      } catch (error) {
+        console.error('Failed to delete invoice from IndexedDB:', error);
+      }
     }
   };
 
@@ -234,3 +292,4 @@ function App() {
 }
 
 export default App;
+
