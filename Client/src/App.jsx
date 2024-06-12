@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import Nav from './components/Nav';
-import db, { addInvoiceToIndexedDB, updateInvoiceInIndexedDB, deleteInvoiceFromIndexedDB } from './utils/indexedDB';
+import db, { addInvoiceToIndexedDB, updateInvoiceInIndexedDB, deleteInvoiceFromIndexedDB, getUserData, getAuthData, getLoginCredentials } from './utils/indexedDB';
 
 const httpLink = createHttpLink({
   uri: '/graphql',
@@ -28,6 +28,9 @@ const client = new ApolloClient({
 function App() {
   const [invoices, setInvoices] = useState([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [userData, setUserData] = useState(null);
+  const [authData, setAuthData] = useState(null);
+  const [loginCredentials, setLoginCredentials] = useState([]);
 
   useEffect(() => {
     db.open().catch(err => {
@@ -42,6 +45,33 @@ function App() {
         setInvoices(data);
       } catch (error) {
         console.error('Failed to fetch invoices:', error);
+      }
+    };
+
+    const getAndSetUserData = async () => {
+      try {
+        const userData = await getUserData();
+        setUserData(userData);
+      } catch (error) {
+        console.error('Failed to get user data:', error);
+      }
+    };
+
+    const getAndSetAuthData = async () => {
+      try {
+        const authData = await getAuthData();
+        setAuthData(authData);
+      } catch (error) {
+        console.error('Failed to get authentication data:', error);
+      }
+    };
+
+    const getAndSetLoginCredentials = async () => {
+      try {
+        const credentials = await getLoginCredentials();
+        setLoginCredentials(credentials);
+      } catch (error) {
+        console.error('Failed to get login credentials:', error);
       }
     };
 
@@ -100,6 +130,7 @@ function App() {
       }
     };
 
+    // Fetch and store invoices
     if (!navigator.onLine) {
       getInvoicesFromIndexedDB();
     } else {
@@ -107,6 +138,12 @@ function App() {
       syncLocalChangesWithServer();
     }
 
+    // Fetch user data, authentication data, and login credentials
+    getAndSetUserData();
+    getAndSetAuthData();
+    getAndSetLoginCredentials();
+
+    // Event listeners for online/offline status
     const handleOnline = () => {
       setIsOnline(true);
       fetchAndStoreInvoices();
@@ -121,6 +158,7 @@ function App() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    // Cleanup event listeners
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
