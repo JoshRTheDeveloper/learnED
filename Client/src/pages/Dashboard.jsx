@@ -13,24 +13,24 @@ const Home = () => {
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
 
-  // Query to fetch user data
+
   const { loading: userLoading, error: userError, data: userData, refetch } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
-    fetchPolicy: 'cache-first', // Retrieve data from cache first, then attempt network request
+    fetchPolicy: 'cache-first',
     onCompleted: async (data) => {
-      // Clear IndexedDB and store invoices locally when user data is fetched
+
       await clearIndexedDB();
       await data.getUser.invoices.forEach(invoice => addInvoiceToIndexedDB(invoice));
     },
   });
 
-  // Mutation to mark invoice as paid
+ 
   const [markAsPaidMutation] = useMutation(UPDATE_INVOICE);
 
-  // Mutation to delete invoice
+
   const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
 
-  // State variables
+
   const [searchInvoiceNumber, setSearchInvoiceNumber] = useState('');
   const [searchResult, setSearchResult] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -39,7 +39,7 @@ const Home = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
-  // Effect to handle online/offline status
+
   useEffect(() => {
     const handleOnline = () => {
       setIsOffline(false);
@@ -59,7 +59,7 @@ const Home = () => {
     };
   }, [refetch]);
 
-  // Function to handle search
+  
   const handleSearch = async () => {
     try {
       setSearchLoading(true);
@@ -77,19 +77,19 @@ const Home = () => {
     }
   };
 
-  // Function to handle invoice click
+
   const handleInvoiceClick = (invoice) => {
     setSelectedInvoice(invoice);
     setIsModalOpen(true);
   };
 
-  // Function to close modal
+
   const closeModal = () => {
     setSelectedInvoice(null);
     setIsModalOpen(false);
   };
 
-  // Function to handle deleting invoice
+
   const handleDeleteInvoice = async (invoiceId) => {
     try {
       const { data } = await deleteInvoiceMutation({
@@ -100,7 +100,7 @@ const Home = () => {
             return;
           }
 
-          // Remove deleted invoice from cache and search results
+
           const existingUser = cache.readQuery({
             query: GET_USER,
             variables: { userId: userId || '' },
@@ -137,7 +137,6 @@ const Home = () => {
   const invoicesDue = user?.invoices.filter(invoice => !invoice.paidStatus) || [];
   const invoicesPaid = user?.invoices.filter(invoice => invoice.paidStatus) || [];
 
-  // Filter invoices due based on search input
   const filteredInvoicesDue = searchInvoiceNumber
     ? invoicesDue.filter(invoice => invoice.invoiceNumber.includes(searchInvoiceNumber))
     : invoicesDue;
