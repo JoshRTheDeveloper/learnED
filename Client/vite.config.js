@@ -44,6 +44,7 @@ export default defineConfig({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
+        globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,svg,gif,webp,json,xml,webmanifest}'],
         runtimeCaching: [
           {
             urlPattern: /\/graphql/,
@@ -81,6 +82,17 @@ export default defineConfig({
               cacheName: 'static-resources',
               expiration: {
                 maxEntries: 60,
+                maxAgeSeconds: 30 * 24 * 60 * 60 // 30 Days
+              }
+            }
+          },
+          {
+            urlPattern: /\/manifest.webmanifest$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'manifest-cache',
+              expiration: {
+                maxEntries: 10,
                 maxAgeSeconds: 30 * 24 * 60 * 60 // 30 Days
               }
             }
