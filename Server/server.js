@@ -7,6 +7,7 @@ const { upload } = require('./utils/cloudinary');
 const { typeDefs, resolvers } = require('./schemas');
 const db = require('./config/connection');
 const cors = require('cors');
+const sendInvoiceEmail = require('./utils/mailjet');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3001;
@@ -49,6 +50,20 @@ const startApolloServer = async () => {
   app.use('/graphql', expressMiddleware(server, {
     context: authMiddleware
   }));
+
+
+  app.post('/send-invoice', async (req, res) => {
+    const invoiceDetails = req.body;
+    const user = req.user;
+
+    try {
+      await sendInvoiceEmail(invoiceDetails, user);
+      res.status(200).send({ message: 'Email sent successfully' });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      res.status(500).send({ message: 'Error sending email' });
+    }
+  });
 
   if (process.env.NODE_ENV === 'production') {
     // Serve static files from the React app (Vite build output)
