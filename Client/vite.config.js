@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
@@ -14,7 +13,6 @@ export default defineConfig({
         display: 'standalone',
         background_color: '#ffffff',
         lang: 'en',
-     
         description: 'A simple app for invoices',
         theme_color: '#000000',
         icons: [
@@ -44,6 +42,8 @@ export default defineConfig({
         ]
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /\/graphql/,
@@ -59,7 +59,37 @@ export default defineConfig({
                 statuses: [0, 200]
               }
             }
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'image-cache',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 30 * 24 * 60 * 60 // 30 Days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /\.(?:css|js)$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'static-resources',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 30 * 24 * 60 * 60 // 30 Days
+              }
+            }
           }
+        ],
+        precacheManifestFilename: 'precache-manifest.[manifestHash].js',
+        globDirectory: 'dist',
+        globPatterns: [
+          '**/*.{js,css,html,png,jpg,jpeg,svg,gif,webp}'
         ]
       }
     })
