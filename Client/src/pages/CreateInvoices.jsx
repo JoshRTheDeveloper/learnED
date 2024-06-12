@@ -93,7 +93,7 @@ const CreateInvoices = () => {
 
     try {
         const response = await createInvoice({ variables });
-        await axios.post('http://localhost:3001/send-invoice', variables);
+        await axios.post('/send-invoice', variables);
         
         setInvoiceAmount('');
         setPaidStatus(false);
