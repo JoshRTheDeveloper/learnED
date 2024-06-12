@@ -1,8 +1,11 @@
 import Dexie from 'dexie';
 
 const db = new Dexie('InvoiceDB');
-db.version(1).stores({
-  invoices: '++id, invoiceNumber, clientEmail, clientName, clientAddress, clientCity, invoiceAmount, dueDate, paidStatus, userID'
+
+db.version(2).stores({
+  invoices: '++id, invoiceNumber, clientEmail, clientName, clientAddress, clientCity, invoiceAmount, dueDate, paidStatus, userID',
+  users: '++id, username, password, email, otherUserData', 
+  loginCredentials: '++id, username, password', 
 });
 
 export const updateInvoiceInIndexedDB = async (invoice) => {
