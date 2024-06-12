@@ -17,6 +17,15 @@ export const storeAuthData = async (token, userData) => {
   }
 };
 
+export const getLoginCredentials = async () => {
+  try {
+    return await db.loginCredentials.toArray();
+  } catch (error) {
+    console.error('Failed to get login credentials from IndexedDB:', error);
+    return [];
+  }
+};
+
 export const getAuthData = async () => {
   try {
     return await db.auth.get('auth');
