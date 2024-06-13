@@ -1,5 +1,6 @@
 import Dexie from 'dexie';
 import CryptoJS from 'crypto-js';
+require('dotenv').config();
 
 const db = new Dexie('InvoiceDB');
 
