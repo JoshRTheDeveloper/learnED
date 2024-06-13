@@ -49,12 +49,12 @@ export const storeUserData = async (userData) => {
 
 export const getUserData = async () => {
   try {
-    const encryptedUserData = await db.users.get('user'); // Assuming 'user' is the key or identifier
+    const encryptedUserData = await db.users.get('user'); 
     if (!encryptedUserData) return null;
 
     const decryptedBytes = CryptoJS.AES.decrypt(encryptedUserData.encryptedData, secretKey);
     const decryptedUserData = JSON.parse(decryptedBytes.toString(CryptoJS.enc.Utf8));
-
+    console.log('Decrypted User Data:', decryptedUserData);
     return decryptedUserData;
   } catch (error) {
     console.error('Failed to get user data from IndexedDB:', error);
