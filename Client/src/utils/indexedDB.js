@@ -1,7 +1,6 @@
 import Dexie from 'dexie';
 import CryptoJS from 'crypto-js';
-import dotenv from 'dotenv';
-dotenv.config();
+
 
 const db = new Dexie('InvoiceDB');
 
@@ -12,7 +11,7 @@ db.version(4).stores({
   auth: '++id, token, userData',
 });
 
-const secretKey = process.env.ENCRYPT_SECRET_KEY;
+const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
 
 export const storeAuthData = async (token, userData) => {
   try {
