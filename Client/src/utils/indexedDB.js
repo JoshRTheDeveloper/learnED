@@ -12,6 +12,7 @@ db.version(4).stores({
 });
 
 const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
+console.log('Secret Key:', secretKey);
 
 export const storeAuthData = async (token, userData) => {
   try {
