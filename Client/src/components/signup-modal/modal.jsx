@@ -3,6 +3,7 @@ import { useMutation } from '@apollo/client';
 import Auth from "../../utils/auth";
 import { CREATE_USER } from '../../utils/mutations'; 
 import './modal.css';
+import db, { storeUserData } from '../../utils/indexedDB';
 
 const SignupModal = ({ isOpen, onClose }) => {
   const [formState, setFormState] = useState({ company: '', email: '', password: '', confirmPassword: '', firstName: '', lastName: '' });
@@ -16,31 +17,56 @@ const SignupModal = ({ isOpen, onClose }) => {
       if (formState.password !== formState.confirmPassword) {
         throw new Error('Passwords do not match.');
       }
-      
-
+  
       const passwordRegex = /^(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
-
+  
       if (!passwordRegex.test(formState.password)) {
         throw new Error('Password must contain at least 8 characters and a special character.');
       }
+  
+      
+      await storeUserData(formState);
+  
 
-      const { data } = await addUser({
-        variables: {
-          company: formState.company,
-          email: formState.email,
-          password: formState.password,
-          firstName: formState.firstName,
-          lastName: formState.lastName,
-        },
-      });
-      const token = data.createUser.token;
-      Auth.login(token);
       setSuccessMessage('Thank You! Signup was successful!');
       setSubmitted(true);
+  
+      
+      if (navigator.onLine) {
+        await syncUserDataWithServer();
+      }
     } catch (err) {
       console.error(err);
       setSuccessMessage('');
       setSubmitted(false);
+    }
+  };
+  
+  const syncUserDataWithServer = async () => {
+    try {
+     
+      const userData = await db.getUserData();
+  
+     
+      const { data } = await addUser({
+        variables: {
+          company: userData.company,
+          email: userData.email,
+          password: userData.password,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+        },
+      });
+  
+      const token = data.createUser.token;
+      Auth.login(token);
+      setSuccessMessage('Thank You! Signup was successful!');
+      setSubmitted(true);
+  
+      await db.clearUserData();
+    } catch (error) {
+      console.error('Error syncing user data with server:', error);
+      
     }
   };
 
