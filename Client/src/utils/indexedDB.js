@@ -9,6 +9,64 @@ db.version(4).stores({
   auth: '++id, token, userData',
 });
 
+
+const encryptData = async (data) => {
+  const encoder = new TextEncoder();
+  const encodedData = encoder.encode(JSON.stringify(data));
+  
+  const key = await window.crypto.subtle.generateKey(
+    {
+      name: 'AES-GCM',
+      length: 256,
+    },
+    true,
+    ['encrypt', 'decrypt']
+  );
+
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const encryptedData = await window.crypto.subtle.encrypt(
+    {
+      name: 'AES-GCM',
+      iv: iv,
+    },
+    key,
+    encodedData
+  );
+
+  return {
+    encryptedData: new Uint8Array(encryptedData),
+    iv: iv,
+  };
+};
+
+const decryptData = async (encryptedData, iv) => {
+  const key = await window.crypto.subtle.generateKey(
+    {
+      name: 'AES-GCM',
+      length: 256,
+    },
+    true,
+    ['encrypt', 'decrypt']
+  );
+
+  const decryptedData = await window.crypto.subtle.decrypt(
+    {
+      name: 'AES-GCM',
+      iv: iv,
+    },
+    key,
+    encryptedData
+  );
+
+  const decoder = new TextDecoder();
+  const decodedData = decoder.decode(decryptedData);
+
+  return JSON.parse(decodedData);
+};
+
+
+
+
 export const storeAuthData = async (token, userData) => {
   try {
     await db.auth.put({ token, userData });
@@ -37,20 +95,28 @@ export const getAuthData = async () => {
 
 export const storeUserData = async (userData) => {
   try {
-    await db.users.put({ userData });
+    const { encryptedData, iv } = await encryptData(userData);
+    await db.users.put({ userData: encryptedData, iv: iv });
   } catch (error) {
-    console.error('Failed to store user data in IndexedDB:', error);
+    console.error('Failed to store user data securely in IndexedDB:', error);
   }
 };
 
+// Retrieve and decrypt user data
 export const getUserData = async () => {
   try {
-    return await db.users.toArray();
+    const { userData, iv } = await db.users.toArray();
+    if (userData && iv) {
+      const decryptedUserData = await decryptData(userData, iv);
+      return decryptedUserData;
+    }
+    return null;
   } catch (error) {
-    console.error('Failed to get user data from IndexedDB:', error);
-    return [];
+    console.error('Failed to get user data securely from IndexedDB:', error);
+    return null;
   }
 };
+
 
 export const updateInvoiceInIndexedDB = async (invoice) => {
   try {
