@@ -5,7 +5,7 @@ const db = new Dexie('InvoiceDB');
 
 db.version(4).stores({
   invoices: '++id, invoiceNumber, clientEmail, clientName, clientAddress, clientCity, invoiceAmount, dueDate, paidStatus, userID',
-  users: '++id, encryptedUserData',
+  userData: '++id, encryptedUserData',
   loginCredentials: '++id, username, password',
   auth: '++id, token, userData',
 });
@@ -66,7 +66,7 @@ export const storeUserData = async (userData) => {
   try {
     const key = await generateKey();
     const { encryptedData, iv } = await encryptData(userData, key);
-    await db.users.put({ encryptedUserData: encryptedData, iv: iv });
+    await db.userData.put({ encryptedUserData: encryptedData, iv: iv });
   } catch (error) {
     console.error('Failed to store user data securely in IndexedDB:', error);
   }
