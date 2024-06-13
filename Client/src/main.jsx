@@ -2,13 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './styles.css';
-require('dotenv').config();
 import App from './App.jsx';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard.jsx';
 import Profile from './pages/profile.jsx';
 import Error from './pages/Error';
 import CreateInvoices from './pages/CreateInvoices.jsx';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const router = createBrowserRouter([
   {
