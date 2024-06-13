@@ -1,4 +1,5 @@
 import Dexie from 'dexie';
+import forge from 'node-forge';
 
 const db = new Dexie('InvoiceDB');
 
@@ -9,59 +10,35 @@ db.version(4).stores({
   auth: '++id, token, userData',
 });
 
-const generateKey = async () => {
-  const key = await window.crypto.subtle.generateKey(
-    {
-      name: 'AES-GCM',
-      length: 256,
-    },
-    true,
-    ['encrypt', 'decrypt']
-  );
-  return key;
+const generateKeyAndIV = () => {
+  const key = forge.random.getBytesSync(16);
+  const iv = forge.random.getBytesSync(16); 
+  return { key, iv };
 };
 
-const encryptData = async (data, key) => {
-  const encoder = new TextEncoder();
-  const encodedData = encoder.encode(JSON.stringify(data));
 
-  const iv = window.crypto.getRandomValues(new Uint8Array(12));
-  const encryptedData = await window.crypto.subtle.encrypt(
-    {
-      name: 'AES-GCM',
-      iv: iv,
-    },
-    key,
-    encodedData
-  );
-
-  return {
-    encryptedData: new Uint8Array(encryptedData),
-    iv: iv,
-  };
+const encryptData = (data, key, iv) => {
+  const cipher = forge.cipher.createCipher('AES-CBC', key);
+  cipher.start({ iv: iv });
+  cipher.update(forge.util.createBuffer(JSON.stringify(data), 'utf8'));
+  cipher.finish();
+  return cipher.output.toHex();
 };
 
-const decryptData = async (encryptedData, iv, key) => {
-  const decryptedData = await window.crypto.subtle.decrypt(
-    {
-      name: 'AES-GCM',
-      iv: iv,
-    },
-    key,
-    encryptedData
-  );
 
-  const decoder = new TextDecoder();
-  const decodedData = decoder.decode(decryptedData);
-
-  return JSON.parse(decodedData);
+const decryptData = (encryptedHex, key, iv) => {
+  const decipher = forge.cipher.createDecipher('AES-CBC', key);
+  decipher.start({ iv: iv });
+  decipher.update(forge.util.createBuffer(forge.util.hexToBytes(encryptedHex)));
+  decipher.finish();
+  return JSON.parse(decipher.output.toString('utf8'));
 };
 
 export const storeUserData = async (userData) => {
   try {
-    const key = await generateKey();
-    const { encryptedData, iv } = await encryptData(userData, key);
-    await db.userData.put({ encryptedUserData: encryptedData, iv: iv });
+    const { key, iv } = generateKeyAndIV();
+    const encryptedUserData = encryptData(userData, key, iv);
+    await db.userData.put({ encryptedUserData, iv });
   } catch (error) {
     console.error('Failed to store user data securely in IndexedDB:', error);
   }
@@ -69,10 +46,9 @@ export const storeUserData = async (userData) => {
 
 export const getUserData = async () => {
   try {
-    const { encryptedUserData, iv } = await db.userData.get(1); // Assuming the user data is stored with ID 1
+    const { encryptedUserData, iv } = await db.userData.get(1);
     if (encryptedUserData && iv) {
-      const key = await generateKey();
-      const decryptedUserData = await decryptData(encryptedUserData, iv, key);
+      const decryptedUserData = decryptData(encryptedUserData, iv);
       return decryptedUserData;
     }
     return null;
@@ -92,7 +68,7 @@ export const storeAuthData = async (token, userData) => {
 
 export const getAuthData = async () => {
   try {
-    return await db.auth.get(1); // Assuming authentication data is stored with ID 1
+    return await db.auth.get(1); 
   } catch (error) {
     console.error('Failed to get authentication data from IndexedDB:', error);
     return null;
@@ -162,5 +138,4 @@ export const clearIndexedDB = async () => {
   }
 };
 
-// Export the Dexie instance for use in other parts of your application
 export default db;
