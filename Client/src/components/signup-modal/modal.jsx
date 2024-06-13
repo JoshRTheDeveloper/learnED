@@ -59,14 +59,13 @@ const SignupModal = ({ isOpen, onClose }) => {
       });
   
       const token = data.createUser.token;
+      await storeAuthData(token, userData[0]);
       Auth.login(token);
       setSuccessMessage('Thank You! Signup was successful!');
       setSubmitted(true);
-  
-      await db.clearUserData();
+      await clearUserData();
     } catch (error) {
       console.error('Error syncing user data with server:', error);
-      
     }
   };
 
