@@ -2,14 +2,12 @@ import Dexie from 'dexie';
 
 const db = new Dexie('InvoiceDB');
 
-
 db.version(4).stores({
   invoices: '++id, invoiceNumber, clientEmail, clientName, clientAddress, clientCity, invoiceAmount, dueDate, paidStatus, userID',
-  userData: '++id, encryptedUserData',
+  userData: '++id, encryptedUserData, iv',
   loginCredentials: '++id, username, password',
   auth: '++id, token, userData',
 });
-
 
 const generateKey = async () => {
   const key = await window.crypto.subtle.generateKey(
@@ -22,7 +20,6 @@ const generateKey = async () => {
   );
   return key;
 };
-
 
 const encryptData = async (data, key) => {
   const encoder = new TextEncoder();
@@ -44,7 +41,6 @@ const encryptData = async (data, key) => {
   };
 };
 
-
 const decryptData = async (encryptedData, iv, key) => {
   const decryptedData = await window.crypto.subtle.decrypt(
     {
@@ -61,7 +57,6 @@ const decryptData = async (encryptedData, iv, key) => {
   return JSON.parse(decodedData);
 };
 
-
 export const storeUserData = async (userData) => {
   try {
     const key = await generateKey();
@@ -74,7 +69,7 @@ export const storeUserData = async (userData) => {
 
 export const getUserData = async () => {
   try {
-    const { encryptedUserData, iv } = await db.users.get(1); // Assuming the user data is stored with ID 1
+    const { encryptedUserData, iv } = await db.userData.get(1); // Assuming the user data is stored with ID 1
     if (encryptedUserData && iv) {
       const key = await generateKey();
       const decryptedUserData = await decryptData(encryptedUserData, iv, key);
@@ -95,16 +90,14 @@ export const storeAuthData = async (token, userData) => {
   }
 };
 
-
 export const getAuthData = async () => {
   try {
-    return await db.auth.get(1); 
+    return await db.auth.get(1); // Assuming authentication data is stored with ID 1
   } catch (error) {
     console.error('Failed to get authentication data from IndexedDB:', error);
     return null;
   }
 };
-
 
 export const storeLoginCredentials = async (username, password) => {
   try {
@@ -114,7 +107,6 @@ export const storeLoginCredentials = async (username, password) => {
   }
 };
 
-
 export const getLoginCredentials = async () => {
   try {
     return await db.loginCredentials.toArray();
@@ -123,7 +115,6 @@ export const getLoginCredentials = async () => {
     return [];
   }
 };
-
 
 export const addInvoiceToIndexedDB = async (invoice) => {
   try {
@@ -141,7 +132,6 @@ export const updateInvoiceInIndexedDB = async (invoice) => {
   }
 };
 
-
 export const getInvoicesFromIndexedDB = async () => {
   try {
     return await db.invoices.toArray();
@@ -151,7 +141,6 @@ export const getInvoicesFromIndexedDB = async () => {
   }
 };
 
-
 export const deleteInvoiceFromIndexedDB = async (id) => {
   try {
     await db.invoices.delete(id);
@@ -160,12 +149,11 @@ export const deleteInvoiceFromIndexedDB = async (id) => {
   }
 };
 
-
 export const clearIndexedDB = async () => {
   try {
     await Promise.all([
       db.invoices.clear(),
-      db.users.clear(),
+      db.userData.clear(),
       db.loginCredentials.clear(),
       db.auth.clear(),
     ]);
