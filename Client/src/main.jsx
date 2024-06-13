@@ -8,8 +8,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import Profile from './pages/profile.jsx';
 import Error from './pages/Error';
 import CreateInvoices from './pages/CreateInvoices.jsx';
-import dotenv from 'dotenv';
-dotenv.config();
+
 
 const router = createBrowserRouter([
   {

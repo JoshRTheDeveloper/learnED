@@ -1,18 +1,13 @@
 import Dexie from 'dexie';
-import CryptoJS from 'crypto-js';
-
 
 const db = new Dexie('InvoiceDB');
 
 db.version(4).stores({
   invoices: '++id, invoiceNumber, clientEmail, clientName, clientAddress, clientCity, invoiceAmount, dueDate, paidStatus, userID',
-  users: '++id, encryptedData',
+  users: '++id, userData',
   loginCredentials: '++id, username, password',
   auth: '++id, token, userData',
 });
-
-const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
-console.log('Secret Key:', secretKey);
 
 export const storeAuthData = async (token, userData) => {
   try {
@@ -42,8 +37,7 @@ export const getAuthData = async () => {
 
 export const storeUserData = async (userData) => {
   try {
-    const encryptedUserData = CryptoJS.AES.encrypt(JSON.stringify(userData), secretKey).toString();
-    await db.users.put({ encryptedData: encryptedUserData });
+    await db.users.put({ userData });
   } catch (error) {
     console.error('Failed to store user data in IndexedDB:', error);
   }
@@ -51,16 +45,10 @@ export const storeUserData = async (userData) => {
 
 export const getUserData = async () => {
   try {
-    const encryptedUserData = await db.users.get('user'); 
-    if (!encryptedUserData) return null;
-
-    const decryptedBytes = CryptoJS.AES.decrypt(encryptedUserData.encryptedData, secretKey);
-    const decryptedUserData = JSON.parse(decryptedBytes.toString(CryptoJS.enc.Utf8));
-    console.log('Decrypted User Data:', decryptedUserData);
-    return decryptedUserData;
+    return await db.users.toArray();
   } catch (error) {
     console.error('Failed to get user data from IndexedDB:', error);
-    return null;
+    return [];
   }
 };
 
@@ -71,7 +59,6 @@ export const updateInvoiceInIndexedDB = async (invoice) => {
     console.error('Failed to update invoice in IndexedDB:', error);
   }
 };
-
 
 export const addInvoiceToIndexedDB = async (invoice) => {
   try {
