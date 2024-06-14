@@ -7,7 +7,36 @@ db.version(4).stores({
   userData: '++id, encryptedUserData, iv',
   loginCredentials: '++id, username, password',
   auth: '++id, token, userData',
+  profilePictures: '++id, profilePictureBlob',
 });
+
+export const storeProfilePicture = async (userId, profilePictureBlob) => {
+  try {
+   
+    const existingRecord = await db.profilePictures.get(1);
+
+    if (existingRecord) {
+      
+      await db.profilePictures.update(1, { userId, profilePictureBlob });
+    } else {
+    
+      await db.profilePictures.put({ id: 1, userId, profilePictureBlob });
+    }
+  } catch (error) {
+    console.error('Failed to store profile picture in IndexedDB:', error);
+    throw error;
+  }
+};
+
+export const getProfilePicture = async () => {
+  try {
+    const profilePicture = await db.profilePictures.get(1);
+    return profilePicture ? profilePicture.profilePictureBlob : null;
+  } catch (error) {
+    console.error('Failed to get profile picture from IndexedDB:', error);
+    return null;
+  }
+};
 
 const generateKeyAndIV = async () => {
   const key = await crypto.subtle.generateKey(
@@ -71,14 +100,28 @@ const importKey = async (keyData) => {
 
 export const storeUserData = async (userData) => {
   try {
+   
+    const existingRecord = await db.userData.get(1);
+
+ 
     const { key, iv } = await generateKeyAndIV();
     const exportedKey = await exportKey(key);
     const { encryptedData } = await encryptData(userData, key, iv);
-    await db.userData.put({
+
+  
+    const newData = {
       encryptedUserData: Array.from(encryptedData),
       iv: Array.from(iv),
       key: Array.from(exportedKey),
-    });
+    };
+
+    if (existingRecord) {
+    
+      await db.userData.update(1, newData);
+    } else {
+    
+      await db.userData.put({ ...newData, id: 1 });
+    }
   } catch (error) {
     console.error('Failed to store user data securely in IndexedDB:', error);
   }
@@ -87,12 +130,23 @@ export const storeUserData = async (userData) => {
 export const getUserData = async () => {
   try {
     const record = await db.userData.get(1);
+    console.log('Record from IndexedDB:', record);
+
     if (record && record.encryptedUserData && record.iv && record.key) {
       const key = await importKey(new Uint8Array(record.key));
       const iv = new Uint8Array(record.iv);
       const encryptedData = new Uint8Array(record.encryptedUserData);
+      
+      console.log('Key:', key);
+      console.log('IV:', iv);
+      console.log('Encrypted Data:', encryptedData);
+
       const decryptedUserData = await decryptData(encryptedData, key, iv);
+      console.log('Decrypted User Data:', decryptedUserData); 
+
       return decryptedUserData;
+    } else {
+      console.error('Missing data in IndexedDB record:', record);
     }
     return null;
   } catch (error) {
@@ -101,7 +155,7 @@ export const getUserData = async () => {
   }
 };
 
-// Other database operations remain unchanged
+
 
 export const storeAuthData = async (token, userData) => {
   try {
@@ -120,26 +174,22 @@ export const getAuthData = async () => {
   }
 };
 
-export const storeLoginCredentials = async (username, password) => {
-  try {
-    await db.loginCredentials.add({ username, password });
-  } catch (error) {
-    console.error('Failed to store login credentials in IndexedDB:', error);
-  }
-};
 
-export const getLoginCredentials = async () => {
-  try {
-    return await db.loginCredentials.toArray();
-  } catch (error) {
-    console.error('Failed to get login credentials from IndexedDB:', error);
-    return [];
-  }
-};
+
 
 export const addInvoiceToIndexedDB = async (invoice) => {
   try {
-    await db.invoices.add(invoice);
+    const { key, iv } = await generateKeyAndIV();
+    const exportedKey = await exportKey(key);
+    
+    const encryptedInvoice = {
+      ...invoice,
+      encryptedData: Array.from(await encryptData(invoice, key, iv).encryptedData),
+      iv: Array.from(iv),
+      key: Array.from(exportedKey),
+    };
+
+    await db.invoices.add(encryptedInvoice);
   } catch (error) {
     console.error('Failed to add invoice to IndexedDB:', error);
   }
@@ -147,7 +197,17 @@ export const addInvoiceToIndexedDB = async (invoice) => {
 
 export const updateInvoiceInIndexedDB = async (invoice) => {
   try {
-    await db.invoices.put(invoice);
+    const { key, iv } = await generateKeyAndIV();
+    const exportedKey = await exportKey(key);
+    
+    const encryptedInvoice = {
+      ...invoice,
+      encryptedData: Array.from(await encryptData(invoice, key, iv).encryptedData),
+      iv: Array.from(iv),
+      key: Array.from(exportedKey),
+    };
+
+    await db.invoices.put(encryptedInvoice);
   } catch (error) {
     console.error('Failed to update invoice in IndexedDB:', error);
   }
@@ -155,12 +215,25 @@ export const updateInvoiceInIndexedDB = async (invoice) => {
 
 export const getInvoicesFromIndexedDB = async () => {
   try {
-    return await db.invoices.toArray();
+    const invoices = await db.invoices.toArray();
+    const decryptedInvoices = await Promise.all(
+      invoices.map(async (invoice) => {
+        const key = await importKey(new Uint8Array(invoice.key));
+        const iv = new Uint8Array(invoice.iv);
+        
+        return {
+          ...invoice,
+          ...await decryptData(new Uint8Array(invoice.encryptedData), key, iv),
+        };
+      })
+    );
+    return decryptedInvoices;
   } catch (error) {
     console.error('Failed to get invoices from IndexedDB:', error);
     return [];
   }
 };
+
 
 export const deleteInvoiceFromIndexedDB = async (id) => {
   try {

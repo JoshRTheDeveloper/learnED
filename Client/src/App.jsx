@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import Nav from './components/Nav';
-import db, { addInvoiceToIndexedDB, updateInvoiceInIndexedDB, deleteInvoiceFromIndexedDB, getUserData, getAuthData, getLoginCredentials } from './utils/indexedDB';
+import db, { addInvoiceToIndexedDB, updateInvoiceInIndexedDB, deleteInvoiceFromIndexedDB, getUserData, getAuthData } from './utils/indexedDB';
 
 const httpLink = createHttpLink({
   uri: '/graphql',
@@ -109,14 +109,7 @@ function App() {
     }
   };
 
-  const getAndSetLoginCredentials = async () => {
-    try {
-      const credentials = await getLoginCredentials();
-      setLoginCredentials(credentials);
-    } catch (error) {
-      console.error('Failed to get login credentials:', error);
-    }
-  };
+  
 
   const getInvoicesFromIndexedDB = async () => {
     try {

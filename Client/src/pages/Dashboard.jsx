@@ -19,7 +19,7 @@ const Home = () => {
     fetchPolicy: 'cache-first',
     onCompleted: async (data) => {
 
-      await clearIndexedDB();
+    
       await data.getUser.invoices.forEach(invoice => addInvoiceToIndexedDB(invoice));
     },
   });

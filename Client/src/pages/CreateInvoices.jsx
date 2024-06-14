@@ -1,24 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import SignupModal from '../components/signup-modal/modal';
-import './CreateInvoices.css';
 import jwtDecode from 'jwt-decode';
-import Sidebar from '../components/sidebar/sidebar';
 import { useQuery, useMutation } from '@apollo/client';
-import Auth from "../utils/auth";
+import axios from 'axios';
+import Sidebar from '../components/sidebar/sidebar';
 import { GET_USER } from '../utils/queries';
 import { CREATE_INVOICE } from '../utils/mutations';
-import axios from 'axios';
-import db, { addInvoiceToIndexedDB, getInvoicesFromIndexedDB, clearIndexedDB } from '../utils/indexedDB'; // Import IndexedDB functions
+import { addInvoiceToIndexedDB, getInvoicesFromIndexedDB, getUserData } from '../utils/indexedDB';
+import './CreateInvoices.css';
 
 const CreateInvoices = () => {
   const [userData, setUserData] = useState(null);
   const [email, setEmail] = useState('');
-  const [streetAddress, setStreetAddress] = useState(''); 
+  const [streetAddress, setStreetAddress] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
-  
+
   const [clientEmail, setClientEmail] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientAddress, setClientAddress] = useState('');
@@ -40,21 +38,35 @@ const CreateInvoices = () => {
   const [createInvoice] = useMutation(CREATE_INVOICE);
 
   useEffect(() => {
-    if (!loading && data && data.getUser) {
-      const { firstName, lastName, email, streetAddress, city, state, zip, profilePicture } = data.getUser; 
+    const fetchUserDataFromIndexedDB = async () => {
+      const localUserData = await getUserData(); 
+      if (localUserData) {
+        const { email, streetAddress, city, state, zip, profilePicture, company} = localUserData;
+        setEmail(email);
+        setStreetAddress(streetAddress);
+        setCity(city);
+        setState(state);
+        setZip(zip);
+        setProfilePicture(profilePicture);
+        
+        let clientCompanyName = '';
+        if (company) {
+          clientCompanyName = company; 
+        } else if (data.getUser.firstName) {
+          clientCompanyName = data.getUser.firstName; 
+        }
+       
+        setUserData(localUserData);
       
-      setEmail(email);
-      setStreetAddress(streetAddress);
-      setCity(city);
-      setState(state);
-      setZip(zip);
-      setProfilePicture(profilePicture);
-      setUserData(data.getUser);
-    }
-  }, [loading, data]);
+      }
+    };
+  
+    fetchUserDataFromIndexedDB();
+  }, []);
+  
 
-  const name = `${userData?.firstName || ''} ${userData?.lastName || ''}`;
-
+  const name = `${userData?.company|| ''} ${userData?.lastName || ''}`;
+console.log('name:' + name)
   const user = {
     email: email,
     name: name,
@@ -65,40 +77,38 @@ const CreateInvoices = () => {
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
-  
+
     const invoiceAmountFloat = parseFloat(invoiceAmount);
     const dueDateISO = new Date(dueDate).toISOString();
-  
+
     const variables = {
-        invoiceAmount: invoiceAmountFloat,
-        paidStatus: paidStatus,
-        invoiceNumber: invoiceNumber,
-        companyName: user.name,
-        companyStreetAddress: user.streetAddress,
-        companyCityAddress: user.city,
-        companyEmail: user.email,
-        clientName: clientName,
-        clientStreetAddress: clientAddress,
-        clientCityAddress: clientCity,
-        clientEmail: clientEmail,
-        dueDate: dueDateISO,
-        userID: userId,
-        invoice_details: invoiceDetails,
-        profilePicture: profilePicture,
+      invoiceAmount: invoiceAmountFloat,
+      paidStatus: paidStatus,
+      invoiceNumber: invoiceNumber,
+      companyName: user.name,
+      companyStreetAddress: user.streetAddress,
+      companyCityAddress: user.city,
+      companyEmail: user.email,
+      clientName: clientName,
+      clientStreetAddress: clientAddress,
+      clientCityAddress: clientCity,
+      clientEmail: clientEmail,
+      dueDate: dueDateISO,
+      userID: userId,
+      invoice_details: invoiceDetails,
+      profilePicture: profilePicture,
     };
 
     try {
       if (navigator.onLine) {
-        // Online: Send invoice to server
         const response = await createInvoice({ variables });
         await axios.post('/send-invoice', variables);
       } else {
-        // Offline: Save invoice to IndexedDB
         await addInvoiceToIndexedDB(variables);
         alert('Invoice saved locally. It will be sent when you are back online.');
       }
 
-      // Clear form fields after submission
+ 
       setInvoiceAmount('');
       setPaidStatus(false);
       setInvoiceNumber('');
@@ -114,18 +124,18 @@ const CreateInvoices = () => {
   };
 
   useEffect(() => {
+
     const syncInvoicesWithServer = async () => {
       if (navigator.onLine) {
         const localInvoices = await getInvoicesFromIndexedDB();
         for (const invoice of localInvoices) {
           try {
             await createInvoice({ variables: invoice });
-            await axios.post('http://localhost:3001/send-invoice', invoice);
+            await axios.post('/send-invoice', invoice);
           } catch (error) {
             console.error('Error syncing invoice with server:', error);
           }
         }
-        await clearIndexedDB();
       }
     };
 
@@ -135,6 +145,7 @@ const CreateInvoices = () => {
       window.removeEventListener('online', syncInvoicesWithServer);
     };
   }, [createInvoice]);
+
 
   return (
     <>

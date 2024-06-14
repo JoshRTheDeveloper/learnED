@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import Auth from "../../utils/auth";
 import { LOGIN_USER } from '../../utils/mutations';
-import db, { getUserData } from '../../utils/indexedDB';
+import { getUserData } from '../../utils/indexedDB';
 import './login-modal.css';
 
 const LoginModal = ({ isOpen, onClose }) => {
@@ -13,16 +13,14 @@ const LoginModal = ({ isOpen, onClose }) => {
   const handleFormSubmit = async (event) => {
     event.preventDefault();
     try {
-      // Retrieve encrypted user data from IndexedDB
       const encryptedUserData = await getUserData();
       
       if (encryptedUserData) {
-        // Decrypt user data to check credentials
         const { email, password } = encryptedUserData;
-        
-        // Check if entered credentials match decrypted data
+        console.log('Decrypted Email:', email);
+        console.log('Decrypted Password:', password);
+  
         if (formState.email === email && formState.password === password) {
-          // Perform login mutation
           const mutationResponse = await loginUser({
             variables: {
               email: formState.email,
@@ -30,7 +28,6 @@ const LoginModal = ({ isOpen, onClose }) => {
             },
           });
   
-          // Extract token and authenticate
           const token = mutationResponse.data.loginUser.token;
           Auth.login(token);
   
@@ -44,11 +41,8 @@ const LoginModal = ({ isOpen, onClose }) => {
         console.error('No user data found in IndexedDB');
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error occurred during login:', err);
       setSubmitted(false);
-      if (err.message.includes('AuthenticationError')) {
-        // Handle authentication error if needed
-      }
     }
   };
 
