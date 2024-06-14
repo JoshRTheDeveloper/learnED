@@ -1,35 +1,54 @@
 import React, { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import Auth from "../../utils/auth";
-import { LOGIN_USER } from '../../utils/mutations'; 
+import { LOGIN_USER } from '../../utils/mutations';
+import { getUserData } from '../../services/dbService'; // Import your IndexedDB service
 
 import './login-modal.css';
 
 const LoginModal = ({ isOpen, onClose }) => {
   const [formState, setFormState] = useState({ email: '', password: '' });
-  const [loginUser, { error }] = useMutation(LOGIN_USER); 
+  const [loginUser, { error }] = useMutation(LOGIN_USER);
   const [submitted, setSubmitted] = useState(false);
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
     try {
-      const mutationResponse = await loginUser({
-        variables: {
-          email: formState.email,
-          password: formState.password,
-        },
-      });
-     
+      // Retrieve encrypted user data from IndexedDB
+      const encryptedUserData = await getUserData();
+      
+      if (encryptedUserData) {
+        // Decrypt user data to check credentials
+        const { email, password } = encryptedUserData;
+        
+        // Check if entered credentials match decrypted data
+        if (formState.email === email && formState.password === password) {
+          // Perform login mutation
+          const mutationResponse = await loginUser({
+            variables: {
+              email: formState.email,
+              password: formState.password,
+            },
+          });
   
-      const token = mutationResponse.data.loginUser.token;
-      Auth.login(token);
+          // Extract token and authenticate
+          const token = mutationResponse.data.loginUser.token;
+          Auth.login(token);
   
-      setFormState({ email: '', password: '' });
-      setSubmitted(true);
+          setFormState({ email: '', password: '' });
+          setSubmitted(true);
+        } else {
+          setSubmitted(false);
+          console.error('Invalid credentials');
+        }
+      } else {
+        console.error('No user data found in IndexedDB');
+      }
     } catch (err) {
       console.error(err);
       setSubmitted(false);
       if (err.message.includes('AuthenticationError')) {
+        // Handle authentication error if needed
       }
     }
   };
@@ -42,7 +61,6 @@ const LoginModal = ({ isOpen, onClose }) => {
       [name]: updatedValue,
     });
   };
-  
 
   return (
     <div className={`modal ${isOpen ? 'open' : ''}`} id="LoginModal">
@@ -50,7 +68,7 @@ const LoginModal = ({ isOpen, onClose }) => {
         <button className="close-button" onClick={onClose}>
           X
         </button>
-
+  
         <h2 className='text-center gold-text my-3'>Login</h2>
         {submitted && (
           <div className="success-message">Login successful!</div>
