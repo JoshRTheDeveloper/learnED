@@ -3,7 +3,7 @@ import { useMutation } from '@apollo/client';
 import Auth from "../../utils/auth";
 import { CREATE_USER } from '../../utils/mutations'; 
 import './modal.css';
-import db, { storeUserData } from '../../utils/indexedDB';
+import { getUserData, storeUserData, storeAuthData } from '../../utils/indexedDB';
 
 const SignupModal = ({ isOpen, onClose }) => {
   const [formState, setFormState] = useState({ company: '', email: '', password: '', confirmPassword: '', firstName: '', lastName: '' });
@@ -45,8 +45,8 @@ const SignupModal = ({ isOpen, onClose }) => {
   const syncUserDataWithServer = async () => {
     try {
      
-      const userData = await db.getUserData();
-  
+      const userData = await getUserData();
+
      
       const { data } = await addUser({
         variables: {
@@ -63,7 +63,7 @@ const SignupModal = ({ isOpen, onClose }) => {
       Auth.login(token);
       setSuccessMessage('Thank You! Signup was successful!');
       setSubmitted(true);
-      await clearUserData();
+      
     } catch (error) {
       console.error('Error syncing user data with server:', error);
     }
