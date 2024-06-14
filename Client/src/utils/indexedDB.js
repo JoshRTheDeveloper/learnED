@@ -1,5 +1,4 @@
 import Dexie from 'dexie';
-import forge from 'node-forge';
 
 const db = new Dexie('InvoiceDB');
 
@@ -10,35 +9,76 @@ db.version(4).stores({
   auth: '++id, token, userData',
 });
 
-const generateKeyAndIV = () => {
-  const key = forge.random.getBytesSync(16);
-  const iv = forge.random.getBytesSync(16); 
+const generateKeyAndIV = async () => {
+  const key = await crypto.subtle.generateKey(
+    {
+      name: "AES-CBC",
+      length: 256,
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
+  const iv = crypto.getRandomValues(new Uint8Array(16));
   return { key, iv };
 };
 
-
-const encryptData = (data, key, iv) => {
-  const cipher = forge.cipher.createCipher('AES-CBC', key);
-  cipher.start({ iv: iv });
-  cipher.update(forge.util.createBuffer(JSON.stringify(data), 'utf8'));
-  cipher.finish();
-  return cipher.output.toHex();
+const encryptData = async (data, key, iv) => {
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(JSON.stringify(data));
+  const encryptedBuffer = await crypto.subtle.encrypt(
+    {
+      name: "AES-CBC",
+      iv: iv,
+    },
+    key,
+    dataBuffer
+  );
+  return {
+    encryptedData: new Uint8Array(encryptedBuffer),
+    iv: iv,
+  };
 };
 
+const decryptData = async (encryptedData, key, iv) => {
+  const decryptedBuffer = await crypto.subtle.decrypt(
+    {
+      name: "AES-CBC",
+      iv: iv,
+    },
+    key,
+    encryptedData
+  );
+  const decoder = new TextDecoder();
+  return JSON.parse(decoder.decode(decryptedBuffer));
+};
 
-const decryptData = (encryptedHex, key, iv) => {
-  const decipher = forge.cipher.createDecipher('AES-CBC', key);
-  decipher.start({ iv: iv });
-  decipher.update(forge.util.createBuffer(forge.util.hexToBytes(encryptedHex)));
-  decipher.finish();
-  return JSON.parse(decipher.output.toString('utf8'));
+const exportKey = async (key) => {
+  const exported = await crypto.subtle.exportKey('raw', key);
+  return new Uint8Array(exported);
+};
+
+const importKey = async (keyData) => {
+  return await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    {
+      name: 'AES-CBC',
+    },
+    true,
+    ['encrypt', 'decrypt']
+  );
 };
 
 export const storeUserData = async (userData) => {
   try {
-    const { key, iv } = generateKeyAndIV();
-    const encryptedUserData = encryptData(userData, key, iv);
-    await db.userData.put({ encryptedUserData, iv });
+    const { key, iv } = await generateKeyAndIV();
+    const exportedKey = await exportKey(key);
+    const { encryptedData } = await encryptData(userData, key, iv);
+    await db.userData.put({
+      encryptedUserData: Array.from(encryptedData),
+      iv: Array.from(iv),
+      key: Array.from(exportedKey),
+    });
   } catch (error) {
     console.error('Failed to store user data securely in IndexedDB:', error);
   }
@@ -46,9 +86,12 @@ export const storeUserData = async (userData) => {
 
 export const getUserData = async () => {
   try {
-    const { encryptedUserData, iv } = await db.userData.get(1);
-    if (encryptedUserData && iv) {
-      const decryptedUserData = decryptData(encryptedUserData, iv);
+    const record = await db.userData.get(1);
+    if (record && record.encryptedUserData && record.iv && record.key) {
+      const key = await importKey(new Uint8Array(record.key));
+      const iv = new Uint8Array(record.iv);
+      const encryptedData = new Uint8Array(record.encryptedUserData);
+      const decryptedUserData = await decryptData(encryptedData, key, iv);
       return decryptedUserData;
     }
     return null;
@@ -57,6 +100,8 @@ export const getUserData = async () => {
     return null;
   }
 };
+
+// Other database operations remain unchanged
 
 export const storeAuthData = async (token, userData) => {
   try {
