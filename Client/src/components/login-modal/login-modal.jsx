@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import Auth from "../../utils/auth";
 import { LOGIN_USER } from '../../utils/mutations';
-import { getUserData } from '../../services/dbService'; // Import your IndexedDB service
-
+import db, { getUserData } from '../../utils/indexedDB';
 import './login-modal.css';
 
 const LoginModal = ({ isOpen, onClose }) => {
