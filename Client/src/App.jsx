@@ -30,7 +30,7 @@ function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [userData, setUserData] = useState(null);
   const [authData, setAuthData] = useState(null);
-  const [loginCredentials, setLoginCredentials] = useState([]);
+  
 
   useEffect(() => {
     const initializeData = async () => {
@@ -50,7 +50,6 @@ function App() {
         await Promise.all([
           getAndSetUserData(),
           getAndSetAuthData(),
-          getAndSetLoginCredentials()
         ]);
       } catch (error) {
         console.error('Failed to initialize data:', error);
