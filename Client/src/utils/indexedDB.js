@@ -10,6 +10,53 @@ db.version(4).stores({
   profilePictures: '++id, profilePictureBlob',
 });
 
+export const storeLoginCredentials = async (email, password) => {
+  try {
+    const existingRecord = await db.loginCredentials.get(1);
+
+    const { key, iv } = await generateKeyAndIV();
+    const exportedKey = await exportKey(key);
+    const { encryptedData } = await encryptData({ email, password }, key, iv);
+
+    const newCredentials = {
+      email,
+      encryptedPassword: Array.from(encryptedData),
+      iv: Array.from(iv),
+      key: Array.from(exportedKey),
+    };
+
+    if (existingRecord) {
+      await db.loginCredentials.update(1, newCredentials);
+    } else {
+      await db.loginCredentials.put({ ...newCredentials, id: 1 });
+    }
+  } catch (error) {
+    console.error('Failed to store login credentials securely in IndexedDB:', error);
+  }
+};
+
+export const getLoginCredentials = async () => {
+  try {
+    const record = await db.loginCredentials.get(1);
+
+    if (record && record.encryptedPassword && record.iv && record.key) {
+      const key = await importKey(new Uint8Array(record.key));
+      const iv = new Uint8Array(record.iv);
+      const encryptedData = new Uint8Array(record.encryptedPassword);
+
+      const { email, password } = await decryptData(encryptedData, key, iv);
+
+      return { email, password };
+    } else {
+      console.error('Missing data in login credentials IndexedDB record:', record);
+    }
+    return null;
+  } catch (error) {
+    console.error('Failed to get login credentials securely from IndexedDB:', error);
+    return null;
+  }
+};
+
 export const storeProfilePicture = async (userId, profilePictureBlob) => {
   try {
    
@@ -124,6 +171,26 @@ export const storeUserData = async (userData) => {
     }
   } catch (error) {
     console.error('Failed to store user data securely in IndexedDB:', error);
+  }
+};
+
+export const getUserPassword = async () => {
+  try {
+    const record = await db.userData.get(1);
+    if (record && record.encryptedUserData && record.iv && record.key) {
+      const key = await importKey(new Uint8Array(record.key));
+      const iv = new Uint8Array(record.iv);
+      const encryptedData = new Uint8Array(record.encryptedUserData);
+
+      const decryptedUserData = await decryptData(encryptedData, key, iv);
+      return decryptedUserData.password; // Return only the decrypted password
+    } else {
+      console.error('Missing data in IndexedDB record:', record);
+    }
+    return null;
+  } catch (error) {
+    console.error('Failed to get user password securely from IndexedDB:', error);
+    return null;
   }
 };
 

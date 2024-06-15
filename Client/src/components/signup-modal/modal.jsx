@@ -3,7 +3,7 @@ import { useMutation } from '@apollo/client';
 import Auth from "../../utils/auth";
 import { CREATE_USER } from '../../utils/mutations'; 
 import './modal.css';
-import { getUserData, storeUserData, storeAuthData } from '../../utils/indexedDB';
+import { getUserData, storeUserData, storeAuthData, storeLoginCredentials } from '../../utils/indexedDB';
 
 const SignupModal = ({ isOpen, onClose }) => {
   const [formState, setFormState] = useState({ company: '', email: '', password: '', confirmPassword: '', firstName: '', lastName: '' });
@@ -25,13 +25,20 @@ const SignupModal = ({ isOpen, onClose }) => {
       }
   
       
-      await storeUserData(formState);
-  
+      await storeUserData({
+        company: formState.company,
+        email: formState.email,
+        password: formState.password,
+        firstName: formState.firstName,
+        lastName: formState.lastName,
+      });
+
+     
+      await storeLoginCredentials(formState.email, formState.password);
 
       setSuccessMessage('Thank You! Signup was successful!');
       setSubmitted(true);
   
-      
       if (navigator.onLine) {
         await syncUserDataWithServer();
       }
@@ -44,10 +51,8 @@ const SignupModal = ({ isOpen, onClose }) => {
   
   const syncUserDataWithServer = async () => {
     try {
-     
       const userData = await getUserData();
-
-     
+  
       const { data } = await addUser({
         variables: {
           company: userData.company,
@@ -98,10 +103,10 @@ const SignupModal = ({ isOpen, onClose }) => {
         )}
         {!submitted && (
           <form onSubmit={handleFormSubmit}>
-               <div className="d-flex justify-content-end">
-                <div className='company-input'>
+            <div className="d-flex justify-content-end">
+              <div className='company-input'>
                 <label htmlFor="company" className='me-3 light-text'>Company:</label>
-              <p className='require'> (Not Required)</p>
+                <p className='require'> (Not Required)</p>
               </div>
               <input
                 placeholder="Company"
@@ -112,8 +117,6 @@ const SignupModal = ({ isOpen, onClose }) => {
                 onChange={handleChange}
                 required
               />
-                
-              
             </div>
           
             <div className="d-flex justify-content-end">

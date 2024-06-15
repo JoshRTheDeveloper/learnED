@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import Auth from "../../utils/auth";
 import { LOGIN_USER } from '../../utils/mutations';
-import { getUserData } from '../../utils/indexedDB';
+import { getLoginCredentials } from '../../utils/indexedDB';
 import './login-modal.css';
 
 const LoginModal = ({ isOpen, onClose }) => {
@@ -13,13 +13,9 @@ const LoginModal = ({ isOpen, onClose }) => {
   const handleFormSubmit = async (event) => {
     event.preventDefault();
     try {
-      const encryptedUserData = await getUserData();
+      const { email, password } = await getLoginCredentials();
       
-      if (encryptedUserData) {
-        const { email, password } = encryptedUserData;
-        console.log('Decrypted Email:', email);
-        console.log('Decrypted Password:', password);
-  
+      if (email && password) {
         if (formState.email === email && formState.password === password) {
           const mutationResponse = await loginUser({
             variables: {
@@ -38,7 +34,7 @@ const LoginModal = ({ isOpen, onClose }) => {
           console.error('Invalid credentials');
         }
       } else {
-        console.error('No user data found in IndexedDB');
+        console.error('No login credentials found in IndexedDB');
       }
     } catch (err) {
       console.error('Error occurred during login:', err);
