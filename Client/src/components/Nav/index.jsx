@@ -13,6 +13,7 @@ function Nav() {
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); 
   const [firstName, setFirstName] = useState("");
+  const [onlineStatus, setOnlineStatus] = useState(navigator.onLine ? 'Online' : 'Offline'); 
 
   const navigate = useNavigate();
 
@@ -20,7 +21,22 @@ function Nav() {
     if (Auth.loggedIn()) {
       fetchFirstName();
     }
-  }, []);
+  
+
+  const handleOnlineStatusChange = () => {
+    setOnlineStatus(navigator.onLine ? 'Online' : 'Offline');
+  };
+
+  window.addEventListener('online', handleOnlineStatusChange);
+  window.addEventListener('offline', handleOnlineStatusChange);
+
+
+  return () => {
+    window.removeEventListener('online', handleOnlineStatusChange);
+    window.removeEventListener('offline', handleOnlineStatusChange);
+  };
+}, []);
+
 
   const fetchFirstName = async () => {
     const user = await Auth.getProfile();
@@ -78,7 +94,7 @@ function Nav() {
                 <img className="navbar-brand" src={Logo} alt=""  />
               </Link>
 
-             
+              <span className="online-status">Network: {onlineStatus}</span>
 
               <div className="navbar-collapse" id="navbarCollapse">
                 <ul className="navbar-nav me-auto mb-2 mb-md-0">
@@ -97,6 +113,7 @@ function Nav() {
                 <div className="navbar-text mx-3">
 
                   {firstName && <span>Welcome, {firstName}! </span>} 
+               
 
                 </div>
                 </div>
@@ -104,6 +121,8 @@ function Nav() {
                   <li className="nav-item">
                     <div className='logout-button'>
                     <button className="nav-link active mx-3" onClick={handleLogout}>Logout</button>
+           
+           
                     </div>
                   </li>
                 </ul>
@@ -141,6 +160,7 @@ function Nav() {
                   <li className="nav-item">
                     <button className="nav-link-mobile  nav-link active mx-3 small-font" onClick={() => setIsSignupModalOpen(true)}>Sign Up</button>
                   </li>
+                  <span className="online-status">({onlineStatus})</span>
                 </ul>
               </div>
         
