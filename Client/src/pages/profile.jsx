@@ -49,7 +49,7 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (navigator.onLine) {
+      if (!navigator.onLine) {
       
         const offlineData = await getUserData(userId);
    
