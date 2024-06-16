@@ -6,7 +6,7 @@ import Sidebar from '../components/sidebar/sidebar';
 import temporaryImage from '../assets/noLogo.svg';
 import axios from 'axios';
 import { GET_USER } from '../utils/queries';
-import { storeUserData, storeProfilePicture, getUserData } from '../utils/indexedDB';
+import { storeUserData, storeProfilePicture, getUserData, getProfilePicture } from '../utils/indexedDB';
 import { 
   CHANGE_COMPANY,
   CHANGE_PROFILE_PICTURE,
@@ -49,10 +49,12 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!navigator.onLine) {
+      if (navigator.onLine) {
+      
         const offlineData = await getUserData(userId);
+   
         if (offlineData) {
-          const { company, email, streetAddress, city, state, zip, profilePicture } = offlineData;
+          const { company, email, streetAddress, city, state, zip } = offlineData;
           setEmail(email);
           setStreetAddress(streetAddress);
           setCity(city);
@@ -60,6 +62,7 @@ const Profile = () => {
           setZip(zip);
           setUserData(offlineData);
           setCompany(company);
+          const profilePicture = await getProfilePicture();
           setLogoUrl(profilePicture || temporaryImage);
         }
       } else if (!loading && data && data.getUser) {
