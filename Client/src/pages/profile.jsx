@@ -28,6 +28,7 @@ const Profile = () => {
   const [logoUrl, setLogoUrl] = useState(temporaryImage);
   const [company, setCompany] = useState('');
   const [renamedFile, setRenamedFile] = useState(null);
+  const [offlineMode, setOfflineMode] = useState(!navigator.onLine); 
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -38,7 +39,6 @@ const Profile = () => {
     skip: !navigator.onLine,
   });
 
-  
   const [changeCompanyMutation] = useMutation(CHANGE_COMPANY);
   const [changeProfilePictureMutation] = useMutation(CHANGE_PROFILE_PICTURE);
   const [changeStreetAddressMutation] = useMutation(CHANGE_STREET_ADDRESS);
@@ -50,9 +50,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!navigator.onLine) {
-      
         const offlineData = await getUserData(userId);
-   
         if (offlineData) {
           const { company, email, streetAddress, city, state, zip } = offlineData;
           setEmail(email);
@@ -80,6 +78,20 @@ const Profile = () => {
 
     fetchData();
   }, [loading, data, userId]);
+
+  useEffect(() => {
+    const handleOnlineStatusChange = () => {
+      setOfflineMode(!navigator.onLine);
+    };
+
+    window.addEventListener('online', handleOnlineStatusChange);
+    window.addEventListener('offline', handleOnlineStatusChange);
+
+    return () => {
+      window.removeEventListener('online', handleOnlineStatusChange);
+      window.removeEventListener('offline', handleOnlineStatusChange);
+    };
+  }, []);
 
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handleStreetAddressChange = (e) => setStreetAddress(e.target.value);
@@ -113,6 +125,34 @@ const Profile = () => {
     }
   };
 
+  const handleOfflineMutations = async () => {
+    try {
+      const offlineUserData = await getUserData(userId);
+
+      if (offlineUserData) {
+        const { company, email, streetAddress, city, state, zip, profilePicture } = offlineUserData;
+
+        if (profilePicture) {
+          const picturePath = await getProfilePicture();
+          await changeProfilePictureMutation({ variables: { userId, picturePath } });
+        }
+
+        await Promise.all([
+          changeCompanyMutation({ variables: { userId, company } }),
+          changeStreetAddressMutation({ variables: { userId, streetAddress } }),
+          changeEmailMutation({ variables: { userId, email } }),
+          changeCityMutation({ variables: { userId, city } }),
+          changeStateMutation({ variables: { userId, state } }),
+          changeZipMutation({ variables: { userId, zip } }),
+        ]);
+
+        await storeUserData({ userId, company, email, streetAddress, city, state, zip });
+      }
+    } catch (error) {
+      console.error('Error processing offline mutations:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -134,12 +174,14 @@ const Profile = () => {
           changeStateMutation({ variables: { userId, state } }),
           changeZipMutation({ variables: { userId, zip } }),
         ]);
+
+        await storeUserData({ userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath });
+      } else {
+        await handleOfflineMutations();
       }
 
       const updatedUserData = { userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath };
       setUserData(updatedUserData);
-      await storeUserData(updatedUserData);
-
       setCompany(updatedUserData.company || '');
       setEmail(updatedUserData.email || '');
       setStreetAddress(updatedUserData.streetAddress || '');
