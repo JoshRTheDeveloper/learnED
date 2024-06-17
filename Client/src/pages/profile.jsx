@@ -144,65 +144,79 @@ const Profile = () => {
   // on submit
 // If online it preforms the proper mutations - should update the indexedDB 
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      let picturePath = logoUrl;
+  try {
+    let picturePath = logoUrl;
 
-      if (navigator.onLine) {
-        if (logo) {
-          picturePath = await uploadProfilePicture(renamedFile);
-          await storeProfilePicture(userId, picturePath);
-          await changeProfilePictureMutation({ variables: { userId, picturePath } });
-        }
+    console.log('Initial picturePath:', picturePath);
 
-        await Promise.all([
-          changeCompanyMutation({ variables: { userId, company } }),
-          changeStreetAddressMutation({ variables: { userId, streetAddress } }),
-          changeEmailMutation({ variables: { userId, email } }),
-          changeCityMutation({ variables: { userId, city } }),
-          changeStateMutation({ variables: { userId, state } }),
-          changeZipMutation({ variables: { userId, zip } }),
-          changeProfilePictureMutation({ variables: { userId, picturePath } }),
-        ]);
-
-        await storeUserData({ userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath });
-      } else {
-        const offlineUserData = {
-          userId,
-          email,
-          streetAddress,
-          city,
-          state,
-          zip,
-          company,
-          profilePicture: picturePath
-        };
-
-        await storeUserData(offlineUserData);
-
-        if (logo) {
-          await storeProfilePicture(userId, picturePath);
-        }
+    if (navigator.onLine) {
+      if (logo) {
+        // Upload the profile picture and get the updated picturePath
+        console.log('Uploading profile picture...');
+        const uploadedPicturePath = await uploadProfilePicture(renamedFile);
+        picturePath = uploadedPicturePath; // Update picturePath with the uploaded path
+        console.log('Uploaded picturePath:', picturePath);
+        await storeProfilePicture(userId, picturePath);
       }
 
-      const updatedUserData = { userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath };
-      setUserData(updatedUserData);
-      setCompany(updatedUserData.company || '');
-      setEmail(updatedUserData.email || '');
-      setStreetAddress(updatedUserData.streetAddress || '');
-      setCity(updatedUserData.city || '');
-      setState(updatedUserData.state || '');
-      setZip(updatedUserData.zip || '');
-      setLogo(null);
-      setRenamedFile(null);
-      setLogoUrl('');
+      // Perform mutations with updated data
+      console.log('Performing mutations with picturePath:', picturePath);
+      await Promise.all([
+        changeCompanyMutation({ variables: { userId, company } }),
+        changeStreetAddressMutation({ variables: { userId, streetAddress } }),
+        changeEmailMutation({ variables: { userId, email } }),
+        changeCityMutation({ variables: { userId, city } }),
+        changeStateMutation({ variables: { userId, state } }),
+        changeZipMutation({ variables: { userId, zip } }),
+        changeProfilePictureMutation({ variables: { userId, profilePicture: picturePath } }), // Ensure picturePath is not null
+      ]);
 
-    } catch (error) {
-      console.error('Error updating profile:', error);
+      console.log('Mutations completed successfully. ');
+
+      // Update IndexedDB with the latest data
+      console.log('Storing user data in IndexedDB with picturePath:', picturePath);
+      await storeUserData({ userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath });
+    } else {
+      const offlineUserData = {
+        userId,
+        email,
+        streetAddress,
+        city,
+        state,
+        zip,
+        company,
+        profilePicture: picturePath
+      };
+
+      console.log('Offline mode, storing offlineUserData:', offlineUserData);
+      await storeUserData(offlineUserData);
+
+      if (logo) {
+        await storeProfilePicture(userId, picturePath);
+        console.log('Stored profile picture in IndexedDB for offline use.');
+      }
     }
-  };
+
+    const updatedUserData = { userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath };
+    console.log('Updating state with updatedUserData:', updatedUserData);
+    setUserData(updatedUserData);
+    setCompany(updatedUserData.company || '');
+    setEmail(updatedUserData.email || '');
+    setStreetAddress(updatedUserData.streetAddress || '');
+    setCity(updatedUserData.city || '');
+    setState(updatedUserData.state || '');
+    setZip(updatedUserData.zip || '');
+    setLogo(null);
+    setRenamedFile(null);
+    setLogoUrl('');
+
+  } catch (error) {
+    console.error('Error updating profile:', error);
+  }
+};
 
   useEffect(() => {
     if (userData) {
