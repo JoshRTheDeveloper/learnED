@@ -47,6 +47,11 @@ const Profile = () => {
   const [changeStateMutation] = useMutation(CHANGE_STATE);
   const [changeZipMutation] = useMutation(CHANGE_ZIP);
 
+
+  // This use effect fetches the data depending on Online or offline status 
+  // if online it will fetch from the GET_USER (MongoDB) 
+  // If Offline it will fetch from Indexed DB 
+
   useEffect(() => {
     const fetchData = async () => {
       if (!navigator.onLine) {
@@ -136,6 +141,9 @@ const Profile = () => {
     }
   };
 
+  // on submit
+// If online it preforms the proper mutations - should update the indexedDB 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -156,6 +164,7 @@ const Profile = () => {
           changeCityMutation({ variables: { userId, city } }),
           changeStateMutation({ variables: { userId, state } }),
           changeZipMutation({ variables: { userId, zip } }),
+          changeProfilePictureMutation({ variables: { userId, picturePath } }),
         ]);
 
         await storeUserData({ userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath });
