@@ -9,6 +9,7 @@ const LoginModal = ({ isOpen, onClose }) => {
   const [formState, setFormState] = useState({ email: '', password: '' });
   const [loginUser, { error }] = useMutation(LOGIN_USER);
   const [submitted, setSubmitted] = useState(false);
+  
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();

@@ -73,6 +73,17 @@ const Profile = () => {
         setUserData(data.getUser);
         setCompany(company);
         setLogoUrl(profilePicture || temporaryImage);
+
+        await storeUserData({
+          userId,
+          company,
+          email,
+          streetAddress,
+          city,
+          state,
+          zip,
+          profilePicture
+        });
       }
     };
 
@@ -80,9 +91,17 @@ const Profile = () => {
   }, [loading, data, userId]);
 
   useEffect(() => {
-    const handleOnlineStatusChange = () => {
+    const handleOnlineStatusChange = async () => {
       setOfflineMode(!navigator.onLine);
-    };
+    
+    if (navigator.onLine) {
+      const offlineMutations = await getOfflineMutations();
+      for (const mutation of offlineMutations) {
+        await mutation();
+      }
+      await clearOfflineMutations();
+    }
+  };
 
     window.addEventListener('online', handleOnlineStatusChange);
     window.addEventListener('offline', handleOnlineStatusChange);
