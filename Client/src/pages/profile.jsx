@@ -6,7 +6,7 @@ import Sidebar from '../components/sidebar/sidebar';
 import temporaryImage from '../assets/noLogo.svg';
 import axios from 'axios';
 import { GET_USER } from '../utils/queries';
-import { storeUserData, storeProfilePicture, getUserData, getProfilePicture } from '../utils/indexedDB';
+import { storeUserData, storeProfilePicture, getUserData, getProfilePicture, storeOfflineMutation, getOfflineMutations, clearOfflineMutations } from '../utils/indexedDB';
 import { 
   CHANGE_COMPANY,
   CHANGE_PROFILE_PICTURE,
@@ -94,14 +94,14 @@ const Profile = () => {
     const handleOnlineStatusChange = async () => {
       setOfflineMode(!navigator.onLine);
     
-    if (navigator.onLine) {
-      const offlineMutations = await getOfflineMutations();
-      for (const mutation of offlineMutations) {
-        await mutation();
+      if (navigator.onLine) {
+        const offlineMutations = await getOfflineMutations();
+        for (const mutation of offlineMutations) {
+          await mutation();
+        }
+        await clearOfflineMutations();
       }
-      await clearOfflineMutations();
-    }
-  };
+    };
 
     window.addEventListener('online', handleOnlineStatusChange);
     window.addEventListener('offline', handleOnlineStatusChange);
@@ -196,6 +196,14 @@ const Profile = () => {
 
         await storeUserData({ userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath });
       } else {
+        await storeOfflineMutation(() => changeProfilePictureMutation({ variables: { userId, picturePath } }));
+        await storeOfflineMutation(() => changeCompanyMutation({ variables: { userId, company } }));
+        await storeOfflineMutation(() => changeStreetAddressMutation({ variables: { userId, streetAddress } }));
+        await storeOfflineMutation(() => changeEmailMutation({ variables: { userId, email } }));
+        await storeOfflineMutation(() => changeCityMutation({ variables: { userId, city } }));
+        await storeOfflineMutation(() => changeStateMutation({ variables: { userId, state } }));
+        await storeOfflineMutation(() => changeZipMutation({ variables: { userId, zip } }));
+        
         await handleOfflineMutations();
       }
 

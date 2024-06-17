@@ -1,306 +1,183 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
-import jwtDecode from 'jwt-decode';
-import './profile.css';
-import Sidebar from '../components/sidebar/sidebar';
-import temporaryImage from '../assets/noLogo.svg';
-import axios from 'axios';
-import { GET_USER } from '../utils/queries';
-import { storeUserData, storeProfilePicture, getUserData, getProfilePicture, storeOfflineMutation, getOfflineMutations, clearOfflineMutations } from '../utils/indexedDB';
-import { 
-  CHANGE_COMPANY,
-  CHANGE_PROFILE_PICTURE,
-  CHANGE_STREET_ADDRESS,
-  CHANGE_EMAIL,
-  CHANGE_CITY,
-  CHANGE_STATE,
-  CHANGE_ZIP
-} from '../utils/mutations';
+import Auth from "../../utils/auth";
+import { Link } from "react-router-dom";
+import Logo from "../../assets/Logo.svg";
+import SignupModal from '../signup-modal/modal';
+import LoginModal from '../login-modal/login-modal';
+import { useNavigate } from "react-router-dom";
 
-const Profile = () => {
-  const [userData, setUserData] = useState(null);
-  const [email, setEmail] = useState('');
-  const [streetAddress, setStreetAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [zip, setZip] = useState('');
-  const [logo, setLogo] = useState(null);
-  const [logoUrl, setLogoUrl] = useState(temporaryImage);
-  const [company, setCompany] = useState('');
-  const [renamedFile, setRenamedFile] = useState(null);
-  const [offlineMode, setOfflineMode] = useState(!navigator.onLine); 
+import './index.css'
 
-  const token = localStorage.getItem('authToken');
-  const decodedToken = jwtDecode(token);
-  const userId = decodedToken.data._id;
+function Nav() {
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
 
-  const { loading, error, data } = useQuery(GET_USER, {
-    variables: { userId: userId || '' },
-    skip: !navigator.onLine,
-  });
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); 
+  const [firstName, setFirstName] = useState("");
+  const [onlineStatus, setOnlineStatus] = useState(navigator.onLine ? 'Online' : 'Offline'); 
 
-  const [changeCompanyMutation] = useMutation(CHANGE_COMPANY);
-  const [changeProfilePictureMutation] = useMutation(CHANGE_PROFILE_PICTURE);
-  const [changeStreetAddressMutation] = useMutation(CHANGE_STREET_ADDRESS);
-  const [changeEmailMutation] = useMutation(CHANGE_EMAIL);
-  const [changeCityMutation] = useMutation(CHANGE_CITY);
-  const [changeStateMutation] = useMutation(CHANGE_STATE);
-  const [changeZipMutation] = useMutation(CHANGE_ZIP);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!navigator.onLine) {
-        const offlineData = await getUserData(userId);
-        if (offlineData) {
-          const { company, email, streetAddress, city, state, zip } = offlineData;
-          setEmail(email);
-          setStreetAddress(streetAddress);
-          setCity(city);
-          setState(state);
-          setZip(zip);
-          setUserData(offlineData);
-          setCompany(company);
-          const profilePicture = await getProfilePicture();
-          setLogoUrl(profilePicture || temporaryImage);
-        }
-      } else if (!loading && data && data.getUser) {
-        const { company, email, streetAddress, city, state, zip, profilePicture } = data.getUser;
-        setEmail(email);
-        setStreetAddress(streetAddress);
-        setCity(city);
-        setState(state);
-        setZip(zip);
-        setUserData(data.getUser);
-        setCompany(company);
-        setLogoUrl(profilePicture || temporaryImage);
+    if (Auth.loggedIn()) {
+      fetchFirstName();
+    }
+  
 
-        await storeUserData({
-          userId,
-          company,
-          email,
-          streetAddress,
-          city,
-          state,
-          zip,
-          profilePicture
-        });
-      }
-    };
-
-    fetchData();
-  }, [loading, data, userId]);
-
-  useEffect(() => {
-    const handleOnlineStatusChange = async () => {
-      setOfflineMode(!navigator.onLine);
-    
-      if (navigator.onLine) {
-        const offlineMutations = await getOfflineMutations();
-        for (const mutation of offlineMutations) {
-          await mutation();
-        }
-        await clearOfflineMutations();
-      }
-    };
-
-    window.addEventListener('online', handleOnlineStatusChange);
-    window.addEventListener('offline', handleOnlineStatusChange);
-
-    return () => {
-      window.removeEventListener('online', handleOnlineStatusChange);
-      window.removeEventListener('offline', handleOnlineStatusChange);
-    };
-  }, []);
-
-  const handleEmailChange = (e) => setEmail(e.target.value);
-  const handleStreetAddressChange = (e) => setStreetAddress(e.target.value);
-  const handleCityChange = (e) => setCity(e.target.value);
-  const handleCompanyChange = (e) => setCompany(e.target.value);
-  const handleStateChange = (e) => setState(e.target.value);
-  const handleZipChange = (e) => setZip(e.target.value);
-
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    setLogo(file);
-    setLogoUrl(URL.createObjectURL(file));
-    const filename = `${userId}_profile_picture.jpg`;
-    setRenamedFile(new File([file], filename, { type: file.type }));
+  const handleOnlineStatusChange = () => {
+    setOnlineStatus(navigator.onLine ? 'Online' : 'Offline');
   };
 
-  const uploadProfilePicture = async (file) => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await axios.post('https://invoicinator3000-d580657ecca9.herokuapp.com/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'userId': userId,
-        },
-      });
-      return response.data.fileUrl;
-    } catch (error) {
-      console.error('Error uploading profile picture:', error);
-      throw error;
+  window.addEventListener('online', handleOnlineStatusChange);
+  window.addEventListener('offline', handleOnlineStatusChange);
+
+
+  return () => {
+    window.removeEventListener('online', handleOnlineStatusChange);
+    window.removeEventListener('offline', handleOnlineStatusChange);
+  };
+}, []);
+
+
+  const fetchFirstName = async () => {
+    const user = await Auth.getProfile();
+    if (user && user.data) {
+      setFirstName(user.data.firstName);
     }
   };
 
-  const handleOfflineMutations = async () => {
-    try {
-      const offlineUserData = await getUserData(userId);
-
-      if (offlineUserData) {
-        const { company, email, streetAddress, city, state, zip, profilePicture } = offlineUserData;
-
-        if (profilePicture) {
-          const picturePath = await getProfilePicture();
-          await changeProfilePictureMutation({ variables: { userId, picturePath } });
-        }
-
-        await Promise.all([
-          changeCompanyMutation({ variables: { userId, company } }),
-          changeStreetAddressMutation({ variables: { userId, streetAddress } }),
-          changeEmailMutation({ variables: { userId, email } }),
-          changeCityMutation({ variables: { userId, city } }),
-          changeStateMutation({ variables: { userId, state } }),
-          changeZipMutation({ variables: { userId, zip } }),
-        ]);
-
-        await storeUserData({ userId, company, email, streetAddress, city, state, zip });
+  const navigateToServices = () => {
+    navigate("/");
+    setTimeout(() => {
+      const servicesSection = document.getElementById("services");
+      if (servicesSection) {
+        servicesSection.scrollIntoView({ behavior: "smooth" });
       }
-    } catch (error) {
-      console.error('Error processing offline mutations:', error);
+    }, 500);
+  }
+
+  const handleLogout = () => {
+    Auth.logout();
+
+    setFirstName("");
+    setIsLoginModalOpen(false);
+    setIsSignupModalOpen(false);
+    navigate("/");
+
+
+  }
+
+  const handleLoginModalClose = async () => {
+    setIsLoginModalOpen(false);
+    await fetchFirstName();
+    if (Auth.loggedIn()) {
+      navigate("/dashboard");
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+ const handleSignUpModalClose = async () => {
+    setIsSignupModalOpen(false);
+    await fetchFirstName();
+    if (Auth.loggedIn()) {
+      navigate("/dashboard");
+    }
+  };
 
-    try {
-      let picturePath = logoUrl;
 
-      if (navigator.onLine) {
-        if (logo) {
-          picturePath = await uploadProfilePicture(renamedFile);
-          await storeProfilePicture(userId, picturePath);
-          await changeProfilePictureMutation({ variables: { userId, picturePath } });
-        }
+  if (Auth.loggedIn()) {
 
-        await Promise.all([
-          changeCompanyMutation({ variables: { userId, company } }),
-          changeStreetAddressMutation({ variables: { userId, streetAddress } }),
-          changeEmailMutation({ variables: { userId, email } }),
-          changeCityMutation({ variables: { userId, city } }),
-          changeStateMutation({ variables: { userId, state } }),
-          changeZipMutation({ variables: { userId, zip } }),
-        ]);
+    return (
+      <>
+        <header>
+          <nav className="navbar navbar-expand-md navbar-light fixed-top ">
+            <div className="container-fluid">
+              <Link to="/" className="navbar-brand">
+                <img className="navbar-brand" src={Logo} alt=""  />
+              </Link>
 
-        await storeUserData({ userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath });
-      } else {
-        await storeOfflineMutation(() => changeProfilePictureMutation({ variables: { userId, picturePath } }));
-        await storeOfflineMutation(() => changeCompanyMutation({ variables: { userId, company } }));
-        await storeOfflineMutation(() => changeStreetAddressMutation({ variables: { userId, streetAddress } }));
-        await storeOfflineMutation(() => changeEmailMutation({ variables: { userId, email } }));
-        await storeOfflineMutation(() => changeCityMutation({ variables: { userId, city } }));
-        await storeOfflineMutation(() => changeStateMutation({ variables: { userId, state } }));
-        await storeOfflineMutation(() => changeZipMutation({ variables: { userId, zip } }));
+              <span className="online-status">Network: {onlineStatus}</span>
+
+              <div className="navbar-collapse" id="navbarCollapse">
+                <ul className="navbar-nav me-auto mb-2 mb-md-0">
+                
+                </ul>
+
+                <div className='mobile-container'>
+                <ul className='mobile-sidebar'>
+            <li><Link to="/dashboard">Dashboard</Link></li>
+            <li><Link to="/CreateInvoices">Create Invoice</Link></li>
+            <li><a href="/Profile">Profile</a></li>
+            <button className="mobile-logout" onClick={handleLogout}>Logout</button>
+            </ul>
+            </div>
+            <div className='width'>
+                <div className="navbar-text mx-3">
+
+                  {firstName && <span>Welcome, {firstName}! </span>} 
+               
+
+                </div>
+                </div>
+                <ul className="navbar-nav mb-md-0">
+                  <li className="nav-item">
+                    <div className='logout-button'>
+                    <button className="nav-link active mx-3" onClick={handleLogout}>Logout</button>
+           
+           
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </nav>
+        </header>
+      </>
+    );
+  } else {
+    return (
+      <>
+        <header>
+        <nav className="navbar navbar-expand-md navbar-light fixed-top ">
+            <div className="container-fluid-mobile container-fluid">
+              <Link to="/" className="navbar-brand-mobile navbar-brand">
+                <img className="navbar-brand-mobile navbar-brand" src={Logo} alt=""  />
+              </Link>
+
+             
+
+         
+            <div className='width'>
+                <div className="navbar-text mx-3">
+
+                  {firstName && <span>Welcome, {firstName}! </span>} 
+
+                </div>
+                </div>
+                <ul className="navbar-nav navbar-nav-mobile mb-md-0">
+               
+                  <li className="nav-item">
+                    <button className="nav-link-mobile nav-link active mx-3 small-font" onClick={() => setIsLoginModalOpen(true)}>Login</button>
+                  </li>
+                  <li className="nav-item">
+                    <button className="nav-link-mobile  nav-link active mx-3 small-font" onClick={() => setIsSignupModalOpen(true)}>Sign Up</button>
+                  </li>
+                  <span className="online-status">({onlineStatus})</span>
+                </ul>
+              </div>
         
-        await handleOfflineMutations();
-      }
+          </nav>
+          
+          
+        </header>
 
-      const updatedUserData = { userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath };
-      setUserData(updatedUserData);
-      setCompany(updatedUserData.company || '');
-      setEmail(updatedUserData.email || '');
-      setStreetAddress(updatedUserData.streetAddress || '');
-      setCity(updatedUserData.city || '');
-      setState(updatedUserData.state || '');
-      setZip(updatedUserData.zip || '');
-      setLogo(null);
-      setRenamedFile(null);
-      setLogoUrl('');
+        <SignupModal isOpen={isSignupModalOpen} onClose={handleSignUpModalClose} onCloseModal={handleSignUpModalClose} /> 
 
-    } catch (error) {
-      console.error('Error updating profile:', error);
-    }
-  };
+       
+        <LoginModal isOpen={isLoginModalOpen} onClose={handleLoginModalClose} onCloseModal={handleLoginModalClose} /> 
 
-  useEffect(() => {
-    if (userData) {
-      setEmail(userData.email || '');
-      setStreetAddress(userData.streetAddress || '');
-      setCity(userData.city || '');
-      setState(userData.state || '');
-      setZip(userData.zip || '');
-      setCompany(userData.company || '');
-      setLogoUrl(userData.profilePicture || temporaryImage);
-    }
-  }, [userData]);
 
-  return (
-    <div>
-      <Sidebar />
-      <div className='profile'>
-        <div className='profile-Id'>
-          <div>
-            <img src={logoUrl} alt='Uploaded Logo' className='logo-preview' />
-          </div>
-          <h2 id='profile-h2'>Edit Profile</h2>
-          <div className='columns-2'>
-            <div className='split3'>
-              <br></br>
-              <p>Company:</p>
-              <br></br>
-              <p>Email:</p>
-              <br></br>
-              <p>Address:</p>
-            </div>
-            <div className='split4'>
-              <br></br>
-              <p>{userData?.company}</p>
-              <br></br>
-              <p>{userData?.email}</p>
-              <br></br>
-              <p>{userData?.streetAddress}</p>
-              <p>{userData?.city} {userData?.state} {userData?.zip}</p>
-            </div>
-          </div>
-        </div>
-        <div className='form1'>
-          <form onSubmit={handleSubmit}>
-            <div className='fields'>
-              <label className='labels'>Company:</label>
-              <input className='inputs' type="text" value={company} onChange={handleCompanyChange} />
-            </div>
-            <div className='fields'>
-              <label className='labels'>Email:</label>
-              <input className='inputs' type="email" value={email} onChange={handleEmailChange} />
-            </div>
-            <div className='fields'>
-              <label className='labels'>Address:</label>
-              <input className='inputs' type="text" placeholder="Enter Address" value={streetAddress} onChange={handleStreetAddressChange} />
-            </div>
-            <div className='fields'>
-              <label className='labels'>City:</label>
-              <input className='inputs' type="text" placeholder="Enter City" value={city} onChange={handleCityChange} />
-            </div>
-            <div className='fields'>
-              <label className='labels'>State:</label>
-              <input className='inputs' type="text" placeholder="Enter State" value={state} onChange={handleStateChange} />
-            </div>
-            <div className='fields'>
-              <label className='labels'>Zip:</label>
-              <input className='inputs' type="text" placeholder="Enter Zip" value={zip} onChange={handleZipChange} />
-            </div>
-            <div className='fields'>
-              <label className='labels'>Logo:</label>
-              <input className='inputs1' type="file" accept="image/*" onChange={handleLogoChange} />
-            </div>
-            <button className='submit-button' type="submit">Submit</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-};
+      </>
+    );
+  }
+}
 
-export default Profile;
+export default Nav;
