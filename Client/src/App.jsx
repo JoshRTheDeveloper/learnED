@@ -9,6 +9,8 @@ const httpLink = createHttpLink({
   uri: '/graphql',
 });
 
+
+
 const authLink = setContext((_, { headers }) => {
   const token = localStorage.getItem('Auth_token');
   return {
@@ -32,6 +34,7 @@ function App() {
   const [authData, setAuthData] = useState(null);
   
 
+  
   useEffect(() => {
     const initializeData = async () => {
       try {
@@ -270,6 +273,16 @@ function App() {
       } catch (error) {
         console.error('Failed to delete invoice from IndexedDB:', error);
       }
+    }
+  };
+
+  const fetchUserDataFromServer = async () => {
+    try {
+      const response = await fetch('/api/user');
+      return response.json();
+    } catch (error) {
+      console.error('Failed to fetch user data from server:', error);
+      return null;
     }
   };
 

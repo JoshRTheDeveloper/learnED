@@ -34,7 +34,7 @@ const Profile = () => {
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
 
-  const { loading, error, data } = useQuery(GET_USER, {
+  const { loading, error, data, refetch } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
     skip: !navigator.onLine,
   });
@@ -47,10 +47,74 @@ const Profile = () => {
   const [changeStateMutation] = useMutation(CHANGE_STATE);
   const [changeZipMutation] = useMutation(CHANGE_ZIP);
 
+  useEffect(() => {
+    const handleOnlineStatusChange = () => {
+      if (!offlineMode && navigator.onLine) {
+        syncWithServer();
+      }
+      setOfflineMode(!navigator.onLine);
+    };
 
-  // This use effect fetches the data depending on Online or offline status 
-  // if online it will fetch from the GET_USER (MongoDB) 
-  // If Offline it will fetch from Indexed DB 
+    window.addEventListener('online', handleOnlineStatusChange);
+    window.addEventListener('offline', handleOnlineStatusChange);
+
+    return () => {
+      window.removeEventListener('online', handleOnlineStatusChange);
+      window.removeEventListener('offline', handleOnlineStatusChange);
+    };
+  }, [offlineMode]);
+
+  const syncWithServer = async () => {
+    const offlineUserData = await getUserData(userId);
+    const offlineProfilePicture = await getProfilePicture(userId);
+
+    if (offlineUserData) {
+      const { company, email, streetAddress, city, state, zip } = offlineUserData;
+
+     
+      const onlineUserData = data?.getUser;
+
+    
+      const isDifferent =
+        onlineUserData.company !== company ||
+        onlineUserData.email !== email ||
+        onlineUserData.streetAddress !== streetAddress ||
+        onlineUserData.city !== city ||
+        onlineUserData.state !== state ||
+        onlineUserData.zip !== zip ||
+        onlineUserData.profilePicture !== offlineProfilePicture;
+
+      if (isDifferent) {
+        try {
+          await Promise.all([
+            changeCompanyMutation({ variables: { userId, company } }),
+            changeStreetAddressMutation({ variables: { userId, streetAddress } }),
+            changeEmailMutation({ variables: { userId, email } }),
+            changeCityMutation({ variables: { userId, city } }),
+            changeStateMutation({ variables: { userId, state } }),
+            changeZipMutation({ variables: { userId, zip } }),
+            changeProfilePictureMutation({ variables: { userId, profilePicture: offlineProfilePicture } }),
+          ]);
+
+          await storeUserData({
+            userId,
+            email,
+            streetAddress,
+            city,
+            state,
+            zip,
+            company,
+            profilePicture: offlineProfilePicture,
+          });
+
+       
+          refetch();
+        } catch (error) {
+          console.error('Error syncing data with server:', error);
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -95,20 +159,6 @@ const Profile = () => {
     fetchData();
   }, [loading, data, userId]);
 
-  useEffect(() => {
-    const handleOnlineStatusChange = () => {
-      setOfflineMode(!navigator.onLine);
-    };
-
-    window.addEventListener('online', handleOnlineStatusChange);
-    window.addEventListener('offline', handleOnlineStatusChange);
-
-    return () => {
-      window.removeEventListener('online', handleOnlineStatusChange);
-      window.removeEventListener('offline', handleOnlineStatusChange);
-    };
-  }, []);
-
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handleStreetAddressChange = (e) => setStreetAddress(e.target.value);
   const handleCityChange = (e) => setCity(e.target.value);
@@ -141,82 +191,64 @@ const Profile = () => {
     }
   };
 
-  // on submit
-// If online it preforms the proper mutations - should update the indexedDB 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+    try {
+      let picturePath = logoUrl;
 
-  try {
-    let picturePath = logoUrl;
+      if (navigator.onLine) {
+        if (logo) {
+          const uploadedPicturePath = await uploadProfilePicture(renamedFile);
+          picturePath = uploadedPicturePath;
+          await storeProfilePicture(userId, picturePath);
+        }
 
-    console.log('Initial picturePath:', picturePath);
+        await Promise.all([
+          changeCompanyMutation({ variables: { userId, company } }),
+          changeStreetAddressMutation({ variables: { userId, streetAddress } }),
+          changeEmailMutation({ variables: { userId, email } }),
+          changeCityMutation({ variables: { userId, city } }),
+          changeStateMutation({ variables: { userId, state } }),
+          changeZipMutation({ variables: { userId, zip } }),
+          changeProfilePictureMutation({ variables: { userId, profilePicture: picturePath } }),
+        ]);
 
-    if (navigator.onLine) {
-      if (logo) {
-        // Upload the profile picture and get the updated picturePath
-        console.log('Uploading profile picture...');
-        const uploadedPicturePath = await uploadProfilePicture(renamedFile);
-        picturePath = uploadedPicturePath; // Update picturePath with the uploaded path
-        console.log('Uploaded picturePath:', picturePath);
-        await storeProfilePicture(userId, picturePath);
+        await storeUserData({ userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath });
+      } else {
+        const offlineUserData = {
+          userId,
+          email,
+          streetAddress,
+          city,
+          state,
+          zip,
+          company,
+          profilePicture: picturePath
+        };
+
+        await storeUserData(offlineUserData);
+
+        if (logo) {
+          await storeProfilePicture(userId, picturePath);
+        }
       }
 
-      // Perform mutations with updated data
-      console.log('Performing mutations with picturePath:', picturePath);
-      await Promise.all([
-        changeCompanyMutation({ variables: { userId, company } }),
-        changeStreetAddressMutation({ variables: { userId, streetAddress } }),
-        changeEmailMutation({ variables: { userId, email } }),
-        changeCityMutation({ variables: { userId, city } }),
-        changeStateMutation({ variables: { userId, state } }),
-        changeZipMutation({ variables: { userId, zip } }),
-        changeProfilePictureMutation({ variables: { userId, profilePicture: picturePath } }), // Ensure picturePath is not null
-      ]);
+      setUserData({ userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath });
+      setCompany(company);
+      setEmail(email);
+      setStreetAddress(streetAddress);
+      setCity(city);
+      setState(state);
+      setZip(zip);
+      setLogo(null);
+      setRenamedFile(null);
+      setLogoUrl('');
 
-      console.log('Mutations completed successfully. ');
-
-      // Update IndexedDB with the latest data
-      console.log('Storing user data in IndexedDB with picturePath:', picturePath);
-      await storeUserData({ userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath });
-    } else {
-      const offlineUserData = {
-        userId,
-        email,
-        streetAddress,
-        city,
-        state,
-        zip,
-        company,
-        profilePicture: picturePath
-      };
-
-      console.log('Offline mode, storing offlineUserData:', offlineUserData);
-      await storeUserData(offlineUserData);
-
-      if (logo) {
-        await storeProfilePicture(userId, picturePath);
-        console.log('Stored profile picture in IndexedDB for offline use.');
-      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
     }
-
-    const updatedUserData = { userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath };
-    console.log('Updating state with updatedUserData:', updatedUserData);
-    setUserData(updatedUserData);
-    setCompany(updatedUserData.company || '');
-    setEmail(updatedUserData.email || '');
-    setStreetAddress(updatedUserData.streetAddress || '');
-    setCity(updatedUserData.city || '');
-    setState(updatedUserData.state || '');
-    setZip(updatedUserData.zip || '');
-    setLogo(null);
-    setRenamedFile(null);
-    setLogoUrl('');
-
-  } catch (error) {
-    console.error('Error updating profile:', error);
-  }
-};
+  };
 
   useEffect(() => {
     if (userData) {
@@ -230,71 +262,73 @@ const handleSubmit = async (e) => {
     }
   }, [userData]);
 
-  return (
-    <div>
-      <Sidebar />
-      <div className='profile'>
-        <div className='profile-Id'>
-          <div>
-            <img src={logoUrl} alt='Uploaded Logo' className='logo-preview' />
-          </div>
-          <h2 id='profile-h2'>Edit Profile</h2>
-          <div className='columns-2'>
-            <div className='split3'>
-              <br></br>
-              <p>Company:</p>
-              <br></br>
-              <p>Email:</p>
-              <br></br>
-              <p>Address:</p>
-            </div>
-            <div className='split4'>
-              <br></br>
-              <p>{userData?.company}</p>
-              <br></br>
-              <p>{userData?.email}</p>
-              <br></br>
-              <p>{userData?.streetAddress}</p>
-              <p>{userData?.city} {userData?.state} {userData?.zip}</p>
-            </div>
-          </div>
+  return (   
+     <div>
+    <Sidebar />
+    <div className='profile'>
+      <div className='profile-Id'>
+        <div>
+          <img src={logoUrl} alt='Uploaded Logo' className='logo-preview' />
         </div>
-        <div className='form1'>
-          <form onSubmit={handleSubmit}>
-            <div className='fields'>
-              <label className='labels'>Company:</label>
-              <input className='inputs' type="text" value={company} onChange={handleCompanyChange} />
-            </div>
-            <div className='fields'>
-              <label className='labels'>Email:</label>
-              <input className='inputs' type="email" value={email} onChange={handleEmailChange} />
-            </div>
-            <div className='fields'>
-              <label className='labels'>Address:</label>
-              <input className='inputs' type="text" placeholder="Enter Address" value={streetAddress} onChange={handleStreetAddressChange} />
-            </div>
-            <div className='fields'>
-              <label className='labels'>City:</label>
-              <input className='inputs' type="text" placeholder="Enter City" value={city} onChange={handleCityChange} />
-            </div>
-            <div className='fields'>
-              <label className='labels'>State:</label>
-              <input className='inputs' type="text" placeholder="Enter State" value={state} onChange={handleStateChange} />
-            </div>
-            <div className='fields'>
-              <label className='labels'>Zip:</label>
-              <input className='inputs' type="text" placeholder="Enter Zip" value={zip} onChange={handleZipChange} />
-            </div>
-            <div className='fields'>
-              <label className='labels'>Logo:</label>
-              <input className='inputs1' type="file" accept="image/*" onChange={handleLogoChange} />
-            </div>
-            <button className='submit-button' type="submit">Submit</button>
-          </form>
+        <h2 id='profile-h2'>Edit Profile</h2>
+        <div className='columns-2'>
+          <div className='split3'>
+            <br></br>
+            <p>Company:</p>
+            <br></br>
+            <p>Email:</p>
+            <br></br>
+            <p>Address:</p>
+          </div>
+          <div className='split4'>
+            <br></br>
+            <p>{userData?.company}</p>
+            <br></br>
+            <p>{userData?.email}</p>
+
+            <br></br>
+            <p>{userData?.streetAddress}</p>
+            <p>{userData?.city} {userData?.state} {userData?.zip}</p>
+          </div>
         </div>
       </div>
+      <div className='form1'>
+        <form onSubmit={handleSubmit}>
+          <div className='fields'>
+            <label className='labels'>Company:</label>
+            <input className='inputs' type="text" value={company} onChange={handleCompanyChange} />
+          </div>
+          <div className='fields'>
+            <label className='labels'>Email:</label>
+            <input className='inputs' type="email" value={email} onChange={handleEmailChange} />
+          </div>
+          <div className='fields'>
+            <label className='labels'>Address:</label>
+            <input className='inputs' type="text" placeholder="Enter Address" value={streetAddress} onChange={handleStreetAddressChange} />
+          </div>
+          <div className='fields'>
+            <label className='labels'>City:</label>
+            <input className='inputs' type="text" placeholder="Enter City" value={city} onChange={handleCityChange} />
+          </div>
+          <div className='fields'>
+            <label className='labels'>State:</label>
+            <input className='inputs' type="text" placeholder="Enter State" value={state} onChange={handleStateChange} />
+          </div>
+          <div className='fields'>
+            <label className='labels'>Zip:</label>
+            <input className='inputs' type="text" placeholder="Enter Zip" value={zip} onChange={handleZipChange} />
+          </div>
+          <div className='fields'>
+            <label className='labels'>Logo:</label>
+            <input className='inputs1' type="file" accept="image/*" onChange={handleLogoChange} />
+          </div>
+          <button className='submit-button' type="submit">Submit</button>
+        </form>
+      </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default Profile;
+
