@@ -67,14 +67,11 @@ const Profile = () => {
   const syncWithServer = async () => {
     const offlineUserData = await getUserData(userId);
     const offlineProfilePicture = await getProfilePicture(userId);
-
+  
     if (offlineUserData) {
       const { company, email, streetAddress, city, state, zip } = offlineUserData;
-
-     
       const onlineUserData = data?.getUser;
-
-    
+  
       const isDifferent =
         onlineUserData.company !== company ||
         onlineUserData.email !== email ||
@@ -83,7 +80,7 @@ const Profile = () => {
         onlineUserData.state !== state ||
         onlineUserData.zip !== zip ||
         onlineUserData.profilePicture !== offlineProfilePicture;
-
+  
       if (isDifferent) {
         try {
           await Promise.all([
@@ -95,7 +92,7 @@ const Profile = () => {
             changeZipMutation({ variables: { userId, zip } }),
             changeProfilePictureMutation({ variables: { userId, profilePicture: offlineProfilePicture } }),
           ]);
-
+  
           await storeUserData({
             userId,
             email,
@@ -106,8 +103,7 @@ const Profile = () => {
             company,
             profilePicture: offlineProfilePicture,
           });
-
-       
+  
           refetch();
         } catch (error) {
           console.error('Error syncing data with server:', error);
@@ -268,7 +264,7 @@ const Profile = () => {
     <div className='profile'>
       <div className='profile-Id'>
         <div>
-          <img src={logoUrl} alt='Uploaded Logo' className='logo-preview' />
+          <img src={profilePicture} alt='Uploaded Logo' className='logo-preview' />
         </div>
         <h2 id='profile-h2'>Edit Profile</h2>
         <div className='columns-2'>
