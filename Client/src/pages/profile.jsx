@@ -65,47 +65,54 @@ const Profile = () => {
 
         if (offlineUserData) {
           const { company, email, streetAddress, city, state, zip } = offlineUserData;
-
+        
+         
           const onlineUserData = data?.getUser;
-
+        
+     
           const isDifferent =
-            onlineUserData.company !== company ||
-            onlineUserData.email !== email ||
-            onlineUserData.streetAddress !== streetAddress ||
-            onlineUserData.city !== city ||
-            onlineUserData.state !== state ||
-            onlineUserData.zip !== zip ||
-            onlineUserData.profilePicture !== offlineProfilePicture;
-
+            onlineUserData &&
+            (onlineUserData.company !== company ||
+              onlineUserData.email !== email ||
+              onlineUserData.streetAddress !== streetAddress ||
+              onlineUserData.city !== city ||
+              onlineUserData.state !== state ||
+              onlineUserData.zip !== zip ||
+              onlineUserData.profilePicture !== offlineProfilePicture);
+        
           if (isDifferent) {
-            await Promise.all([
-              changeCompanyMutation({ variables: { userId, company } }),
-              changeStreetAddressMutation({ variables: { userId, streetAddress } }),
-              changeEmailMutation({ variables: { userId, email } }),
-              changeCityMutation({ variables: { userId, city } }),
-              changeStateMutation({ variables: { userId, state } }),
-              changeZipMutation({ variables: { userId, zip } }),
-              changeProfilePictureMutation({ variables: { userId, profilePicture: offlineProfilePicture } }),
-            ]);
-
-            await storeUserData({
-              userId,
-              email,
-              streetAddress,
-              city,
-              state,
-              zip,
-              company,
-              profilePicture: offlineProfilePicture,
-            });
-
-            refetch();
+            try {
+              
+              await Promise.all([
+                changeCompanyMutation({ variables: { userId, company } }),
+                changeStreetAddressMutation({ variables: { userId, streetAddress } }),
+                changeEmailMutation({ variables: { userId, email } }),
+                changeCityMutation({ variables: { userId, city } }),
+                changeStateMutation({ variables: { userId, state } }),
+                changeZipMutation({ variables: { userId, zip } }),
+                changeProfilePictureMutation({
+                  variables: { userId, profilePicture: offlineProfilePicture },
+                }),
+              ]);
+        
+              await storeUserData({
+                userId,
+                email,
+                streetAddress,
+                city,
+                state,
+                zip,
+                company,
+                profilePicture: offlineProfilePicture,
+              });
+        
+             
+              refetch();
+            } catch (error) {
+              console.error('Error syncing data with server:', error);
+            }
           }
         }
-      } catch (error) {
-        console.error('Error syncing data with server:', error);
-      }
-    };
 
     window.addEventListener('online', handleOnlineStatusChange);
 
