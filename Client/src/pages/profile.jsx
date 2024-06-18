@@ -29,9 +29,9 @@ const Profile = () => {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
+  const [company, setCompany] = useState('');
   const [logo, setLogo] = useState(null);
   const [logoUrl, setLogoUrl] = useState(temporaryImage);
-  const [company, setCompany] = useState('');
   const [renamedFile, setRenamedFile] = useState(null);
   const [offlineMode, setOfflineMode] = useState(!navigator.onLine);
 
@@ -52,12 +52,23 @@ const Profile = () => {
   const [changeStateMutation] = useMutation(CHANGE_STATE);
   const [changeZipMutation] = useMutation(CHANGE_ZIP);
 
+  // Effect to handle online status changes
   useEffect(() => {
-    const handleOnlineStatusChange = async () => {
+    const handleOnlineStatusChange = () => {
       const isOnline = navigator.onLine;
       setOfflineMode(!isOnline);
+    };
 
-      if (!isOnline) return;
+    window.addEventListener('online', handleOnlineStatusChange);
+
+    return () => {
+      window.removeEventListener('online', handleOnlineStatusChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncOfflineData = async () => {
+      if (!navigator.onLine) return;
 
       try {
         const offlineUserData = await getUserData(userId);
@@ -65,11 +76,8 @@ const Profile = () => {
 
         if (offlineUserData) {
           const { company, email, streetAddress, city, state, zip } = offlineUserData;
-        
-         
           const onlineUserData = data?.getUser;
-        
-     
+
           const isDifferent =
             onlineUserData &&
             (onlineUserData.company !== company ||
@@ -79,49 +87,42 @@ const Profile = () => {
               onlineUserData.state !== state ||
               onlineUserData.zip !== zip ||
               onlineUserData.profilePicture !== offlineProfilePicture);
-        
+
           if (isDifferent) {
-            try {
-              
-              await Promise.all([
-                changeCompanyMutation({ variables: { userId, company } }),
-                changeStreetAddressMutation({ variables: { userId, streetAddress } }),
-                changeEmailMutation({ variables: { userId, email } }),
-                changeCityMutation({ variables: { userId, city } }),
-                changeStateMutation({ variables: { userId, state } }),
-                changeZipMutation({ variables: { userId, zip } }),
-                changeProfilePictureMutation({
-                  variables: { userId, profilePicture: offlineProfilePicture },
-                }),
-              ]);
-        
-              await storeUserData({
-                userId,
-                email,
-                streetAddress,
-                city,
-                state,
-                zip,
-                company,
-                profilePicture: offlineProfilePicture,
-              });
-        
-             
-              refetch();
-            } catch (error) {
-              console.error('Error syncing data with server:', error);
-            }
+            await Promise.all([
+              changeCompanyMutation({ variables: { userId, company } }),
+              changeStreetAddressMutation({ variables: { userId, streetAddress } }),
+              changeEmailMutation({ variables: { userId, email } }),
+              changeCityMutation({ variables: { userId, city } }),
+              changeStateMutation({ variables: { userId, state } }),
+              changeZipMutation({ variables: { userId, zip } }),
+              changeProfilePictureMutation({
+                variables: { userId, profilePicture: offlineProfilePicture },
+              }),
+            ]);
+
+            await storeUserData({
+              userId,
+              email,
+              streetAddress,
+              city,
+              state,
+              zip,
+              company,
+              profilePicture: offlineProfilePicture,
+            });
+
+            refetch();
           }
         }
-
-    window.addEventListener('online', handleOnlineStatusChange);
-
-    return () => {
-      window.removeEventListener('online', handleOnlineStatusChange);
+      } catch (error) {
+        console.error('Error syncing data with server:', error);
+      }
     };
-  }, [data, userId, changeCompanyMutation, changeStreetAddressMutation, changeEmailMutation, changeCityMutation, changeStateMutation, changeZipMutation, changeProfilePictureMutation]);
 
-  // Effect to fetch data either from IndexedDB or MongoDB
+    syncOfflineData();
+  }, [data, userId, changeCompanyMutation, changeStreetAddressMutation, changeEmailMutation, changeCityMutation, changeStateMutation, changeZipMutation, changeProfilePictureMutation, refetch]);
+
   useEffect(() => {
     const fetchData = async () => {
       if (!navigator.onLine) {
@@ -157,7 +158,7 @@ const Profile = () => {
           city,
           state,
           zip,
-          profilePicture
+          profilePicture,
         });
       }
     };
@@ -230,7 +231,7 @@ const Profile = () => {
           state,
           zip,
           company,
-          profilePicture: picturePath
+          profilePicture: picturePath,
         };
 
         await storeUserData(offlineUserData);
@@ -240,13 +241,23 @@ const Profile = () => {
         }
       }
 
-      setUserData({ userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath });
-      setCompany(company);
+      setUserData({
+        userId,
+        email,
+        streetAddress,
+        city,
+        state,
+        zip,
+        company,
+        profilePicture: picturePath,
+      });
+
       setEmail(email);
       setStreetAddress(streetAddress);
       setCity(city);
       setState(state);
       setZip(zip);
+      setCompany(company);
       setLogo(null);
       setRenamedFile(null);
       setLogoUrl('');
@@ -255,6 +266,7 @@ const Profile = () => {
       console.error('Error updating profile:', error);
     }
   };
+
 
   useEffect(() => {
     if (userData) {
@@ -291,7 +303,6 @@ const Profile = () => {
               <p>{userData?.company}</p>
               <br></br>
               <p>{userData?.email}</p>
-
               <br></br>
               <p>{userData?.streetAddress}</p>
               <p>{userData?.city} {userData?.state} {userData?.zip}</p>
