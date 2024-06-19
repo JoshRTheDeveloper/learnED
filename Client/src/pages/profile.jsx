@@ -59,11 +59,11 @@ const Profile = () => {
       setOfflineMode(!isOnline);
 
       if (isOnline) {
-        console.log('Back online. Syncing offline data and refetching...');
+      
         await syncOfflineData();
         refetch();
       } else {
-        console.log('Went offline.');
+        console.error('Went offline.');
       }
     };
 
@@ -80,7 +80,6 @@ const Profile = () => {
     const fetchData = async () => {
       if (initialLoad) {
         if (!loading && data && data.getUser) {
-          console.log('Fetching initial online data...');
           const { company, email, streetAddress, city, state, zip, profilePicture } = data.getUser;
           setEmail(email);
           setStreetAddress(streetAddress);
@@ -104,10 +103,8 @@ const Profile = () => {
           setInitialLoad(false);
         }
       } else if (!navigator.onLine) {
-        console.log('Fetching offline data...');
         const offlineData = await getUserData(userId);
         if (offlineData) {
-          console.log('Offline data found:', offlineData);
           setEmail(offlineData.email);
           setStreetAddress(offlineData.streetAddress);
           setCity(offlineData.city);
@@ -118,7 +115,7 @@ const Profile = () => {
           const profilePicture = await getProfilePicture(userId);
           setLogoUrl(profilePicture || temporaryImage);
         } else {
-          console.log('No offline data found.');
+          console.error('No offline data found.');
         }
       }
     };
@@ -133,8 +130,6 @@ const Profile = () => {
   
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
-  
-        console.log('Syncing offline changes to server...');
         await Promise.all([
           changeCompanyMutation({ variables: { userId, company } }),
           changeStreetAddressMutation({ variables: { userId, streetAddress } }),
@@ -147,9 +142,8 @@ const Profile = () => {
           }),
         ]);
   
-        console.log('Sync successful.');
       } else {
-        console.log('No offline changes to sync.');
+        console.error('No offline changes to sync.');
       }
     } catch (error) {
       console.error('Error syncing data with server:', error);
@@ -190,17 +184,19 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     try {
-      let picturePath = logoUrl;
-
+      let picturePath = logoUrl; 
+  
       if (navigator.onLine) {
+        // Handle online mode
         if (logo) {
-          const uploadedPicturePath = await uploadProfilePicture(renamedFile);
-          picturePath = uploadedPicturePath;
+          const uploadedPicturePath = await uploadProfilePicture(renamedFile); 
+          picturePath = uploadedPicturePath; 
           await storeProfilePicture(userId, picturePath);
         }
-
+  
+ 
         await Promise.all([
           changeCompanyMutation({ variables: { userId, company } }),
           changeStreetAddressMutation({ variables: { userId, streetAddress } }),
@@ -210,9 +206,31 @@ const Profile = () => {
           changeZipMutation({ variables: { userId, zip } }),
           changeProfilePictureMutation({ variables: { userId, profilePicture: picturePath } }),
         ]);
+  
 
-        await storeUserData({ userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath });
+        setUserData({
+          userId,
+          email,
+          streetAddress,
+          city,
+          state,
+          zip,
+          company,
+          profilePicture: picturePath,
+        });
+
+        await storeUserData({
+          userId,
+          email,
+          streetAddress,
+          city,
+          state,
+          zip,
+          company,
+          profilePicture: picturePath,
+        });
       } else {
+       
         const offlineUserData = {
           userId,
           email,
@@ -223,25 +241,17 @@ const Profile = () => {
           company,
           profilePicture: picturePath,
         };
-
+  
+   
         await storeUserData(offlineUserData);
-
+  
+     
         if (logo) {
           await storeProfilePicture(userId, picturePath);
         }
       }
-
-      setUserData({
-        userId,
-        email,
-        streetAddress,
-        city,
-        state,
-        zip,
-        company,
-        profilePicture: picturePath,
-      });
-
+  
+    
       setEmail(email);
       setStreetAddress(streetAddress);
       setCity(city);
@@ -250,24 +260,14 @@ const Profile = () => {
       setCompany(company);
       setLogo(null);
       setRenamedFile(null);
-      setLogoUrl(logoUrl);
-
+      setLogoUrl(picturePath);
+  
     } catch (error) {
       console.error('Error updating profile:', error);
     }
   };
+  
 
-  console.log('Rendering Profile component...');
-  console.log('Current user data:', userData);
-  console.log('Offline mode:', offlineMode);
-  console.log('Initial load:', initialLoad);
-  console.log('Company:', company);
-  console.log('Email:', email);
-  console.log('Street Address:', streetAddress);
-  console.log('City:', city);
-  console.log('State:', state);
-  console.log('Zip:', zip);
-  console.log('Logo URL:', logoUrl);
 
   return (
     <div>
