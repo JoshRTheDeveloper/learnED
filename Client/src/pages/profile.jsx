@@ -9,8 +9,10 @@ import { GET_USER } from '../utils/queries';
 import {
   storeUserData,
   storeProfilePicture,
+  storeProfileFile,
   getUserData,
   getProfilePicture,
+  getProfileFile,
 } from '../utils/indexedDB';
 import {
   CHANGE_COMPANY,
@@ -115,13 +117,14 @@ const Profile = () => {
     try {
       const offlineUserData = await getUserData(userId);
       const offlineProfilePicture = await getProfilePicture(userId);
+      const offlineProfileFile = await getProfileFile(userId);
 
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
         let picturePath = offlineUserData.profilePicture;
 
-        if (offlineProfilePicture) {
-          const uploadedPicturePath = await uploadProfilePicture(offlineProfilePicture);
+        if (offlineProfileFile) {
+          const uploadedPicturePath = await uploadProfilePicture(offlineProfileFile);
           picturePath = uploadedPicturePath;
         }
 
@@ -179,6 +182,7 @@ const Profile = () => {
     const renamedFile = new File([file], filename, { type: file.type });
     setRenamedFile(renamedFile);
     await storeProfilePicture(userId, renamedFile);
+    await storeProfileFile(userId, renamedFile);
   };
 
   const uploadProfilePicture = async (file) => {
@@ -191,7 +195,7 @@ const Profile = () => {
           'userId': userId,
         },
       });
-      return response.data.fileUrl;
+      return response.data.url;
     } catch (error) {
       console.error('Error uploading profile picture:', error);
       throw error;
@@ -258,6 +262,7 @@ const Profile = () => {
 
         if (logo) {
           await storeProfilePicture(userId, picturePath);
+          await storeProfileFile(userId, renamedFile);
         }
       }
 
