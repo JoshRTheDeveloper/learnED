@@ -42,7 +42,7 @@ const Profile = () => {
 
   const { loading, data, refetch } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
-    skip: !navigator.onLine || !initialLoad,
+    skip: !navigator.onLine 
   });
 
   const [changeCompanyMutation] = useMutation(CHANGE_COMPANY);
@@ -135,9 +135,6 @@ const Profile = () => {
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
 
-        const { loading, data, error } = useQuery(GET_USER, {
-          variables: { userId: userId },
-        });
 
         if (loading) {
           console.log('Loading online data...');
