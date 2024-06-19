@@ -78,8 +78,8 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (initialLoad && !loading) {
-        if (data && data.getUser) {
+      if (initialLoad) {
+        if (!loading && data && data.getUser) {
           console.log('Fetching initial online data...');
           const { company, email, streetAddress, city, state, zip, profilePicture } = data.getUser;
           setEmail(email);
@@ -137,6 +137,9 @@ const Profile = () => {
         if (data && data.getUser) {
           const onlineUserData = data.getUser;
 
+          console.log('Offline Data:', offlineUserData);
+          console.log('Online Data:', onlineUserData);
+
           const isDifferent =
             onlineUserData &&
             (onlineUserData.company !== company ||
@@ -161,6 +164,8 @@ const Profile = () => {
               }),
             ]);
 
+            await refetch();
+
             await storeUserData({
               userId,
               email,
@@ -173,8 +178,6 @@ const Profile = () => {
             });
           } else {
             console.log('No changes to sync.');
-            console.log('Online Data:', onlineUserData);
-            console.log('Offline Data:', { company, email, streetAddress, city, state, zip, profilePicture: offlineProfilePicture });
           }
         }
       }
