@@ -78,9 +78,9 @@ const Profile = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (initialLoad) {
-        if (!loading && data && data.getUser) {
+        if (!loading && data ) {
           console.log('Fetching initial online data...');
-          const { company, email, streetAddress, city, state, zip, profilePicture } = data.getUser;
+          const { company, email, streetAddress, city, state, zip, profilePicture } = data;
           setEmail(email);
           setStreetAddress(streetAddress);
           setCity(city);
