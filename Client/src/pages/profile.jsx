@@ -95,10 +95,10 @@ const Profile = () => {
     try {
       const offlineUserData = await getUserData(userId);
       const offlineProfilePicture = await getProfilePicture(userId);
-
+  
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
-
+  
         console.log('Syncing offline changes to server...');
         await Promise.all([
           changeCompanyMutation({ variables: { userId, company } }),
@@ -111,39 +111,8 @@ const Profile = () => {
             variables: { userId, profilePicture: offlineProfilePicture },
           }),
         ]);
-
-        console.log('Sync successful. Updating local data...');
-        setUserData({
-          userId,
-          email,
-          streetAddress,
-          city,
-          state,
-          zip,
-          company,
-          profilePicture: offlineProfilePicture,
-        });
-
-        setEmail(email);
-        setStreetAddress(streetAddress);
-        setCity(city);
-        setState(state);
-        setZip(zip);
-        setCompany(company);
-        setLogoUrl(offlineProfilePicture || temporaryImage);
-
-        // Clear offline data from IndexedDB after successful sync
-        await storeUserData({
-          userId,
-          email: '',
-          streetAddress: '',
-          city: '',
-          state: '',
-          zip: '',
-          company: '',
-          profilePicture: '',
-        });
-        await storeProfilePicture(userId, ''); // Clear profile picture in IndexedDB
+  
+        console.log('Sync successful.');
       } else {
         console.log('No offline changes to sync.');
       }
@@ -152,6 +121,7 @@ const Profile = () => {
     }
   };
 
+  
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handleStreetAddressChange = (e) => setStreetAddress(e.target.value);
   const handleCityChange = (e) => setCity(e.target.value);
