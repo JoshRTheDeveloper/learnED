@@ -136,16 +136,6 @@ const Profile = () => {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
 
 
-        if (loading) {
-          console.log('Loading online data...');
-          return; // Wait until data is loaded
-        }
-
-        if (error) {
-          console.error('Error fetching online data:', error);
-          return; // Handle error fetching data
-        }
-
         const onlineUserData = data.getUser;
            console.log('Online Data:', onlineUserData);
 
