@@ -118,6 +118,13 @@ const Profile = () => {
 
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
+        let picturePath = offlineUserData.profilePicture;
+
+        if (offlineProfilePicture) {
+          const uploadedPicturePath = await uploadProfilePicture(offlineProfilePicture);
+          picturePath = uploadedPicturePath;
+        }
+
         await Promise.all([
           changeCompanyMutation({ variables: { userId, company } }),
           changeStreetAddressMutation({ variables: { userId, streetAddress } }),
@@ -126,13 +133,13 @@ const Profile = () => {
           changeStateMutation({ variables: { userId, state } }),
           changeZipMutation({ variables: { userId, zip } }),
           changeProfilePictureMutation({
-            variables: { userId, profilePicture: offlineProfilePicture },
+            variables: { userId, profilePicture: picturePath },
           }),
         ]);
 
         setUserData({
           ...offlineUserData,
-          profilePicture: offlineProfilePicture,
+          profilePicture: picturePath,
         });
 
         setCompany(offlineUserData.company);
@@ -141,11 +148,11 @@ const Profile = () => {
         setCity(offlineUserData.city);
         setState(offlineUserData.state);
         setZip(offlineUserData.zip);
-        setLogoUrl(offlineProfilePicture || temporaryImage);
+        setLogoUrl(picturePath || temporaryImage);
 
         await storeUserData({
           ...offlineUserData,
-          profilePicture: offlineProfilePicture,
+          profilePicture: picturePath,
         });
 
       } else {
@@ -163,12 +170,15 @@ const Profile = () => {
   const handleStateChange = (e) => setState(e.target.value);
   const handleZipChange = (e) => setZip(e.target.value);
 
-  const handleLogoChange = (e) => {
+  const handleLogoChange = async (e) => {
     const file = e.target.files[0];
+    const blobUrl = URL.createObjectURL(file);
     setLogo(file);
-    setLogoUrl(URL.createObjectURL(file));
+    setLogoUrl(blobUrl);
     const filename = `${userId}_profile_picture.jpg`;
-    setRenamedFile(new File([file], filename, { type: file.type }));
+    const renamedFile = new File([file], filename, { type: file.type });
+    setRenamedFile(renamedFile);
+    await storeProfilePicture(userId, renamedFile);
   };
 
   const uploadProfilePicture = async (file) => {
