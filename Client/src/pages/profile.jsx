@@ -134,59 +134,63 @@ const Profile = () => {
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
   
-        if (data && data.getUser) {
-          const onlineUserData = data.getUser;
+        // Fetch the latest online data
+        const { data: { getUser: onlineUserData } } = await client.query({
+          query: GET_USER,
+          variables: { userId },
+          fetchPolicy: 'network-only', // Fetch fresh data from the server
+        });
   
-          console.log('Offline Data:', offlineUserData);
-          console.log('Online Data:', onlineUserData);
+        console.log('Offline Data:', offlineUserData);
+        console.log('Online Data:', onlineUserData);
   
-          const isDifferent =
-            onlineUserData &&
-            (onlineUserData.company !== company ||
-              onlineUserData.email !== email ||
-              onlineUserData.streetAddress !== streetAddress ||
-              onlineUserData.city !== city ||
-              onlineUserData.state !== state ||
-              onlineUserData.zip !== zip ||
-              onlineUserData.profilePicture !== offlineProfilePicture);
+        const isDifferent =
+          onlineUserData &&
+          (onlineUserData.company !== company ||
+            onlineUserData.email !== email ||
+            onlineUserData.streetAddress !== streetAddress ||
+            onlineUserData.city !== city ||
+            onlineUserData.state !== state ||
+            onlineUserData.zip !== zip ||
+            onlineUserData.profilePicture !== offlineProfilePicture);
   
-          if (isDifferent) {
-            console.log('Syncing offline changes to server...');
-            await Promise.all([
-              changeCompanyMutation({ variables: { userId, company } }),
-              changeStreetAddressMutation({ variables: { userId, streetAddress } }),
-              changeEmailMutation({ variables: { userId, email } }),
-              changeCityMutation({ variables: { userId, city } }),
-              changeStateMutation({ variables: { userId, state } }),
-              changeZipMutation({ variables: { userId, zip } }),
-              changeProfilePictureMutation({
-                variables: { userId, profilePicture: offlineProfilePicture },
-              }),
-            ]);
+        if (isDifferent) {
+          console.log('Syncing offline changes to server...');
+          await Promise.all([
+            changeCompanyMutation({ variables: { userId, company } }),
+            changeStreetAddressMutation({ variables: { userId, streetAddress } }),
+            changeEmailMutation({ variables: { userId, email } }),
+            changeCityMutation({ variables: { userId, city } }),
+            changeStateMutation({ variables: { userId, state } }),
+            changeZipMutation({ variables: { userId, zip } }),
+            changeProfilePictureMutation({
+              variables: { userId, profilePicture: offlineProfilePicture },
+            }),
+          ]);
   
-            // After mutations, refetch the data to update the UI
-            await refetch();
+          // After mutations, refetch the data to update the UI
+          await client.query({ query: GET_USER, variables: { userId }, fetchPolicy: 'network-only' });
   
-            // Update IndexedDB with the latest synced data
-            await storeUserData({
-              userId,
-              email,
-              streetAddress,
-              city,
-              state,
-              zip,
-              company,
-              profilePicture: offlineProfilePicture,
-            });
-          } else {
-            console.log('No changes to sync.');
-          }
+          // Update IndexedDB with the latest synced data
+          await storeUserData({
+            userId,
+            email,
+            streetAddress,
+            city,
+            state,
+            zip,
+            company,
+            profilePicture: offlineProfilePicture,
+          });
+        } else {
+          console.log('No changes to sync.');
         }
       }
     } catch (error) {
       console.error('Error syncing data with server:', error);
     }
   };
+  
 
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handleStreetAddressChange = (e) => setStreetAddress(e.target.value);
