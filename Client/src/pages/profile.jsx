@@ -130,16 +130,16 @@ const Profile = () => {
     try {
       const offlineUserData = await getUserData(userId);
       const offlineProfilePicture = await getProfilePicture(userId);
-
+  
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
-
+  
         if (data && data.getUser) {
           const onlineUserData = data.getUser;
-
+  
           console.log('Offline Data:', offlineUserData);
           console.log('Online Data:', onlineUserData);
-
+  
           const isDifferent =
             onlineUserData &&
             (onlineUserData.company !== company ||
@@ -149,7 +149,7 @@ const Profile = () => {
               onlineUserData.state !== state ||
               onlineUserData.zip !== zip ||
               onlineUserData.profilePicture !== offlineProfilePicture);
-
+  
           if (isDifferent) {
             console.log('Syncing offline changes to server...');
             await Promise.all([
@@ -163,9 +163,11 @@ const Profile = () => {
                 variables: { userId, profilePicture: offlineProfilePicture },
               }),
             ]);
-
+  
+            // After mutations, refetch the data to update the UI
             await refetch();
-
+  
+            // Update IndexedDB with the latest synced data
             await storeUserData({
               userId,
               email,
