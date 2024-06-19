@@ -59,7 +59,6 @@ const Profile = () => {
       setOfflineMode(!isOnline);
 
       if (isOnline) {
-      
         await syncOfflineData();
         refetch();
       } else {
@@ -79,43 +78,32 @@ const Profile = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (initialLoad) {
-        if (!loading && data && data.getUser) {
-          const { company, email, streetAddress, city, state, zip, profilePicture } = data.getUser;
-          setEmail(email);
-          setStreetAddress(streetAddress);
-          setCity(city);
-          setState(state);
-          setZip(zip);
-          setUserData(data.getUser);
-          setCompany(company);
-          setLogoUrl(profilePicture || temporaryImage);
+        try {
+          let userDataFromDB;
 
-          await storeUserData({
-            userId,
-            company,
-            email,
-            streetAddress,
-            city,
-            state,
-            zip,
-            profilePicture,
-          });
+          if (navigator.onLine && !loading && data && data.getUser) {
+            userDataFromDB = data.getUser;
+          } else {
+            userDataFromDB = await getUserData(userId);
+          }
+
+          if (userDataFromDB) {
+            const { company, email, streetAddress, city, state, zip, profilePicture } = userDataFromDB;
+            setEmail(email);
+            setStreetAddress(streetAddress);
+            setCity(city);
+            setState(state);
+            setZip(zip);
+            setUserData(userDataFromDB);
+            setCompany(company);
+            setLogoUrl(profilePicture || temporaryImage);
+          } else {
+            console.error('No offline data found.');
+          }
+
           setInitialLoad(false);
-        }
-      } else if (!navigator.onLine) {
-        const offlineData = await getUserData(userId);
-        if (offlineData) {
-          setEmail(offlineData.email);
-          setStreetAddress(offlineData.streetAddress);
-          setCity(offlineData.city);
-          setState(offlineData.state);
-          setZip(offlineData.zip);
-          setUserData(offlineData);
-          setCompany(offlineData.company);
-          const profilePicture = await getProfilePicture(userId);
-          setLogoUrl(profilePicture || temporaryImage);
-        } else {
-          console.error('No offline data found.');
+        } catch (error) {
+          console.error('Error fetching data:', error);
         }
       }
     };
@@ -127,7 +115,7 @@ const Profile = () => {
     try {
       const offlineUserData = await getUserData(userId);
       const offlineProfilePicture = await getProfilePicture(userId);
-  
+
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
         await Promise.all([
@@ -141,7 +129,25 @@ const Profile = () => {
             variables: { userId, profilePicture: offlineProfilePicture },
           }),
         ]);
-  
+
+        setUserData({
+          ...offlineUserData,
+          profilePicture: offlineProfilePicture,
+        });
+
+        setCompany(offlineUserData.company);
+        setEmail(offlineUserData.email);
+        setStreetAddress(offlineUserData.streetAddress);
+        setCity(offlineUserData.city);
+        setState(offlineUserData.state);
+        setZip(offlineUserData.zip);
+        setLogoUrl(offlineProfilePicture || temporaryImage);
+
+        await storeUserData({
+          ...offlineUserData,
+          profilePicture: offlineProfilePicture,
+        });
+
       } else {
         console.error('No offline changes to sync.');
       }
@@ -184,19 +190,17 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     try {
-      let picturePath = logoUrl; 
-  
+      let picturePath = logoUrl;
+
       if (navigator.onLine) {
-        // Handle online mode
         if (logo) {
-          const uploadedPicturePath = await uploadProfilePicture(renamedFile); 
-          picturePath = uploadedPicturePath; 
+          const uploadedPicturePath = await uploadProfilePicture(renamedFile);
+          picturePath = uploadedPicturePath;
           await storeProfilePicture(userId, picturePath);
         }
-  
- 
+
         await Promise.all([
           changeCompanyMutation({ variables: { userId, company } }),
           changeStreetAddressMutation({ variables: { userId, streetAddress } }),
@@ -206,7 +210,6 @@ const Profile = () => {
           changeZipMutation({ variables: { userId, zip } }),
           changeProfilePictureMutation({ variables: { userId, profilePicture: picturePath } }),
         ]);
-  
 
         setUserData({
           userId,
@@ -230,7 +233,6 @@ const Profile = () => {
           profilePicture: picturePath,
         });
       } else {
-       
         const offlineUserData = {
           userId,
           email,
@@ -241,17 +243,14 @@ const Profile = () => {
           company,
           profilePicture: picturePath,
         };
-  
-   
+
         await storeUserData(offlineUserData);
-  
-     
+
         if (logo) {
           await storeProfilePicture(userId, picturePath);
         }
       }
-  
-    
+
       setEmail(email);
       setStreetAddress(streetAddress);
       setCity(city);
@@ -261,13 +260,10 @@ const Profile = () => {
       setLogo(null);
       setRenamedFile(null);
       setLogoUrl(picturePath);
-  
     } catch (error) {
       console.error('Error updating profile:', error);
     }
   };
-  
-
 
   return (
     <div>
