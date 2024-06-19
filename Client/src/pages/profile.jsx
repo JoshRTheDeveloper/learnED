@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client';
 import jwtDecode from 'jwt-decode';
 import './profile.css';
 import Sidebar from '../components/sidebar/sidebar';
 import temporaryImage from '../assets/noLogo.svg';
 import axios from 'axios';
-import { GET_USER } from '../utils/queries';
 import {
   storeUserData,
   storeProfilePicture,
@@ -34,16 +33,10 @@ const Profile = () => {
   const [logo, setLogo] = useState(null);
   const [renamedFile, setRenamedFile] = useState(null);
   const [offlineMode, setOfflineMode] = useState(!navigator.onLine);
-  const [initialLoad, setInitialLoad] = useState(true);
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
-
-  const { loading, data, refetch } = useQuery(GET_USER, {
-    variables: { userId: userId || '' },
-    skip: !navigator.onLine || !initialLoad,
-  });
 
   const [changeCompanyMutation] = useMutation(CHANGE_COMPANY);
   const [changeProfilePictureMutation] = useMutation(CHANGE_PROFILE_PICTURE);
@@ -59,9 +52,8 @@ const Profile = () => {
       setOfflineMode(!isOnline);
 
       if (isOnline) {
-        console.log('Back online. Syncing offline data and refetching...');
+        console.log('Back online. Syncing offline data...');
         await syncOfflineData();
-        refetch();
       } else {
         console.log('Went offline.');
       }
@@ -74,123 +66,91 @@ const Profile = () => {
       window.removeEventListener('online', handleOnlineStatusChange);
       window.removeEventListener('offline', handleOnlineStatusChange);
     };
-  }, [refetch]);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (initialLoad) {
-        if (!loading && data && data.getUser) {
-          console.log('Fetching initial online data...');
-          const { company, email, streetAddress, city, state, zip, profilePicture } = data.getUser;
-          setEmail(email);
-          setStreetAddress(streetAddress);
-          setCity(city);
-          setState(state);
-          setZip(zip);
-          setUserData(data.getUser);
-          setCompany(company);
-          setLogoUrl(profilePicture || temporaryImage);
-
-          await storeUserData({
-            userId,
-            company,
-            email,
-            streetAddress,
-            city,
-            state,
-            zip,
-            profilePicture,
-          });
-          setInitialLoad(false);
-        }
-      } else if (!navigator.onLine) {
-        console.log('Fetching offline data...');
-        const offlineData = await getUserData(userId);
-        if (offlineData) {
-          console.log('Offline data found:', offlineData);
-          setEmail(offlineData.email);
-          setStreetAddress(offlineData.streetAddress);
-          setCity(offlineData.city);
-          setState(offlineData.state);
-          setZip(offlineData.zip);
-          setUserData(offlineData);
-          setCompany(offlineData.company);
-          const profilePicture = await getProfilePicture(userId);
-          setLogoUrl(profilePicture || temporaryImage);
-        } else {
-          console.log('No offline data found.');
-        }
+      console.log('Fetching offline data...');
+      const offlineData = await getUserData(userId);
+      if (offlineData) {
+        console.log('Offline data found:', offlineData);
+        setEmail(offlineData.email);
+        setStreetAddress(offlineData.streetAddress);
+        setCity(offlineData.city);
+        setState(offlineData.state);
+        setZip(offlineData.zip);
+        setCompany(offlineData.company);
+        const profilePicture = await getProfilePicture(userId);
+        setLogoUrl(profilePicture || temporaryImage);
+        setUserData(offlineData);
+      } else {
+        console.log('No offline data found.');
       }
     };
 
     fetchData();
-  }, [loading, data, userId, initialLoad]);
+  }, [userId]);
 
   const syncOfflineData = async () => {
     try {
       const offlineUserData = await getUserData(userId);
       const offlineProfilePicture = await getProfilePicture(userId);
-  
+
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
-  
-        // Fetch the latest online data
-        const { data: { getUser: onlineUserData } } = await client.query({
-          query: GET_USER,
-          variables: { userId },
-          fetchPolicy: 'network-only', // Fetch fresh data from the server
+
+        console.log('Syncing offline changes to server...');
+        await Promise.all([
+          changeCompanyMutation({ variables: { userId, company } }),
+          changeStreetAddressMutation({ variables: { userId, streetAddress } }),
+          changeEmailMutation({ variables: { userId, email } }),
+          changeCityMutation({ variables: { userId, city } }),
+          changeStateMutation({ variables: { userId, state } }),
+          changeZipMutation({ variables: { userId, zip } }),
+          changeProfilePictureMutation({
+            variables: { userId, profilePicture: offlineProfilePicture },
+          }),
+        ]);
+
+        console.log('Sync successful. Updating local data...');
+        setUserData({
+          userId,
+          email,
+          streetAddress,
+          city,
+          state,
+          zip,
+          company,
+          profilePicture: offlineProfilePicture,
         });
-  
-        console.log('Offline Data:', offlineUserData);
-        console.log('Online Data:', onlineUserData);
-  
-        const isDifferent =
-          onlineUserData &&
-          (onlineUserData.company !== company ||
-            onlineUserData.email !== email ||
-            onlineUserData.streetAddress !== streetAddress ||
-            onlineUserData.city !== city ||
-            onlineUserData.state !== state ||
-            onlineUserData.zip !== zip ||
-            onlineUserData.profilePicture !== offlineProfilePicture);
-  
-        if (isDifferent) {
-          console.log('Syncing offline changes to server...');
-          await Promise.all([
-            changeCompanyMutation({ variables: { userId, company } }),
-            changeStreetAddressMutation({ variables: { userId, streetAddress } }),
-            changeEmailMutation({ variables: { userId, email } }),
-            changeCityMutation({ variables: { userId, city } }),
-            changeStateMutation({ variables: { userId, state } }),
-            changeZipMutation({ variables: { userId, zip } }),
-            changeProfilePictureMutation({
-              variables: { userId, profilePicture: offlineProfilePicture },
-            }),
-          ]);
-  
-          // After mutations, refetch the data to update the UI
-          await client.query({ query: GET_USER, variables: { userId }, fetchPolicy: 'network-only' });
-  
-          // Update IndexedDB with the latest synced data
-          await storeUserData({
-            userId,
-            email,
-            streetAddress,
-            city,
-            state,
-            zip,
-            company,
-            profilePicture: offlineProfilePicture,
-          });
-        } else {
-          console.log('No changes to sync.');
-        }
+
+        setEmail(email);
+        setStreetAddress(streetAddress);
+        setCity(city);
+        setState(state);
+        setZip(zip);
+        setCompany(company);
+        setLogoUrl(offlineProfilePicture || temporaryImage);
+
+        // Clear offline data from IndexedDB after successful sync
+        await storeUserData({
+          userId,
+          email: '',
+          streetAddress: '',
+          city: '',
+          state: '',
+          zip: '',
+          company: '',
+          profilePicture: '',
+        });
+        await storeProfilePicture(userId, ''); // Clear profile picture in IndexedDB
+      } else {
+        console.log('No offline changes to sync.');
       }
     } catch (error) {
       console.error('Error syncing data with server:', error);
     }
   };
-  
 
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handleStreetAddressChange = (e) => setStreetAddress(e.target.value);
@@ -230,42 +190,21 @@ const Profile = () => {
     try {
       let picturePath = logoUrl;
 
-      if (navigator.onLine) {
-        if (logo) {
-          const uploadedPicturePath = await uploadProfilePicture(renamedFile);
-          picturePath = uploadedPicturePath;
-          await storeProfilePicture(userId, picturePath);
-        }
-
-        await Promise.all([
-          changeCompanyMutation({ variables: { userId, company } }),
-          changeStreetAddressMutation({ variables: { userId, streetAddress } }),
-          changeEmailMutation({ variables: { userId, email } }),
-          changeCityMutation({ variables: { userId, city } }),
-          changeStateMutation({ variables: { userId, state } }),
-          changeZipMutation({ variables: { userId, zip } }),
-          changeProfilePictureMutation({ variables: { userId, profilePicture: picturePath } }),
-        ]);
-
-        await storeUserData({ userId, email, streetAddress, city, state, zip, company, profilePicture: picturePath });
-      } else {
-        const offlineUserData = {
-          userId,
-          email,
-          streetAddress,
-          city,
-          state,
-          zip,
-          company,
-          profilePicture: picturePath,
-        };
-
-        await storeUserData(offlineUserData);
-
-        if (logo) {
-          await storeProfilePicture(userId, picturePath);
-        }
+      if (logo) {
+        const uploadedPicturePath = await uploadProfilePicture(renamedFile);
+        picturePath = uploadedPicturePath;
+        await storeProfilePicture(userId, picturePath);
       }
+
+      await Promise.all([
+        changeCompanyMutation({ variables: { userId, company } }),
+        changeStreetAddressMutation({ variables: { userId, streetAddress } }),
+        changeEmailMutation({ variables: { userId, email } }),
+        changeCityMutation({ variables: { userId, city } }),
+        changeStateMutation({ variables: { userId, state } }),
+        changeZipMutation({ variables: { userId, zip } }),
+        changeProfilePictureMutation({ variables: { userId, profilePicture: picturePath } }),
+      ]);
 
       setUserData({
         userId,
@@ -296,7 +235,6 @@ const Profile = () => {
   console.log('Rendering Profile component...');
   console.log('Current user data:', userData);
   console.log('Offline mode:', offlineMode);
-  console.log('Initial load:', initialLoad);
   console.log('Company:', company);
   console.log('Email:', email);
   console.log('Street Address:', streetAddress);
