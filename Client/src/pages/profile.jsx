@@ -34,7 +34,7 @@ const Profile = () => {
   const [logo, setLogo] = useState(null);
   const [renamedFile, setRenamedFile] = useState(null);
   const [offlineMode, setOfflineMode] = useState(!navigator.onLine);
-  const [initialLoad, setInitialLoad] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true); // Initially true
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -97,6 +97,8 @@ const Profile = () => {
             zip,
             profilePicture,
           });
+
+          // Set initialLoad to false after initial data fetch
           setInitialLoad(false);
         }
       } else if (!navigator.onLine) {
@@ -267,6 +269,7 @@ const Profile = () => {
       console.error('Error updating profile:', error);
     }
   };
+
 
   return (
     <div>
