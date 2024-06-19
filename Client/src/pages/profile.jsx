@@ -250,7 +250,7 @@ const Profile = () => {
       setCompany(company);
       setLogo(null);
       setRenamedFile(null);
-      setLogoUrl('');
+      setLogoUrl(logoUrl);
 
     } catch (error) {
       console.error('Error updating profile:', error);
