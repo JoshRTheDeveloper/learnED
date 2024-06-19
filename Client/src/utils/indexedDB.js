@@ -323,4 +323,15 @@ export const clearIndexedDB = async () => {
   }
 };
 
+export const storeProfileFile = async (userId, file) => {
+  const db = await dbPromise;
+  return db.put('profileFiles', { userId, file });
+};
+
+export const getProfileFile = async (userId) => {
+  const db = await dbPromise;
+  const result = await db.get('profileFiles', userId);
+  return result ? result.file : null;
+};
+
 export default db;
