@@ -130,13 +130,27 @@ const Profile = () => {
     try {
       const offlineUserData = await getUserData(userId);
       const offlineProfilePicture = await getProfilePicture(userId);
-      console.log('Fetched Offline Data:', offlineUserData);
-      console.log('Fetched Offline Profile Picture:', offlineProfilePicture);
+     
 
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
+
+        const { loading, data, error } = useQuery(GET_USER, {
+          variables: { userId: userId },
+        });
+
+        if (loading) {
+          console.log('Loading online data...');
+          return; // Wait until data is loaded
+        }
+
+        if (error) {
+          console.error('Error fetching online data:', error);
+          return; // Handle error fetching data
+        }
+
         const onlineUserData = data.getUser;
-        console.log(data.getUser)
+           console.log('Online Data:', onlineUserData);
 
         const isDifferent =
           onlineUserData &&
