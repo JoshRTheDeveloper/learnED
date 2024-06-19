@@ -42,7 +42,6 @@ const Profile = () => {
 
   const { loading, data, refetch } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
-    skip: !navigator.onLine 
   });
 
   const [changeCompanyMutation] = useMutation(CHANGE_COMPANY);
