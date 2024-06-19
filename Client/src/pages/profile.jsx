@@ -34,7 +34,7 @@ const Profile = () => {
   const [logo, setLogo] = useState(null);
   const [renamedFile, setRenamedFile] = useState(null);
   const [offlineMode, setOfflineMode] = useState(!navigator.onLine);
-  const [initialLoad, setInitialLoad] = useState(true); // Initially true
+  const [initialLoad, setInitialLoad] = useState(true);
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -59,8 +59,11 @@ const Profile = () => {
       setOfflineMode(!isOnline);
 
       if (isOnline) {
+        console.log('Back online. Syncing offline data and refetching...');
         await syncOfflineData();
         refetch();
+      } else {
+        console.log('Went offline.');
       }
     };
 
@@ -77,6 +80,7 @@ const Profile = () => {
     const fetchData = async () => {
       if (initialLoad) {
         if (!loading && data && data.getUser) {
+          console.log('Fetching initial online data...');
           const { company, email, streetAddress, city, state, zip, profilePicture } = data.getUser;
           setEmail(email);
           setStreetAddress(streetAddress);
@@ -97,13 +101,13 @@ const Profile = () => {
             zip,
             profilePicture,
           });
-
-          // Set initialLoad to false after initial data fetch
           setInitialLoad(false);
         }
       } else if (!navigator.onLine) {
+        console.log('Fetching offline data...');
         const offlineData = await getUserData(userId);
         if (offlineData) {
+          console.log('Offline data found:', offlineData);
           setEmail(offlineData.email);
           setStreetAddress(offlineData.streetAddress);
           setCity(offlineData.city);
@@ -113,6 +117,8 @@ const Profile = () => {
           setCompany(offlineData.company);
           const profilePicture = await getProfilePicture(userId);
           setLogoUrl(profilePicture || temporaryImage);
+        } else {
+          console.log('No offline data found.');
         }
       }
     };
@@ -140,6 +146,7 @@ const Profile = () => {
             onlineUserData.profilePicture !== offlineProfilePicture);
 
         if (isDifferent) {
+          console.log('Syncing offline changes to server...');
           await Promise.all([
             changeCompanyMutation({ variables: { userId, company } }),
             changeStreetAddressMutation({ variables: { userId, streetAddress } }),
@@ -162,6 +169,8 @@ const Profile = () => {
             company,
             profilePicture: offlineProfilePicture,
           });
+        } else {
+          console.log('No changes to sync.');
         }
       }
     } catch (error) {
@@ -270,6 +279,17 @@ const Profile = () => {
     }
   };
 
+  console.log('Rendering Profile component...');
+  console.log('Current user data:', userData);
+  console.log('Offline mode:', offlineMode);
+  console.log('Initial load:', initialLoad);
+  console.log('Company:', company);
+  console.log('Email:', email);
+  console.log('Street Address:', streetAddress);
+  console.log('City:', city);
+  console.log('State:', state);
+  console.log('Zip:', zip);
+  console.log('Logo URL:', logoUrl);
 
   return (
     <div>
