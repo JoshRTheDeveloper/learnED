@@ -116,7 +116,6 @@ const Profile = () => {
   const syncOfflineData = async () => {
     try {
       const offlineUserData = await getUserData(userId);
-      const offlineProfilePicture = await getProfilePicture(userId);
       const offlineProfileFile = await getProfileFile(userId);
 
       if (offlineUserData) {
@@ -181,7 +180,7 @@ const Profile = () => {
     const filename = `${userId}_profile_picture.jpg`;
     const renamedFile = new File([file], filename, { type: file.type });
     setRenamedFile(renamedFile);
-    await storeProfilePicture(userId, renamedFile);
+    await storeProfilePicture(userId, blobUrl);
     await storeProfileFile(userId, renamedFile);
   };
 
@@ -195,7 +194,7 @@ const Profile = () => {
           'userId': userId,
         },
       });
-      return response.data.url;
+      return response.data.fileUrl;
     } catch (error) {
       console.error('Error uploading profile picture:', error);
       throw error;
@@ -261,7 +260,7 @@ const Profile = () => {
         await storeUserData(offlineUserData);
 
         if (logo) {
-          await storeProfilePicture(userId, picturePath);
+          await storeProfilePicture(userId, logoUrl);
           await storeProfileFile(userId, renamedFile);
         }
       }
