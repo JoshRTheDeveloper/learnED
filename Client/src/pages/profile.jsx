@@ -74,7 +74,7 @@ const Profile = () => {
       window.removeEventListener('online', handleOnlineStatusChange);
       window.removeEventListener('offline', handleOnlineStatusChange);
     };
-  }, []);
+  }, [refetch]);
 
   useEffect(() => {
     const fetchData = async () => {
