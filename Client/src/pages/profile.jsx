@@ -42,6 +42,7 @@ const Profile = () => {
 
   const { loading, data, refetch } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
+    skip: !navigator.onLine || !initialLoad,
   });
 
   const [changeCompanyMutation] = useMutation(CHANGE_COMPANY);
@@ -77,10 +78,10 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (initialLoad) {
-        if (!loading && data ) {
+      if (initialLoad && !loading) {
+        if (data && data.getUser) {
           console.log('Fetching initial online data...');
-          const { company, email, streetAddress, city, state, zip, profilePicture } = data;
+          const { company, email, streetAddress, city, state, zip, profilePicture } = data.getUser;
           setEmail(email);
           setStreetAddress(streetAddress);
           setCity(city);
@@ -129,53 +130,52 @@ const Profile = () => {
     try {
       const offlineUserData = await getUserData(userId);
       const offlineProfilePicture = await getProfilePicture(userId);
-     
 
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
 
+        if (data && data.getUser) {
+          const onlineUserData = data.getUser;
 
-        const onlineUserData = data.getUser;
-           console.log('Online Data:', onlineUserData);
+          const isDifferent =
+            onlineUserData &&
+            (onlineUserData.company !== company ||
+              onlineUserData.email !== email ||
+              onlineUserData.streetAddress !== streetAddress ||
+              onlineUserData.city !== city ||
+              onlineUserData.state !== state ||
+              onlineUserData.zip !== zip ||
+              onlineUserData.profilePicture !== offlineProfilePicture);
 
-        const isDifferent =
-          onlineUserData &&
-          (onlineUserData.company !== company ||
-            onlineUserData.email !== email ||
-            onlineUserData.streetAddress !== streetAddress ||
-            onlineUserData.city !== city ||
-            onlineUserData.state !== state ||
-            onlineUserData.zip !== zip ||
-            onlineUserData.profilePicture !== offlineProfilePicture);
+          if (isDifferent) {
+            console.log('Syncing offline changes to server...');
+            await Promise.all([
+              changeCompanyMutation({ variables: { userId, company } }),
+              changeStreetAddressMutation({ variables: { userId, streetAddress } }),
+              changeEmailMutation({ variables: { userId, email } }),
+              changeCityMutation({ variables: { userId, city } }),
+              changeStateMutation({ variables: { userId, state } }),
+              changeZipMutation({ variables: { userId, zip } }),
+              changeProfilePictureMutation({
+                variables: { userId, profilePicture: offlineProfilePicture },
+              }),
+            ]);
 
-        if (isDifferent) {
-          console.log('Syncing offline changes to server...');
-          await Promise.all([
-            changeCompanyMutation({ variables: { userId, company } }),
-            changeStreetAddressMutation({ variables: { userId, streetAddress } }),
-            changeEmailMutation({ variables: { userId, email } }),
-            changeCityMutation({ variables: { userId, city } }),
-            changeStateMutation({ variables: { userId, state } }),
-            changeZipMutation({ variables: { userId, zip } }),
-            changeProfilePictureMutation({
-              variables: { userId, profilePicture: offlineProfilePicture },
-            }),
-          ]);
-
-          await storeUserData({
-            userId,
-            email,
-            streetAddress,
-            city,
-            state,
-            zip,
-            company,
-            profilePicture: offlineProfilePicture,
-          });
-        } else {
-          console.log('No changes to sync.');
-          console.log('Online Data:', onlineUserData);
-          console.log('Offline Data:', { company, email, streetAddress, city, state, zip, profilePicture: offlineProfilePicture });
+            await storeUserData({
+              userId,
+              email,
+              streetAddress,
+              city,
+              state,
+              zip,
+              company,
+              profilePicture: offlineProfilePicture,
+            });
+          } else {
+            console.log('No changes to sync.');
+            console.log('Online Data:', onlineUserData);
+            console.log('Offline Data:', { company, email, streetAddress, city, state, zip, profilePicture: offlineProfilePicture });
+          }
         }
       }
     } catch (error) {
