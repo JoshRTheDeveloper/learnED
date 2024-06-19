@@ -130,6 +130,9 @@ const Profile = () => {
     try {
       const offlineUserData = await getUserData(userId);
       const offlineProfilePicture = await getProfilePicture(userId);
+      console.log('Fetched Offline Data:', offlineUserData);
+      console.log('Fetched Offline Profile Picture:', offlineProfilePicture);
+
 
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
@@ -171,6 +174,8 @@ const Profile = () => {
           });
         } else {
           console.log('No changes to sync.');
+          console.log('Online Data:', onlineUserData);
+          console.log('Offline Data:', { company, email, streetAddress, city, state, zip, profilePicture: offlineProfilePicture });
         }
       }
     } catch (error) {
