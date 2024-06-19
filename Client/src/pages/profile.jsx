@@ -30,8 +30,8 @@ const Profile = () => {
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
   const [company, setCompany] = useState('');
-  const [logo, setLogo] = useState(null);
   const [logoUrl, setLogoUrl] = useState(temporaryImage);
+  const [logo, setLogo] = useState(null);
   const [renamedFile, setRenamedFile] = useState(null);
   const [offlineMode, setOfflineMode] = useState(!navigator.onLine);
   const [initialLoad, setInitialLoad] = useState(true);
@@ -102,14 +102,13 @@ const Profile = () => {
       } else if (!navigator.onLine) {
         const offlineData = await getUserData(userId);
         if (offlineData) {
-          const { company, email, streetAddress, city, state, zip } = offlineData;
-          setEmail(email);
-          setStreetAddress(streetAddress);
-          setCity(city);
-          setState(state);
-          setZip(zip);
+          setEmail(offlineData.email);
+          setStreetAddress(offlineData.streetAddress);
+          setCity(offlineData.city);
+          setState(offlineData.state);
+          setZip(offlineData.zip);
           setUserData(offlineData);
-          setCompany(company);
+          setCompany(offlineData.company);
           const profilePicture = await getProfilePicture(userId);
           setLogoUrl(profilePicture || temporaryImage);
         }
@@ -269,84 +268,71 @@ const Profile = () => {
     }
   };
 
-
-  useEffect(() => {
-    if (userData) {
-      setEmail(userData.email || '');
-      setStreetAddress(userData.streetAddress || '');
-      setCity(userData.city || '');
-      setState(userData.state || '');
-      setZip(userData.zip || '');
-      setCompany(userData.company || '');
-      setLogoUrl(userData.profilePicture || temporaryImage);
-      }
-      }, [userData]);
-      
-      return (
-      <div>
+  return (
+    <div>
       <Sidebar />
       <div className='profile'>
-      <div className='profile-Id'>
-      <div>
-      <img src={logoUrl} alt='Uploaded Logo' className='logo-preview' />
+        <div className='profile-Id'>
+          <div>
+            <img src={logoUrl} alt='Uploaded Logo' className='logo-preview' />
+          </div>
+          <h2 id='profile-h2'>Edit Profile</h2>
+          <div className='columns-2'>
+            <div className='split3'>
+              <br />
+              <p>Company:</p>
+              <br />
+              <p>Email:</p>
+              <br />
+              <p>Address:</p>
+            </div>
+            <div className='split4'>
+              <br />
+              <p>{company}</p>
+              <br />
+              <p>{email}</p>
+              <br />
+              <p>{streetAddress}</p>
+              <p>{city} {state} {zip}</p>
+            </div>
+          </div>
+        </div>
+        <div className='form1'>
+          <form onSubmit={handleSubmit}>
+            <div className='fields'>
+              <label className='labels'>Company:</label>
+              <input className='inputs' type="text" value={company} onChange={handleCompanyChange} />
+            </div>
+            <div className='fields'>
+              <label className='labels'>Email:</label>
+              <input className='inputs' type="email" value={email} onChange={handleEmailChange} />
+            </div>
+            <div className='fields'>
+              <label className='labels'>Address:</label>
+              <input className='inputs' type="text" placeholder="Enter Address" value={streetAddress} onChange={handleStreetAddressChange} />
+            </div>
+            <div className='fields'>
+              <label className='labels'>City:</label>
+              <input className='inputs' type="text" placeholder="Enter City" value={city} onChange={handleCityChange} />
+            </div>
+            <div className='fields'>
+              <label className='labels'>State:</label>
+              <input className='inputs' type="text" placeholder="Enter State" value={state} onChange={handleStateChange} />
+            </div>
+            <div className='fields'>
+              <label className='labels'>Zip:</label>
+              <input className='inputs' type="text" placeholder="Enter Zip" value={zip} onChange={handleZipChange} />
+            </div>
+            <div className='fields'>
+              <label className='labels'>Logo:</label>
+              <input className='inputs1' type="file" accept="image/*" onChange={handleLogoChange} />
+            </div>
+            <button className='submit-button' type="submit">Submit</button>
+          </form>
+        </div>
       </div>
-      <h2 id='profile-h2'>Edit Profile</h2>
-      <div className='columns-2'>
-      <div className='split3'>
-      <br></br>
-      <p>Company:</p>
-      <br></br>
-      <p>Email:</p>
-      <br></br>
-      <p>Address:</p>
-      </div>
-      <div className='split4'>
-      <br></br>
-      <p>{userData?.company}</p>
-      <br></br>
-      <p>{userData?.email}</p>
-      <br></br>
-      <p>{userData?.streetAddress}</p>
-      <p>{userData?.city} {userData?.state} {userData?.zip}</p>
-      </div>
-      </div>
-      </div>
-      <div className='form1'>
-      <form onSubmit={handleSubmit}>
-      <div className='fields'>
-      <label className='labels'>Company:</label>
-      <input className='inputs' type="text" value={company} onChange={handleCompanyChange} />
-      </div>
-      <div className='fields'>
-      <label className='labels'>Email:</label>
-      <input className='inputs' type="email" value={email} onChange={handleEmailChange} />
-      </div>
-      <div className='fields'>
-      <label className='labels'>Address:</label>
-      <input className='inputs' type="text" placeholder="Enter Address" value={streetAddress} onChange={handleStreetAddressChange} />
-      </div>
-      <div className='fields'>
-      <label className='labels'>City:</label>
-      <input className='inputs' type="text" placeholder="Enter City" value={city} onChange={handleCityChange} />
-      </div>
-      <div className='fields'>
-      <label className='labels'>State:</label>
-      <input className='inputs' type="text" placeholder="Enter State" value={state} onChange={handleStateChange} />
-      </div>
-      <div className='fields'>
-      <label className='labels'>Zip:</label>
-      <input className='inputs' type="text" placeholder="Enter Zip" value={zip} onChange={handleZipChange} />
-      </div>
-      <div className='fields'>
-      <label className='labels'>Logo:</label>
-      <input className='inputs1' type="file" accept="image/*" onChange={handleLogoChange} />
-      </div>
-      <button className='submit-button' type="submit">Submit</button>
-      </form>
-      </div>
-      </div>
-      </div>
-      );
-      };
-      
-      export default Profile;
+    </div>
+  );
+};
+
+export default Profile;
