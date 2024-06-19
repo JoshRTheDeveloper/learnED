@@ -133,10 +133,10 @@ const Profile = () => {
       console.log('Fetched Offline Data:', offlineUserData);
       console.log('Fetched Offline Profile Picture:', offlineProfilePicture);
 
-
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
-        const onlineUserData = data?.getUser;
+        const onlineUserData = data.getUser;
+        console.log(data.getUser)
 
         const isDifferent =
           onlineUserData &&
