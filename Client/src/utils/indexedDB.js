@@ -328,4 +328,29 @@ export const getProfileFile = async (userId) => {
   }
 };
 
+export const addOfflineMutation = async (mutation) => {
+  const db = await openDB();
+  const tx = db.transaction('offlineMutations', 'readwrite');
+  const store = tx.objectStore('offlineMutations');
+  await store.add(mutation);
+  await tx.done;
+};
+
+export const getOfflineMutations = async () => {
+  const db = await openDB();
+  const tx = db.transaction('offlineMutations', 'readonly');
+  const store = tx.objectStore('offlineMutations');
+  const allMutations = await store.getAll();
+  await tx.done;
+  return allMutations;
+};
+
+export const clearOfflineMutations = async () => {
+  const db = await openDB();
+  const tx = db.transaction('offlineMutations', 'readwrite');
+  const store = tx.objectStore('offlineMutations');
+  await store.clear();
+  await tx.done;
+};
+
 export default db;
