@@ -27,35 +27,33 @@ const Home = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
-  const { refetch } = useQuery(GET_USER, {
+  const { data: userDataFromServer, refetch: refetchUser } = useQuery(GET_USER, {
     variables: { userId: userData?.userId },
-    fetchPolicy: 'cache-first',
+    fetchPolicy: 'network-only', // Force fetch from server
     skip: isOffline,
+    onError: (error) => {
+      console.error('Error fetching user data:', error);
+      setLoading(false);
+    },
     onCompleted: async (data) => {
       setUserData(data.getUser);
       setLoading(false);
       await data.getUser.invoices.forEach((invoice) => addInvoiceToIndexedDB(invoice));
     },
-    onError: () => {
-      setLoading(false);
-    },
   });
-
-  const [markAsPaidMutation] = useMutation(UPDATE_INVOICE);
-  const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
 
   useEffect(() => {
     const handleOnline = async () => {
       setIsOffline(false);
       setLoading(true);
       await syncOfflineMutations();
-      refetch();
+      refetchUser();
     };
 
     const handleOffline = async () => {
       setIsOffline(true);
       const invoices = await getInvoicesFromIndexedDB();
-      setUserData({ invoices });
+      setUserData({ ...userData, invoices }); // Merge with existing user data
       setLoading(false);
     };
 
@@ -70,7 +68,17 @@ const Home = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [isOffline, refetch]);
+  }, [isOffline, refetchUser]);
+
+  useEffect(() => {
+    if (userDataFromServer) {
+      // Merge data from server with existing user data
+      setUserData((prevUserData) => ({
+        ...prevUserData,
+        ...userDataFromServer.getUser,
+      }));
+    }
+  }, [userDataFromServer]);
 
   const syncOfflineMutations = async () => {
     const offlineMutations = await getOfflineMutations();
@@ -161,7 +169,7 @@ const Home = () => {
         });
 
         await deleteInvoiceFromIndexedDB(invoiceId);
-        refetch();
+        refetchUser();
       } catch (error) {
         console.error('Error deleting invoice:', error);
       }
