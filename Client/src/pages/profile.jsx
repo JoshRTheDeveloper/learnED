@@ -116,14 +116,15 @@ const Profile = () => {
   const syncOfflineData = async () => {
     try {
       const offlineUserData = await getUserData(userId);
-      const offlineProfileFile = await getProfileFile(userId);
+      const offlineProfilePictureBlob = await getProfilePicture(userId);
+      const offlineProfilePictureFile = await getProfileFile(userId);
 
       if (offlineUserData) {
         const { company, email, streetAddress, city, state, zip } = offlineUserData;
         let picturePath = offlineUserData.profilePicture;
 
-        if (offlineProfileFile) {
-          const uploadedPicturePath = await uploadProfilePicture(offlineProfileFile);
+        if (offlineProfilePictureFile) {
+          const uploadedPicturePath = await uploadProfilePicture(offlineProfilePictureFile);
           picturePath = uploadedPicturePath;
         }
 
@@ -180,8 +181,8 @@ const Profile = () => {
     const filename = `${userId}_profile_picture.jpg`;
     const renamedFile = new File([file], filename, { type: file.type });
     setRenamedFile(renamedFile);
-    await storeProfilePicture(userId, blobUrl);
-    await storeProfileFile(userId, renamedFile);
+    await storeProfilePicture(userId, file); 
+    await storeProfileFile(userId, renamedFile); 
   };
 
   const uploadProfilePicture = async (file) => {
@@ -211,7 +212,7 @@ const Profile = () => {
         if (logo) {
           const uploadedPicturePath = await uploadProfilePicture(renamedFile);
           picturePath = uploadedPicturePath;
-          await storeProfilePicture(userId, picturePath);
+          await storeProfilePicture(userId, picturePath); // Update the blob in IndexedDB
         }
 
         await Promise.all([
@@ -260,8 +261,8 @@ const Profile = () => {
         await storeUserData(offlineUserData);
 
         if (logo) {
-          await storeProfilePicture(userId, logoUrl);
-          await storeProfileFile(userId, renamedFile);
+          await storeProfilePicture(userId, logoUrl); // Save blob for offline use
+          await storeProfileFile(userId, renamedFile); // Save file for later upload
         }
       }
 
