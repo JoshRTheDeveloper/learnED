@@ -212,7 +212,7 @@ const Profile = () => {
         if (logo) {
           const uploadedPicturePath = await uploadProfilePicture(renamedFile);
           picturePath = uploadedPicturePath;
-          await storeProfilePicture(userId, picturePath); // Update the blob in IndexedDB
+          await storeProfilePicture(userId, picturePath); 
         }
 
         await Promise.all([
