@@ -234,29 +234,19 @@ export const getAuthData = async () => {
 
 export const addInvoiceToIndexedDB = async (invoice) => {
   try {
-    console.log('Invoice before encryption:', invoice); 
-
     const { key, iv } = await generateKeyAndIV();
     const exportedKey = await exportKey(key);
 
-    const encryptedData = await encryptData(invoice, key, iv);
+    const { encryptedData } = await encryptData(invoice, key, iv);
 
-    console.log('Encrypted Data:', encryptedData); 
-
-    
     const encryptedInvoice = {
       ...invoice,
-      encryptedData: Array.from(encryptedData.encryptedData),
+      encryptedData: Array.from(encryptedData),
       iv: Array.from(iv),
       key: Array.from(exportedKey),
     };
 
-    console.log('Encrypted Invoice to be added to IndexedDB:', encryptedInvoice); 
-
-
     await db.invoices.add(encryptedInvoice);
-
-    console.log('Invoice successfully added to IndexedDB'); 
   } catch (error) {
     console.error('Failed to add invoice to IndexedDB:', error);
   }
@@ -288,9 +278,11 @@ export const getInvoicesFromIndexedDB = async () => {
         const key = await importKey(new Uint8Array(invoice.key));
         const iv = new Uint8Array(invoice.iv);
 
+        const decryptedData = await decryptData(new Uint8Array(invoice.encryptedData), key, iv);
+
         return {
           ...invoice,
-          ...await decryptData(new Uint8Array(invoice.encryptedData), key, iv),
+          ...decryptedData,
         };
       })
     );
