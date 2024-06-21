@@ -99,6 +99,8 @@ console.log('name:' + name)
       profilePicture: profilePicture,
     };
   
+    console.log('Invoice variables:', variables); 
+  
     try {
       if (navigator.onLine) {
         const response = await createInvoice({ variables });
@@ -123,6 +125,7 @@ console.log('name:' + name)
       console.error('Error creating invoice:', error);
     }
   };
+  
   
 
   useEffect(() => {
