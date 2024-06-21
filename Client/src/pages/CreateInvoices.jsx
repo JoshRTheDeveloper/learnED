@@ -128,6 +128,7 @@ console.log('name:' + name)
     const syncInvoicesWithServer = async () => {
       if (navigator.onLine) {
         const localInvoices = await getInvoicesFromIndexedDB();
+        console.log('Invoices from IndexedDB:', localInvoices);
         for (const invoice of localInvoices) {
           try {
             await createInvoice({ variables: invoice });
