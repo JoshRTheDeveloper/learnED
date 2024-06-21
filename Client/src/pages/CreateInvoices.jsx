@@ -77,10 +77,10 @@ console.log('name:' + name)
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
-
+  
     const invoiceAmountFloat = parseFloat(invoiceAmount);
     const dueDateISO = new Date(dueDate).toISOString();
-
+  
     const variables = {
       invoiceAmount: invoiceAmountFloat,
       paidStatus: paidStatus,
@@ -98,17 +98,18 @@ console.log('name:' + name)
       invoice_details: invoiceDetails,
       profilePicture: profilePicture,
     };
-
+  
     try {
       if (navigator.onLine) {
         const response = await createInvoice({ variables });
         await axios.post('/send-invoice', variables);
+        console.log('Invoice sent to server:', variables);
       } else {
         await addInvoiceToIndexedDB(variables);
+        console.log('Invoice saved to IndexedDB:', variables); 
         alert('Invoice saved locally. It will be sent when you are back online.');
       }
-
- 
+  
       setInvoiceAmount('');
       setPaidStatus(false);
       setInvoiceNumber('');
@@ -122,13 +123,14 @@ console.log('name:' + name)
       console.error('Error creating invoice:', error);
     }
   };
+  
 
   useEffect(() => {
 
     const syncInvoicesWithServer = async () => {
       if (navigator.onLine) {
         const localInvoices = await getInvoicesFromIndexedDB();
-        console.log('Invoices from IndexedDB:', localInvoices);
+
         for (const invoice of localInvoices) {
           try {
             await createInvoice({ variables: invoice });
