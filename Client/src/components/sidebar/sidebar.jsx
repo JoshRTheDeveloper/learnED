@@ -3,6 +3,7 @@ import './sidebar.css';
 import { Link } from "react-router-dom";
 import Auth from "../../utils/auth";
 import { getUserData, getProfilePicture } from '../../utils/indexedDB'; 
+import { GET_USER } from '../utils/queries';
 const Sidebar = () => {
   const [userFirstName, setUserFirstName] = useState("");
   const [userLastName, setUserLastName] = useState("");
