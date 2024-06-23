@@ -81,7 +81,7 @@ const Home = () => {
       if (mutation.type === 'delete') {
         await deleteInvoiceMutation({ variables: { id: mutation.invoiceId } });
       }
-     
+      // Handle other mutation types if necessary
     }
     await clearOfflineMutations();
   };
@@ -115,7 +115,6 @@ const Home = () => {
 
   const handleDeleteInvoice = async (invoiceId) => {
     if (isOffline) {
-      // Add to offline mutations if offline
       await addOfflineMutation({ type: 'delete', invoiceId });
       await deleteInvoiceFromIndexedDB(invoiceId);
       setUserData(prevData => ({
@@ -216,7 +215,7 @@ const Home = () => {
                 <div className='mark-button'>
                   <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
                   {!invoice.paidStatus && (
-                    <button onClick={(e) => { e.stopPropagation(); markAsPaid(invoice._id); }}>Mark as Paid</button>
+                    <button onClick={(e) => { e.stopPropagation(); markAsPaidMutation({ variables: { id: invoice._id } }); }}>Mark as Paid</button>
                   )}
                   <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
                 </div>
