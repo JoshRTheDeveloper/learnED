@@ -34,11 +34,13 @@ const Home = () => {
     variables: { userId: userId || '' },
     fetchPolicy: 'cache-first',
     onCompleted: async (data) => {
+      console.log('Query completed', data);
       setUserData(data.getUser);
       setLoading(false);
       await Promise.all(data.getUser.invoices.map(invoice => addInvoiceToIndexedDB(invoice)));
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Error fetching user data:', error);
       setLoading(false);
     },
     skip: isOffline,
@@ -159,6 +161,10 @@ const Home = () => {
       }
     }
   };
+
+  useEffect(() => {
+    console.log('userData changed:', userData);
+  }, [userData]);
 
   if (loading || queryLoading) {
     return <p>Loading user data...</p>;
