@@ -83,21 +83,23 @@ export const getProfilePicture = async () => {
   }
 };
 
+
 const generateKeyAndIV = async () => {
   try {
     const key = await crypto.subtle.generateKey(
       {
         name: "AES-CBC",
-        length: 256,
+        length: 256, 
       },
       true,
       ["encrypt", "decrypt"]
     );
-    const iv = crypto.getRandomValues(new Uint8Array(16));
-    console.log('Generated Key:', key); 
+
+    const iv = crypto.getRandomValues(new Uint8Array(16)); 
+
     return { key, iv };
   } catch (error) {
-    console.error('Error generating key and IV:', error);
+    console.error("Error generating key and IV:", error);
     throw error;
   }
 };
@@ -116,25 +118,27 @@ const decryptData = async (encryptedData, key, iv) => {
 };
 
 const exportKey = async (key) => {
-  const exported = await crypto.subtle.exportKey('raw', key);
-  return new Uint8Array(exported);
+  try {
+    const exported = await crypto.subtle.exportKey("raw", key);
+    return new Uint8Array(exported);
+  } catch (error) {
+    console.error("Error exporting key:", error);
+    throw error;
+  }
 };
 
 const importKey = async (keyData) => {
   try {
     const importedKey = await crypto.subtle.importKey(
-      'raw',
+      "raw",
       keyData,
-      {
-        name: 'AES-CBC',
-      },
+      { name: "AES-CBC", length: 256 }, 
       true,
-      ['encrypt', 'decrypt']
+      ["encrypt", "decrypt"]
     );
-    console.log('Imported Key:', importedKey); // Log the imported key for debugging
     return importedKey;
   } catch (error) {
-    console.error('Error importing key:', error);
+    console.error("Error importing key:", error);
     throw error;
   }
 };
