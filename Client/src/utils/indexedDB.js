@@ -196,11 +196,6 @@ export const getUserData = async () => {
       const key = await importKey(new Uint8Array(record.key));
       const iv = new Uint8Array(record.iv);
       const encryptedData = new Uint8Array(record.encryptedUserData);
-
-      console.log('Key:', key);
-      console.log('IV:', iv);
-      console.log('Encrypted Data:', encryptedData);
-
       const decryptedUserData = await decryptData(encryptedData, key, iv);
       console.log('Decrypted User Data:', decryptedUserData);
 
@@ -276,6 +271,7 @@ export const getInvoicesFromIndexedDB = async () => {
     const decryptedInvoices = await Promise.all(
       invoices.map(async (invoice) => {
         const key = await importKey(new Uint8Array(invoice.key));
+        console.log('Imported Key:', key);
         const iv = new Uint8Array(invoice.iv);
 
         const decryptedData = await decryptData(new Uint8Array(invoice.encryptedData), key, iv);
