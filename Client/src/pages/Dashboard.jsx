@@ -78,7 +78,7 @@ const Home = () => {
   }, [isOffline, refetch]);
 
   useEffect(() => {
-    refetch();  // Fetch data when component mounts
+    refetch();  
   }, []);
 
   const syncOfflineMutations = async () => {
