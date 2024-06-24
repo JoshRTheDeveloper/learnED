@@ -120,6 +120,7 @@ const Home = () => {
 
   const handleDeleteInvoice = async (invoiceId) => {
     if (isOffline) {
+  
       await addOfflineMutation({ type: 'delete', invoiceId });
       await deleteInvoiceFromIndexedDB(invoiceId);
       setUserData(prevData => ({
@@ -128,6 +129,7 @@ const Home = () => {
       }));
     } else {
       try {
+    
         await deleteInvoiceMutation({
           variables: { id: invoiceId },
           update: (cache, { data: { deleteInvoice } }) => {
@@ -135,29 +137,25 @@ const Home = () => {
               console.error('Error deleting invoice:', deleteInvoice.message);
               return;
             }
-
-            const existingUser = cache.readQuery({
-              query: GET_USER,
-              variables: { userId: userId || '' },
+  
+      
+            cache.modify({
+              id: cache.identify(userData),
+              fields: {
+                invoices(existingInvoices = [], { readField }) {
+                  return existingInvoices.filter(invoice => invoice._id !== invoiceId);
+                }
+              }
             });
-
-            cache.writeQuery({
-              query: GET_USER,
-              data: {
-                getUser: {
-                  ...existingUser.getUser,
-                  invoices: existingUser.getUser.invoices.filter(
-                    (invoice) => invoice._id !== invoiceId
-                  ),
-                },
-              },
-              variables: { userId: userId || '' },
-            });
-
-            setSearchResult(prevSearchResult => prevSearchResult.filter(invoice => invoice._id !== invoiceId));
+  
+   
+            setUserData(prevData => ({
+              ...prevData,
+              invoices: prevData.invoices.filter(invoice => invoice._id !== invoiceId)
+            }));
           },
         });
-
+  
         await deleteInvoiceFromIndexedDB(invoiceId);
         refetch();
       } catch (error) {
