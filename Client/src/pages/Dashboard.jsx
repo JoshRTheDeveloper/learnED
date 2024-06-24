@@ -30,13 +30,12 @@ const Home = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
-  const { refetch } = useQuery(GET_USER, {
+  const { data, refetch, loading: queryLoading } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
     fetchPolicy: 'cache-first',
     onCompleted: async (data) => {
       setUserData(data.getUser);
-      setLoading(false);
-      await data.getUser.invoices.forEach(invoice => addInvoiceToIndexedDB(invoice));
+      await Promise.all(data.getUser.invoices.map(invoice => addInvoiceToIndexedDB(invoice)));
     },
     onError: () => {
       setLoading(false);
@@ -67,6 +66,8 @@ const Home = () => {
 
     if (isOffline) {
       handleOffline();
+    } else {
+      refetch();
     }
 
     return () => {
@@ -81,7 +82,6 @@ const Home = () => {
       if (mutation.type === 'delete') {
         await deleteInvoiceMutation({ variables: { id: mutation.invoiceId } });
       }
-     
     }
     await clearOfflineMutations();
   };
@@ -115,7 +115,6 @@ const Home = () => {
 
   const handleDeleteInvoice = async (invoiceId) => {
     if (isOffline) {
-      // Add to offline mutations if offline
       await addOfflineMutation({ type: 'delete', invoiceId });
       await deleteInvoiceFromIndexedDB(invoiceId);
       setUserData(prevData => ({
@@ -162,7 +161,7 @@ const Home = () => {
     }
   };
 
-  if (loading) return <p>Loading user data...</p>;
+  if (loading || queryLoading) return <p>Loading user data...</p>;
   if (!userData) return <p>No user data available.</p>;
 
   const invoicesDue = userData?.invoices.filter(invoice => !invoice.paidStatus) || [];
@@ -216,7 +215,7 @@ const Home = () => {
                 <div className='mark-button'>
                   <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
                   {!invoice.paidStatus && (
-                    <button onClick={(e) => { e.stopPropagation(); markAsPaid(invoice._id); }}>Mark as Paid</button>
+                    <button onClick={(e) => { e.stopPropagation(); markAsPaidMutation({ variables: { id: invoice._id } }); }}>Mark as Paid</button>
                   )}
                   <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
                 </div>
