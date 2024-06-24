@@ -83,25 +83,34 @@ export const getProfilePicture = async () => {
   }
 };
 
-
 const generateKeyAndIV = async () => {
-  try {
-    const key = await crypto.subtle.generateKey(
-      {
-        name: "AES-CBC",
-        length: 256, 
-      },
-      true,
-      ["encrypt", "decrypt"]
-    );
+  const key = await crypto.subtle.generateKey(
+    {
+      name: "AES-CBC",
+      length: 256,
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
+  const iv = crypto.getRandomValues(new Uint8Array(16));
+  return { key, iv };
+};
 
-    const iv = crypto.getRandomValues(new Uint8Array(16)); 
-
-    return { key, iv };
-  } catch (error) {
-    console.error("Error generating key and IV:", error);
-    throw error;
-  }
+const encryptData = async (data, key, iv) => {
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(JSON.stringify(data));
+  const encryptedBuffer = await crypto.subtle.encrypt(
+    {
+      name: "AES-CBC",
+      iv: iv,
+    },
+    key,
+    dataBuffer
+  );
+  return {
+    encryptedData: new Uint8Array(encryptedBuffer),
+    iv: iv,
+  };
 };
 
 const decryptData = async (encryptedData, key, iv) => {
@@ -118,29 +127,20 @@ const decryptData = async (encryptedData, key, iv) => {
 };
 
 const exportKey = async (key) => {
-  try {
-    const exported = await crypto.subtle.exportKey("raw", key);
-    return new Uint8Array(exported);
-  } catch (error) {
-    console.error("Error exporting key:", error);
-    throw error;
-  }
+  const exported = await crypto.subtle.exportKey('raw', key);
+  return new Uint8Array(exported);
 };
 
 const importKey = async (keyData) => {
-  try {
-    const importedKey = await crypto.subtle.importKey(
-      "raw",
-      keyData,
-      { name: "AES-CBC", length: 256 }, 
-      true,
-      ["encrypt", "decrypt"]
-    );
-    return importedKey;
-  } catch (error) {
-    console.error("Error importing key:", error);
-    throw error;
-  }
+  return await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    {
+      name: 'AES-CBC',
+    },
+    true,
+    ['encrypt', 'decrypt']
+  );
 };
 
 export const storeUserData = async (userData) => {
@@ -275,25 +275,15 @@ export const getInvoicesFromIndexedDB = async () => {
     const invoices = await db.invoices.toArray();
     const decryptedInvoices = await Promise.all(
       invoices.map(async (invoice) => {
-        try {
-          const key = await importKey(new Uint8Array(invoice.key));
-          const iv = new Uint8Array(invoice.iv);
+        const key = await importKey(new Uint8Array(invoice.key));
+        const iv = new Uint8Array(invoice.iv);
 
-          console.log('Imported Key:', key);
-          console.log('IV:', iv);
+        const decryptedData = await decryptData(new Uint8Array(invoice.encryptedData), key, iv);
 
-          const decryptedData = await decryptData(new Uint8Array(invoice.encryptedData), key, iv);
-
-          console.log('Decrypted Data:', decryptedData);
-
-          return {
-            ...invoice,
-            ...decryptedData,
-          };
-        } catch (error) {
-          console.error('Error decrypting invoice:', error);
-          throw error;
-        }
+        return {
+          ...invoice,
+          ...decryptedData,
+        };
       })
     );
     return decryptedInvoices;
@@ -302,7 +292,6 @@ export const getInvoicesFromIndexedDB = async () => {
     return [];
   }
 };
-
 
 export const deleteInvoiceFromIndexedDB = async (id) => {
   try {
