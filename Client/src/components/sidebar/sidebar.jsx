@@ -3,6 +3,8 @@ import './sidebar.css';
 import { Link } from "react-router-dom";
 import Auth from "../../utils/auth";
 import { getUserData, getProfilePicture } from '../../utils/indexedDB'; 
+import { GET_USER } from '../../utils/queries';
+import { useQuery } from '@apollo/client';
 
 const Sidebar = () => {
   const [userFirstName, setUserFirstName] = useState("");
@@ -12,22 +14,48 @@ const Sidebar = () => {
   const profile = Auth.getProfile();
   const userId = profile?.data?._id || '';
 
+  const { data: userDataFromDB, error: errorFromDB, refetch } = useQuery(GET_USER, {
+    variables: { userId },
+    skip: !userId,
+  });
+
   useEffect(() => {
     const fetchUserData = async () => {
-    
-      const userData = await getUserData(userId);
+      let userData, profilePicUrl;
 
-      if (userData) {
-        setUserFirstName(userData.firstName);
-        setUserLastName(userData.lastName);
+  
+      if (navigator.onLine) {
+        try {
       
-        const profilePicUrl = await getProfilePicture(userId);
-        setProfilePicture(profilePicUrl || "");
+          userData = userDataFromDB?.user;
+          profilePicUrl = userData?.profilePictureUrl;
+          
+          if (userData) {
+            setUserFirstName(userData.firstName);
+            setUserLastName(userData.lastName);
+            setProfilePicture(profilePicUrl || "");
+          }
+        } catch (error) {
+          console.error("Error fetching data from online database:", error);
+        }
+      }
+      
+      if (!navigator.onLine || !userData) {
+ 
+        userData = await getUserData(userId);
+        
+        if (userData) {
+          setUserFirstName(userData.firstName);
+          setUserLastName(userData.lastName);
+          
+          profilePicUrl = await getProfilePicture(userId);
+          setProfilePicture(profilePicUrl || "");
+        }
       }
     };
 
     fetchUserData();
-  }, [userId]);
+  }, [userId, userDataFromDB]);
 
   return (
     <div className='content'>
