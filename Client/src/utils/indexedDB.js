@@ -9,79 +9,8 @@ db.version(4).stores({
   auth: '++id, token, userData',
   profilePictures: '++id, userId, profilePictureBlob',
   profileFiles: 'userId,file',
+  offlineMutations: '++id,type,invoiceId',
 });
-
-export const storeLoginCredentials = async (email, password) => {
-  try {
-    const existingRecord = await db.loginCredentials.get(1);
-
-    const { key, iv } = await generateKeyAndIV();
-    const exportedKey = await exportKey(key);
-    const { encryptedData } = await encryptData({ email, password }, key, iv);
-
-    const newCredentials = {
-      email,
-      encryptedPassword: Array.from(encryptedData),
-      iv: Array.from(iv),
-      key: Array.from(exportedKey),
-    };
-
-    if (existingRecord) {
-      await db.loginCredentials.update(1, newCredentials);
-    } else {
-      await db.loginCredentials.put({ ...newCredentials, id: 1 });
-    }
-  } catch (error) {
-    console.error('Failed to store login credentials securely in IndexedDB:', error);
-  }
-};
-
-export const getLoginCredentials = async () => {
-  try {
-    const record = await db.loginCredentials.get(1);
-
-    if (record && record.encryptedPassword && record.iv && record.key) {
-      const key = await importKey(new Uint8Array(record.key));
-      const iv = new Uint8Array(record.iv);
-      const encryptedData = new Uint8Array(record.encryptedPassword);
-
-      const { email, password } = await decryptData(encryptedData, key, iv);
-
-      return { email, password };
-    } else {
-      console.error('Missing data in login credentials IndexedDB record:', record);
-    }
-    return null;
-  } catch (error) {
-    console.error('Failed to get login credentials securely from IndexedDB:', error);
-    return null;
-  }
-};
-
-export const storeProfilePicture = async (userId, profilePictureBlob) => {
-  try {
-    const existingRecord = await db.profilePictures.get(1);
-
-    if (existingRecord) {
-      await db.profilePictures.update(1, { userId, profilePictureBlob });
-    } else {
-      await db.profilePictures.put({ id: 1, userId, profilePictureBlob });
-    }
-  } catch (error) {
-    console.error('Failed to store profile picture in IndexedDB:', error);
-    throw error;
-  }
-};
-
-export const getProfilePicture = async () => {
-  try {
-    const profilePicture = await db.profilePictures.get(1);
-    return profilePicture ? profilePicture.profilePictureBlob : null;
-  } catch (error) {
-    console.error('Failed to get profile picture from IndexedDB:', error);
-    return null;
-  }
-};
 
 const generateKeyAndIV = async () => {
   const key = await crypto.subtle.generateKey(
@@ -141,95 +70,6 @@ const importKey = async (keyData) => {
     true,
     ['encrypt', 'decrypt']
   );
-};
-
-export const storeUserData = async (userData) => {
-  try {
-    const existingRecord = await db.userData.get(1);
-
-    const { key, iv } = await generateKeyAndIV();
-    const exportedKey = await exportKey(key);
-    const { encryptedData } = await encryptData(userData, key, iv);
-
-    const newData = {
-      encryptedUserData: Array.from(encryptedData),
-      iv: Array.from(iv),
-      key: Array.from(exportedKey),
-    };
-
-    if (existingRecord) {
-      await db.userData.update(1, newData);
-    } else {
-      await db.userData.put({ ...newData, id: 1 });
-    }
-  } catch (error) {
-    console.error('Failed to store user data securely in IndexedDB:', error);
-  }
-};
-
-export const getUserPassword = async () => {
-  try {
-    const record = await db.userData.get(1);
-    if (record && record.encryptedUserData && record.iv && record.key) {
-      const key = await importKey(new Uint8Array(record.key));
-      const iv = new Uint8Array(record.iv);
-      const encryptedData = new Uint8Array(record.encryptedUserData);
-
-      const decryptedUserData = await decryptData(encryptedData, key, iv);
-      return decryptedUserData.password; // Return only the decrypted password
-    } else {
-      console.error('Missing data in IndexedDB record:', record);
-    }
-    return null;
-  } catch (error) {
-    console.error('Failed to get user password securely from IndexedDB:', error);
-    return null;
-  }
-};
-
-export const getUserData = async () => {
-  try {
-    const record = await db.userData.get(1);
-    console.log('Record from IndexedDB:', record);
-
-    if (record && record.encryptedUserData && record.iv && record.key) {
-      const key = await importKey(new Uint8Array(record.key));
-      const iv = new Uint8Array(record.iv);
-      const encryptedData = new Uint8Array(record.encryptedUserData);
-
-      console.log('Key:', key);
-      console.log('IV:', iv);
-      console.log('Encrypted Data:', encryptedData);
-
-      const decryptedUserData = await decryptData(encryptedData, key, iv);
-      console.log('Decrypted User Data:', decryptedUserData);
-
-      return decryptedUserData;
-    } else {
-      console.error('Missing data in IndexedDB record:', record);
-    }
-    return null;
-  } catch (error) {
-    console.error('Failed to get user data securely from IndexedDB:', error);
-    return null;
-  }
-};
-
-export const storeAuthData = async (token, userData) => {
-  try {
-    await db.auth.put({ token, userData });
-  } catch (error) {
-    console.error('Failed to store authentication data in IndexedDB:', error);
-  }
-};
-
-export const getAuthData = async () => {
-  try {
-    return await db.auth.get(1);
-  } catch (error) {
-    console.error('Failed to get authentication data from IndexedDB:', error);
-    return null;
-  }
 };
 
 export const addInvoiceToIndexedDB = async (invoice) => {
@@ -333,28 +173,28 @@ export const getProfileFile = async (userId) => {
 };
 
 export const addOfflineMutation = async (mutation) => {
-  const db = await openDB();
-  const tx = db.transaction('offlineMutations', 'readwrite');
-  const store = tx.objectStore('offlineMutations');
-  await store.add(mutation);
-  await tx.done;
+  try {
+    await db.offlineMutations.add(mutation);
+  } catch (error) {
+    console.error('Failed to add offline mutation to IndexedDB:', error);
+  }
 };
 
 export const getOfflineMutations = async () => {
-  const db = await openDB();
-  const tx = db.transaction('offlineMutations', 'readonly');
-  const store = tx.objectStore('offlineMutations');
-  const allMutations = await store.getAll();
-  await tx.done;
-  return allMutations;
+  try {
+    return await db.offlineMutations.toArray();
+  } catch (error) {
+    console.error('Failed to get offline mutations from IndexedDB:', error);
+    return [];
+  }
 };
 
 export const clearOfflineMutations = async () => {
-  const db = await openDB();
-  const tx = db.transaction('offlineMutations', 'readwrite');
-  const store = tx.objectStore('offlineMutations');
-  await store.clear();
-  await tx.done;
+  try {
+    await db.offlineMutations.clear();
+  } catch (error) {
+    console.error('Failed to clear offline mutations from IndexedDB:', error);
+  }
 };
 
 export default db;
