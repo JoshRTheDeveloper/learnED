@@ -270,11 +270,19 @@ export const getInvoicesFromIndexedDB = async () => {
     const invoices = await db.invoices.toArray();
     const decryptedInvoices = await Promise.all(
       invoices.map(async (invoice) => {
-        const key = await importKey(new Uint8Array(invoice.key));
-        console.log('Imported Key:', key);
-        const iv = new Uint8Array(invoice.iv);
+        console.log('Invoice Data:', invoice); // Log full invoice data
 
-        const decryptedData = await decryptData(new Uint8Array(invoice.encryptedData), key, iv);
+        const key = await importKey(new Uint8Array(invoice.key));
+        console.log('Imported Key:', key); // Log imported key details
+
+        const iv = new Uint8Array(invoice.iv);
+        console.log('IV:', iv); // Log IV details
+
+        const encryptedData = new Uint8Array(invoice.encryptedData);
+        console.log('Encrypted Data:', encryptedData); // Log encrypted data
+
+        const decryptedData = await decryptData(encryptedData, key, iv);
+        console.log('Decrypted Data:', decryptedData); // Log decrypted data
 
         return {
           ...invoice,
