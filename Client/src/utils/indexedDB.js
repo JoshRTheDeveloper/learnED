@@ -271,15 +271,25 @@ export const getInvoicesFromIndexedDB = async () => {
     const invoices = await db.invoices.toArray();
     const decryptedInvoices = await Promise.all(
       invoices.map(async (invoice) => {
-        const key = await importKey(new Uint8Array(invoice.key));
-        const iv = new Uint8Array(invoice.iv);
+        try {
+          const key = await importKey(new Uint8Array(invoice.key));
+          const iv = new Uint8Array(invoice.iv);
 
-        const decryptedData = await decryptData(new Uint8Array(invoice.encryptedData), key, iv);
+          console.log('Imported Key:', key);
+          console.log('IV:', iv);
 
-        return {
-          ...invoice,
-          ...decryptedData,
-        };
+          const decryptedData = await decryptData(new Uint8Array(invoice.encryptedData), key, iv);
+
+          console.log('Decrypted Data:', decryptedData);
+
+          return {
+            ...invoice,
+            ...decryptedData,
+          };
+        } catch (error) {
+          console.error('Error decrypting invoice:', error);
+          throw error;
+        }
       })
     );
     return decryptedInvoices;
@@ -288,6 +298,7 @@ export const getInvoicesFromIndexedDB = async () => {
     return [];
   }
 };
+
 
 export const deleteInvoiceFromIndexedDB = async (id) => {
   try {
