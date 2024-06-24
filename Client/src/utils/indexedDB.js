@@ -190,14 +190,14 @@ export const getUserPassword = async () => {
 export const getUserData = async () => {
   try {
     const record = await db.userData.get(1);
-    console.log('Record from IndexedDB:', record);
+   
 
     if (record && record.encryptedUserData && record.iv && record.key) {
       const key = await importKey(new Uint8Array(record.key));
       const iv = new Uint8Array(record.iv);
       const encryptedData = new Uint8Array(record.encryptedUserData);
       const decryptedUserData = await decryptData(encryptedData, key, iv);
-      console.log('Decrypted User Data:', decryptedUserData);
+     
 
       return decryptedUserData;
     } else {
