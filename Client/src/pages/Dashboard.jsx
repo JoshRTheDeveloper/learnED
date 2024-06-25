@@ -120,7 +120,6 @@ const Home = () => {
 
   const handleDeleteInvoice = async (invoiceId) => {
     if (isOffline) {
-  
       await addOfflineMutation({ type: 'delete', invoiceId });
       await deleteInvoiceFromIndexedDB(invoiceId);
       setUserData(prevData => ({
@@ -129,7 +128,6 @@ const Home = () => {
       }));
     } else {
       try {
-    
         await deleteInvoiceMutation({
           variables: { id: invoiceId },
           update: (cache, { data: { deleteInvoice } }) => {
@@ -137,25 +135,23 @@ const Home = () => {
               console.error('Error deleting invoice:', deleteInvoice.message);
               return;
             }
-  
-      
+
             cache.modify({
               id: cache.identify(userData),
               fields: {
                 invoices(existingInvoices = [], { readField }) {
-                  return existingInvoices.filter(invoice => invoice._id !== invoiceId);
+                  return existingInvoices.filter(invoice => readField('_id', invoice) !== invoiceId);
                 }
               }
             });
-  
-   
+
             setUserData(prevData => ({
               ...prevData,
               invoices: prevData.invoices.filter(invoice => invoice._id !== invoiceId)
             }));
           },
         });
-  
+
         await deleteInvoiceFromIndexedDB(invoiceId);
         refetch();
       } catch (error) {
