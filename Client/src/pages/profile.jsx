@@ -17,6 +17,7 @@ const Profile = () => {
   const [logo, setLogo] = useState(null);
   const [renamedFile, setRenamedFile] = useState(null);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -27,23 +28,48 @@ const Profile = () => {
     userLoading,
     userError,
     updateProfileField,
+    fetchUserDataFromIndexedDB,
   } = useDataManagement(userId);
 
   useEffect(() => {
-    console.log("userData:", userData);  
-    if (initialLoad && userData) {
-      const { company, email, streetAddress, city, state, zip, profilePicture } = userData;
-      console.log("Setting state with userData:", userData); 
-      setEmail(email);
-      setStreetAddress(streetAddress);
-      setCity(city);
-      setState(state);
-      setZip(zip);
-      setCompany(company);
-      setLogoUrl(profilePicture || temporaryImage);
-      setInitialLoad(false);
-    }
-  }, [userData, initialLoad]);
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (initialLoad) {
+        let data;
+        if (isOffline) {
+          data = await fetchUserDataFromIndexedDB();
+        } else {
+          data = userData;
+        }
+
+        if (data) {
+          const { company, email, streetAddress, city, state, zip, profilePicture } = data;
+          setEmail(email);
+          setStreetAddress(streetAddress);
+          setCity(city);
+          setState(state);
+          setZip(zip);
+          setCompany(company);
+          setLogoUrl(profilePicture || temporaryImage);
+        }
+        setInitialLoad(false);
+      }
+    };
+
+    loadData();
+  }, [userData, initialLoad, isOffline, fetchUserDataFromIndexedDB]);
 
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handleStreetAddressChange = (e) => setStreetAddress(e.target.value);
@@ -100,7 +126,7 @@ const Profile = () => {
         await updateProfileField('CHANGE_ZIP', { userId, zip });
         await updateProfileField('CHANGE_PROFILE_PICTURE', { userId, profilePicture: picturePath });
       } else {
-        // Handle offline storage (not shown here)
+        // Store updates locally (not shown here)
       }
 
       setEmail(email);
@@ -116,7 +142,6 @@ const Profile = () => {
       console.error('Error updating profile:', error);
     }
   };
-
 
   return (
     <div>

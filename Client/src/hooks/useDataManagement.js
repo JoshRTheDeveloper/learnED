@@ -18,203 +18,132 @@ import {
   addInvoiceToIndexedDB,
   getOfflineMutations,
   clearOfflineMutations,
-  addOfflineMutation, 
+  addOfflineMutation,
+  updateInvoiceInIndexedDB,
+  getUserData,
+  getProfilePicture,
 } from './../utils/indexedDB';
 
 const useDataManagement = (userId) => {
   const [userData, setUserData] = useState(null);
-  const [invoices, setInvoices] = useState([]);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [userLoading, setUserLoading] = useState(true);
+  const [userError, setUserError] = useState(null);
   const client = useApolloClient();
 
-  const { loading: userLoading, error: userError, data: userDataQuery } = useQuery(GET_USER, {
+  const { loading, error, data } = useQuery(GET_USER, {
     variables: { userId },
-    skip: !isOnline,
+    onCompleted: (data) => {
+      setUserData(data.user);
+      storeUserData(data.user);
+    },
+    onError: (error) => {
+      setUserError(error);
+    },
   });
 
-  const { loading: invoicesLoading, error: invoicesError, data: invoicesData } = useQuery(GET_USER_INVOICES, {
-    variables: { userId },
-    skip: !isOnline,
-  });
+  const [
+    changeCompany,
+    { loading: companyLoading, error: companyError },
+  ] = useMutation(CHANGE_COMPANY);
 
-  const [updateInvoiceMutation] = useMutation(UPDATE_INVOICE);
-  const [changeEmailMutation] = useMutation(CHANGE_EMAIL);
-  const [changeCityMutation] = useMutation(CHANGE_CITY);
-  const [changeStateMutation] = useMutation(CHANGE_STATE);
-  const [changeZipMutation] = useMutation(CHANGE_ZIP);
-  const [changeCompanyMutation] = useMutation(CHANGE_COMPANY);
-  const [changeProfilePictureMutation] = useMutation(CHANGE_PROFILE_PICTURE);
-  const [changeStreetAddressMutation] = useMutation(CHANGE_STREET_ADDRESS);
+  const [
+    changeProfilePicture,
+    { loading: pictureLoading, error: pictureError },
+  ] = useMutation(CHANGE_PROFILE_PICTURE);
 
-  useEffect(() => {
-    const handleOnlineStatus = () => {
-      setIsOnline(navigator.onLine);
-    };
+  const [
+    changeStreetAddress,
+    { loading: addressLoading, error: addressError },
+  ] = useMutation(CHANGE_STREET_ADDRESS);
 
-    window.addEventListener('online', handleOnlineStatus);
-    window.addEventListener('offline', handleOnlineStatus);
+  const [
+    changeEmail,
+    { loading: emailLoading, error: emailError },
+  ] = useMutation(CHANGE_EMAIL);
 
-    return () => {
-      window.removeEventListener('online', handleOnlineStatus);
-      window.removeEventListener('offline', handleOnlineStatus);
-    };
-  }, []);
+  const [
+    changeCity,
+    { loading: cityLoading, error: cityError },
+  ] = useMutation(CHANGE_CITY);
 
-  useEffect(() => {
-    if (isOnline) {
-      syncOfflineMutations();
-      fetchDataFromServer();
-    } else {
-      fetchDataFromIndexedDB();
-    }
-  }, [isOnline]);
+  const [
+    changeState,
+    { loading: stateLoading, error: stateError },
+  ] = useMutation(CHANGE_STATE);
+
+  const [
+    changeZip,
+    { loading: zipLoading, error: zipError },
+  ] = useMutation(CHANGE_ZIP);
 
   useEffect(() => {
-    if (userDataQuery && userDataQuery.getUser) {
-      setUserData(userDataQuery.getUser);
-      storeUserData(userDataQuery.getUser); 
-      console.log('Stored user data in IndexedDB:', userDataQuery.getUser);
-    }
-  }, [userDataQuery]);
+    setUserLoading(loading);
+  }, [loading]);
 
   useEffect(() => {
-    if (invoicesData && invoicesData.getUserInvoices) {
-      setInvoices(invoicesData.getUserInvoices);
-      invoicesData.getUserInvoices.forEach(async (invoice) => {
-        await addInvoiceToIndexedDB(invoice); 
-        console.log('Stored invoice in IndexedDB:', invoice);
-      });
-    }
-  }, [invoicesData]);
+    if (error) setUserError(error);
+  }, [error]);
 
-  const syncOfflineMutations = async () => {
-    const offlineMutations = await getOfflineMutations();
-    for (const mutation of offlineMutations) {
-      try {
-        await executeOfflineMutation(mutation);
-        console.log('Executed offline mutation:', mutation);
-      } catch (error) {
-        console.error('Failed to execute offline mutation:', error);
-      }
-    }
-    await clearOfflineMutations();
-  };
-
-  const executeOfflineMutation = async (mutation) => {
-    const { mutationType, variables } = mutation;
+  const fetchUserDataFromIndexedDB = async () => {
     try {
-      switch (mutationType) {
-        case 'UPDATE_INVOICE':
-          await updateInvoiceMutation({ variables });
-          break;
-        case 'CHANGE_EMAIL':
-          await changeEmailMutation({ variables });
-          break;
-        case 'CHANGE_CITY':
-          await changeCityMutation({ variables });
-          break;
-        case 'CHANGE_STATE':
-          await changeStateMutation({ variables });
-          break;
-        case 'CHANGE_ZIP':
-          await changeZipMutation({ variables });
-          break;
-        case 'CHANGE_COMPANY':
-          await changeCompanyMutation({ variables });
-          break;
-        case 'CHANGE_PROFILE_PICTURE':
-          await changeProfilePictureMutation({ variables });
-          break;
-        case 'CHANGE_STREET_ADDRESS':
-          await changeStreetAddressMutation({ variables });
-          break;
-        default:
-          throw new Error(`Unknown mutation type: ${mutationType}`);
+      const userData = await getUserData(userId);
+      const profilePicture = await getProfilePicture(userId);
+      if (userData) {
+        return {
+          ...userData,
+          profilePicture: profilePicture,
+        };
       }
-      console.log('Executed mutation:', mutationType, variables);
+      return null;
     } catch (error) {
-      console.error(`Failed to execute ${mutationType}:`, error);
+      console.error('Error fetching user data from IndexedDB:', error);
+      return null;
     }
   };
-
-  const updateInvoice = async (invoiceId, paidStatus) => {
-    if (isOnline) {
-      try {
-        await updateInvoiceMutation({ variables: { id: invoiceId, paidStatus } });
-      } catch (error) {
-        console.error('Error updating invoice online:', error);
-      
-      }
-    } else {
-      try {
-     
-        await updateInvoiceInIndexedDB(invoiceId, paidStatus);
-        await addOfflineMutation({ mutationType: 'UPDATE_INVOICE', variables: { id: invoiceId, paidStatus } });
-        console.log('Stored offline invoice update:', { id: invoiceId, paidStatus });
-      } catch (error) {
-        console.error('Error updating invoice offline:', error);
-
-      }
-    }
-    fetchDataFromIndexedDB();
-  };
-  
 
   const updateProfileField = async (mutationType, variables) => {
-    if (isOnline) {
-      await executeOfflineMutation({ mutationType, variables });
-    } else {
-      await addOfflineMutation({ mutationType, variables });
-      console.log('Stored offline mutation:', { mutationType, variables });
-    }
-    fetchDataFromIndexedDB();
-  };
-  
-  const fetchDataFromServer = async () => {
     try {
-      const { data } = await client.query({
-        query: GET_USER,
-        variables: { userId },
-      });
-  
-      if (data && data.getUser) {
-        setUserData(data.getUser);
-        await storeUserData(data.getUser);
-        console.log('Fetched user data from server and stored in IndexedDB:', data.getUser);
+      let mutation;
+      switch (mutationType) {
+        case 'CHANGE_COMPANY':
+          mutation = changeCompany;
+          break;
+        case 'CHANGE_PROFILE_PICTURE':
+          mutation = changeProfilePicture;
+          break;
+        case 'CHANGE_STREET_ADDRESS':
+          mutation = changeStreetAddress;
+          break;
+        case 'CHANGE_EMAIL':
+          mutation = changeEmail;
+          break;
+        case 'CHANGE_CITY':
+          mutation = changeCity;
+          break;
+        case 'CHANGE_STATE':
+          mutation = changeState;
+          break;
+        case 'CHANGE_ZIP':
+          mutation = changeZip;
+          break;
+        default:
+          throw new Error('Unknown mutation type');
       }
-  
-      const { data: invoicesData } = await client.query({
-        query: GET_USER_INVOICES,
-        variables: { userId },
-      });
-  
-      if (invoicesData && invoicesData.getUserInvoices) {
-        setInvoices(invoicesData.getUserInvoices);
-        for (const invoice of invoicesData.getUserInvoices) {
-          await addInvoiceToIndexedDB(invoice);
-          console.log('Fetched invoice data from server and stored in IndexedDB:', invoice);
-        }
-      }
+      const result = await mutation({ variables });
+      // Store the updated field in IndexedDB (not shown here)
+      return result;
     } catch (error) {
-      console.error('Error fetching data from server:', error);
+      console.error('Error updating profile field:', error);
+      throw error;
     }
-  };
-  
-  const fetchDataFromIndexedDB = async () => {
-    const offlineInvoices = await getInvoicesFromIndexedDB();
-    setInvoices(offlineInvoices || []);
-    console.log('Fetched invoices from IndexedDB:', offlineInvoices);
   };
 
   return {
     userData,
-    invoices,
     userLoading,
     userError,
-    invoicesLoading,
-    invoicesError,
-    updateInvoice,
     updateProfileField,
+    fetchUserDataFromIndexedDB,
   };
 };
 
