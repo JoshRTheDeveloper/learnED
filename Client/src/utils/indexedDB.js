@@ -43,17 +43,55 @@ const encryptData = async (data, key, iv) => {
 };
 
 const decryptData = async (encryptedData, key, iv) => {
-  const decryptedBuffer = await crypto.subtle.decrypt(
-    {
-      name: "AES-CBC",
-      iv: iv,
-    },
-    key,
-    encryptedData
-  );
-  const decoder = new TextDecoder();
-  return JSON.parse(decoder.decode(decryptedBuffer));
+  try {
+    const decryptedBuffer = await crypto.subtle.decrypt(
+      {
+        name: "AES-CBC",
+        iv: iv,
+      },
+      key,
+      encryptedData
+    );
+
+    const decoder = new TextDecoder();
+    const decryptedString = decoder.decode(decryptedBuffer);
+
+    // Add logging to check the decrypted string
+    console.log('Decrypted string:', decryptedString);
+
+    // Validate the decrypted string before parsing
+    if (!decryptedString || decryptedString.trim() === '') {
+      throw new Error('Decrypted data is empty or malformed.');
+    }
+
+    return JSON.parse(decryptedString);
+  } catch (error) {
+    console.error('Error during decryption:', error);
+    throw new Error('Failed to decrypt data.');
+  }
 };
+
+export const getUserData = async () => {
+  try {
+    const record = await db.userData.get(1);
+
+    if (record && record.encryptedUserData && record.iv && record.key) {
+      const key = await importKey(new Uint8Array(record.key));
+      const iv = new Uint8Array(record.iv);
+      const encryptedData = new Uint8Array(record.encryptedUserData);
+      const decryptedUserData = await decryptData(encryptedData, key, iv);
+
+      return decryptedUserData;
+    } else {
+      console.error('Missing data in IndexedDB record:', record);
+      return null;
+    }
+  } catch (error) {
+    console.error('Failed to get user data securely from IndexedDB:', error);
+    return null;
+  }
+};
+
 
 const exportKey = async (key) => {
   const exported = await crypto.subtle.exportKey('raw', key);
@@ -175,27 +213,7 @@ export const storeUserData = async (userData) => {
   }
 };
 
-// Get user data
-export const getUserData = async () => {
-  try {
-    const record = await db.userData.get(1);
 
-    if (record && record.encryptedUserData && record.iv && record.key) {
-      const key = await importKey(new Uint8Array(record.key));
-      const iv = new Uint8Array(record.iv);
-      const encryptedData = new Uint8Array(record.encryptedUserData);
-      const decryptedUserData = await decryptData(encryptedData, key, iv);
-
-      return decryptedUserData;
-    } else {
-      console.error('Missing data in IndexedDB record:', record);
-    }
-    return null;
-  } catch (error) {
-    console.error('Failed to get user data securely from IndexedDB:', error);
-    return null;
-  }
-};
 
 // Store authentication data
 export const storeAuthData = async (token, userData) => {
