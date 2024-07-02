@@ -90,9 +90,7 @@ const Home = () => {
 
       }
     };
-  
-    fetchInvoices(); 
-  }, []);
+
 
   const handleSearch = () => {
     try {
