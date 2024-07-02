@@ -8,7 +8,7 @@ const sendInvoiceEmail = async (invoiceDetails) => {
       Messages: [
         {
           From: {
-            Email: invoiceDetails.companyEmail,  
+            Email: 'invoicinator3000@gmail.com',  
             Name: invoiceDetails.companyName,  
           },
           To: [
