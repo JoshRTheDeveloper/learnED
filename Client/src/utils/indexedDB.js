@@ -72,6 +72,7 @@ const importKey = async (keyData) => {
   );
 };
 
+// Store login credentials
 export const storeLoginCredentials = async (email, password) => {
   try {
     const existingRecord = await db.loginCredentials.get(1);
@@ -98,6 +99,7 @@ export const storeLoginCredentials = async (email, password) => {
   }
 };
 
+// Get login credentials
 export const getLoginCredentials = async () => {
   try {
     const record = await db.loginCredentials.get(1);
@@ -120,6 +122,7 @@ export const getLoginCredentials = async () => {
   }
 };
 
+// Store profile picture
 export const storeProfilePicture = async (userId, profilePictureBlob) => {
   try {
     const existingRecord = await db.profilePictures.get(1);
@@ -135,6 +138,7 @@ export const storeProfilePicture = async (userId, profilePictureBlob) => {
   }
 };
 
+// Get profile picture
 export const getProfilePicture = async () => {
   try {
     const profilePicture = await db.profilePictures.get(1);
@@ -145,6 +149,7 @@ export const getProfilePicture = async () => {
   }
 };
 
+// Store user data
 export const storeUserData = async (userData) => {
   try {
     const existingRecord = await db.userData.get(1);
@@ -170,26 +175,7 @@ export const storeUserData = async (userData) => {
   }
 };
 
-export const getUserPassword = async () => {
-  try {
-    const record = await db.userData.get(1);
-    if (record && record.encryptedUserData && record.iv && record.key) {
-      const key = await importKey(new Uint8Array(record.key));
-      const iv = new Uint8Array(record.iv);
-      const encryptedData = new Uint8Array(record.encryptedUserData);
-
-      const decryptedUserData = await decryptData(encryptedData, key, iv);
-      return decryptedUserData.password; // Return only the decrypted password
-    } else {
-      console.error('Missing data in IndexedDB record:', record);
-    }
-    return null;
-  } catch (error) {
-    console.error('Failed to get user password securely from IndexedDB:', error);
-    return null;
-  }
-};
-
+// Get user data
 export const getUserData = async () => {
   try {
     const record = await db.userData.get(1);
@@ -211,6 +197,7 @@ export const getUserData = async () => {
   }
 };
 
+// Store authentication data
 export const storeAuthData = async (token, userData) => {
   try {
     await db.auth.put({ token, userData });
@@ -220,6 +207,7 @@ export const storeAuthData = async (token, userData) => {
   }
 };
 
+// Get authentication data
 export const getAuthData = async () => {
   try {
     return await db.auth.get(1);
@@ -229,7 +217,7 @@ export const getAuthData = async () => {
   }
 };
 
-
+// Update invoice in IndexedDB
 export const updateInvoiceInIndexedDB = async (invoiceId, paidStatus) => {
   try {
     console.log('Updating invoiceId:', invoiceId, 'with paidStatus:', paidStatus);
@@ -255,6 +243,7 @@ export const updateInvoiceInIndexedDB = async (invoiceId, paidStatus) => {
   }
 };
 
+// Get invoices from IndexedDB
 export const getInvoicesFromIndexedDB = async () => {
   try {
     const invoices = await db.invoices.toArray();
@@ -277,6 +266,7 @@ export const getInvoicesFromIndexedDB = async () => {
   }
 };
 
+// Add invoice to IndexedDB
 export const addInvoiceToIndexedDB = async (invoice) => {
   try {
     if (!invoice._id) {
@@ -302,6 +292,7 @@ export const addInvoiceToIndexedDB = async (invoice) => {
   }
 };
 
+// Delete invoice from IndexedDB
 export const deleteInvoiceFromIndexedDB = async (_id) => {
   try {
     console.log(`Deleting invoice with _id: ${_id}`);
@@ -329,6 +320,7 @@ export const deleteInvoiceFromIndexedDB = async (_id) => {
   }
 };
 
+// Clear IndexedDB
 export const clearIndexedDB = async () => {
   try {
     await Promise.all([
@@ -343,6 +335,7 @@ export const clearIndexedDB = async () => {
   }
 };
 
+// Store profile file
 export const storeProfileFile = async (userId, file) => {
   try {
     await db.profileFiles.put({ userId, file });
@@ -352,6 +345,7 @@ export const storeProfileFile = async (userId, file) => {
   }
 };
 
+// Get profile file
 export const getProfileFile = async (userId) => {
   try {
     const result = await db.profileFiles.get(userId);
@@ -362,6 +356,7 @@ export const getProfileFile = async (userId) => {
   }
 };
 
+// Add offline mutation
 export const addOfflineMutation = async (mutation) => {
   try {
     await db.offlineMutations.add(mutation);
@@ -371,6 +366,7 @@ export const addOfflineMutation = async (mutation) => {
   }
 };
 
+// Get offline mutations
 export const getOfflineMutations = async () => {
   try {
     return await db.offlineMutations.toArray();
@@ -380,6 +376,7 @@ export const getOfflineMutations = async () => {
   }
 };
 
+// Clear offline mutations
 export const clearOfflineMutations = async () => {
   try {
     await db.offlineMutations.clear();
