@@ -1,18 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
-import './dashboard.css';
 import { useQuery, useMutation } from '@apollo/client';
+import './dashboard.css';
 import Sidebar from '../components/sidebar/sidebar';
 import jwtDecode from 'jwt-decode';
 import { GET_USER } from '../utils/queries';
 import { UPDATE_INVOICE, DELETE_INVOICE } from '../utils/mutations';
 import InvoiceModal from '../components/invoice-modal/invoice-modal';
 import {
+  addInvoiceToIndexedDB,
   getInvoicesFromIndexedDB,
   deleteInvoiceFromIndexedDB,
-  updateInvoiceInIndexedDB,
-  storeUserData 
-} from '../utils/indexedDB'; 
+  addOfflineMutation,
+  getOfflineMutations,
+  clearOfflineMutations,
+} from '../utils/indexedDB';
 
 const Home = () => {
   const token = localStorage.getItem('authToken');
@@ -48,7 +49,6 @@ const Home = () => {
 
   const [markAsPaidMutation] = useMutation(UPDATE_INVOICE);
   const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
-
 
   useEffect(() => {
     const handleOnline = async () => {
@@ -87,15 +87,16 @@ const Home = () => {
     for (const mutation of offlineMutations) {
       if (mutation.type === 'delete') {
         await deleteInvoiceMutation({ variables: { id: mutation.invoiceId } });
-
       }
-    };
-
+    }
+    await clearOfflineMutations();
+  };
 
   const handleSearch = () => {
     try {
       setSearchLoading(true);
       setSearchError(null);
+
       const filteredInvoices = userData?.invoices.filter(
         invoice => invoice.invoiceNumber.includes(searchInvoiceNumber)
       ) || [];
@@ -118,18 +119,15 @@ const Home = () => {
     setIsModalOpen(false);
   };
 
-
   const handleDeleteInvoice = async (invoiceId) => {
     if (isOffline) {
   
       await addOfflineMutation({ type: 'delete', invoiceId });
       await deleteInvoiceFromIndexedDB(invoiceId);
- local state
       setUserData(prevData => ({
         ...prevData,
-        invoices: prevData.invoices.filter(invoice => invoice._id !== _id),
+        invoices: prevData.invoices.filter(invoice => invoice._id !== invoiceId)
       }));
-
     } else {
       try {
     
@@ -163,19 +161,7 @@ const Home = () => {
         refetch();
       } catch (error) {
         console.error('Error deleting invoice:', error);
-
       }
-
-      await updateInvoiceInIndexedDB(invoiceId, paidStatus);
-
-      setUserData(prevData => ({
-        ...prevData,
-        invoices: prevData.invoices.map(invoice =>
-          invoice.id === invoiceId ? { ...invoice, paidStatus } : invoice
-        )
-      }));
-    } catch (error) {
-      console.error('Error updating invoice paid status:', error);
     }
   };
 
@@ -183,7 +169,7 @@ const Home = () => {
     console.log('userData changed:', userData);
   }, [userData]);
 
-  if (loading) {
+  if (loading || queryLoading) {
     return <p>Loading user data...</p>;
   }
 
@@ -196,7 +182,6 @@ const Home = () => {
   const filteredInvoicesDue = searchInvoiceNumber
     ? invoicesDue.filter(invoice => invoice.invoiceNumber.includes(searchInvoiceNumber))
     : invoicesDue;
-
 
   return (
     <>
@@ -241,9 +226,7 @@ const Home = () => {
                     <div className='mark-button'>
                       <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
                       {!invoice.paidStatus && (
-
                         <button onClick={(e) => { e.stopPropagation(); markAsPaidMutation({ variables: { id: invoice._id } }); }}>Mark as Paid</button>
-
                       )}
                       <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
                     </div>
@@ -274,9 +257,7 @@ const Home = () => {
                       <div className='mark-button'>
                         <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
                         {!invoice.paidStatus && (
-
                           <button onClick={(e) => { e.stopPropagation(); markAsPaidMutation({ variables: { id: invoice._id } }); }}>Mark as Paid</button>
-
                         )}
                         <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
                       </div>
