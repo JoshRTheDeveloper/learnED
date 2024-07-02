@@ -44,7 +44,7 @@ const Home = () => {
     },
     skip: isOffline,
   });
-
+// blah
 
   const [markAsPaidMutation] = useMutation(UPDATE_INVOICE);
   const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
