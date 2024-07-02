@@ -1,12 +1,32 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation } from '@apollo/client';
 import jwtDecode from 'jwt-decode';
 import './profile.css';
 import Sidebar from '../components/sidebar/sidebar';
 import temporaryImage from '../assets/noLogo.svg';
 import axios from 'axios';
+import { GET_USER } from '../utils/queries';
+import {
+  storeUserData,
+  storeProfilePicture,
+  storeProfileFile,
+  getUserData,
+  getProfilePicture,
+  getProfileFile,
+} from '../utils/indexedDB';
+import {
+  CHANGE_COMPANY,
+  CHANGE_PROFILE_PICTURE,
+  CHANGE_STREET_ADDRESS,
+  CHANGE_EMAIL,
+  CHANGE_CITY,
+  CHANGE_STATE,
+  CHANGE_ZIP,
+} from '../utils/mutations';
 import useDataManagement from '../../src/hooks/useDataManagement';
 
 const Profile = () => {
+  const [userData, setUserData] = useState(null);
   const [email, setEmail] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
   const [city, setCity] = useState('');
@@ -16,61 +36,137 @@ const Profile = () => {
   const [logoUrl, setLogoUrl] = useState(temporaryImage);
   const [logo, setLogo] = useState(null);
   const [renamedFile, setRenamedFile] = useState(null);
+  const [offlineMode, setOfflineMode] = useState(!navigator.onLine);
   const [initialLoad, setInitialLoad] = useState(true);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
 
-  const {
-    userData,
-    userLoading,
-    userError,
-    updateProfileField,
-    fetchUserDataFromIndexedDB,
-    storeUserDataInIndexedDB,
-  } = useDataManagement(userId);
+  const { loading, data, refetch } = useQuery(GET_USER, {
+    variables: { userId: userId || '' },
+    skip: !navigator.onLine || !initialLoad,
+  });
+
+  const [changeCompanyMutation] = useMutation(CHANGE_COMPANY);
+  const [changeProfilePictureMutation] = useMutation(CHANGE_PROFILE_PICTURE);
+  const [changeStreetAddressMutation] = useMutation(CHANGE_STREET_ADDRESS);
+  const [changeEmailMutation] = useMutation(CHANGE_EMAIL);
+  const [changeCityMutation] = useMutation(CHANGE_CITY);
+  const [changeStateMutation] = useMutation(CHANGE_STATE);
+  const [changeZipMutation] = useMutation(CHANGE_ZIP);
 
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
+    const handleOnlineStatusChange = async () => {
+      const isOnline = navigator.onLine;
+      setOfflineMode(!isOnline);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  useEffect(() => {
-    const loadData = async () => {
-      if (initialLoad) {
-        let data;
-        if (isOffline) {
-          data = await fetchUserDataFromIndexedDB();
-        } else {
-          data = userData;
-        }
-
-        if (data) {
-          const { company, email, streetAddress, city, state, zip, profilePicture } = data;
-          setEmail(email);
-          setStreetAddress(streetAddress);
-          setCity(city);
-          setState(state);
-          setZip(zip);
-          setCompany(company);
-          setLogoUrl(profilePicture || temporaryImage);
-        }
-        setInitialLoad(false);
+      if (isOnline) {
+        await syncOfflineData();
+        refetch();
+      } else {
+        console.error('Went offline.');
       }
     };
 
-    loadData();
-  }, [userData, initialLoad, isOffline, fetchUserDataFromIndexedDB]);
+    window.addEventListener('online', handleOnlineStatusChange);
+    window.addEventListener('offline', handleOnlineStatusChange);
+
+    return () => {
+      window.removeEventListener('online', handleOnlineStatusChange);
+      window.removeEventListener('offline', handleOnlineStatusChange);
+    };
+  }, [refetch]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (initialLoad) {
+        try {
+          let userDataFromDB;
+
+          if (navigator.onLine && !loading && data && data.getUser) {
+            userDataFromDB = data.getUser;
+          } else {
+            userDataFromDB = await getUserData(userId);
+          }
+
+          if (userDataFromDB) {
+            const { company, email, streetAddress, city, state, zip, profilePicture } = userDataFromDB;
+            setEmail(email);
+            setStreetAddress(streetAddress);
+            setCity(city);
+            setState(state);
+            setZip(zip);
+            setUserData(userDataFromDB);
+            setCompany(company);
+            setLogoUrl(profilePicture || temporaryImage);
+          } else {
+            console.error('No offline data found.');
+          }
+
+          setInitialLoad(false);
+          console.log('Fetched data from IndexedDB:', userDataFromDB);
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+      }
+    };
+
+    fetchData();
+  }, [loading, data, userId, initialLoad]);
+
+  const syncOfflineData = async () => {
+    try {
+      const offlineUserData = await getUserData(userId);
+      const offlineProfilePictureBlob = await getProfilePicture(userId);
+      const offlineProfilePictureFile = await getProfileFile(userId);
+
+      if (offlineUserData) {
+        const { company, email, streetAddress, city, state, zip } = offlineUserData;
+        let picturePath = offlineUserData.profilePicture;
+
+        if (offlineProfilePictureFile) {
+          const uploadedPicturePath = await uploadProfilePicture(offlineProfilePictureFile);
+          picturePath = uploadedPicturePath;
+        }
+
+        await Promise.all([
+          changeCompanyMutation({ variables: { userId, company } }),
+          changeStreetAddressMutation({ variables: { userId, streetAddress } }),
+          changeEmailMutation({ variables: { userId, email } }),
+          changeCityMutation({ variables: { userId, city } }),
+          changeStateMutation({ variables: { userId, state } }),
+          changeZipMutation({ variables: { userId, zip } }),
+          changeProfilePictureMutation({
+            variables: { userId, profilePicture: picturePath },
+          }),
+        ]);
+
+        setUserData({
+          ...offlineUserData,
+          profilePicture: picturePath,
+        });
+
+        setCompany(offlineUserData.company);
+        setEmail(offlineUserData.email);
+        setStreetAddress(offlineUserData.streetAddress);
+        setCity(offlineUserData.city);
+        setState(offlineUserData.state);
+        setZip(offlineUserData.zip);
+        setLogoUrl(picturePath || temporaryImage);
+
+        await storeUserData({
+          ...offlineUserData,
+          profilePicture: picturePath,
+        });
+
+      } else {
+        console.error('No offline changes to sync.');
+      }
+    } catch (error) {
+      console.error('Error syncing data with server:', error);
+    }
+  };
 
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handleStreetAddressChange = (e) => setStreetAddress(e.target.value);
@@ -87,14 +183,15 @@ const Profile = () => {
     const filename = `${userId}_profile_picture.jpg`;
     const renamedFile = new File([file], filename, { type: file.type });
     setRenamedFile(renamedFile);
-    // Store the file in IndexedDB (not shown here)
+    await storeProfilePicture(userId, file); 
+    await storeProfileFile(userId, renamedFile); 
   };
 
   const uploadProfilePicture = async (file) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await axios.post('https://example.com/upload', formData, {
+      const response = await axios.post('https://invoicinator3000-d580657ecca9.herokuapp.com/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'userId': userId,
@@ -117,29 +214,58 @@ const Profile = () => {
         if (logo) {
           const uploadedPicturePath = await uploadProfilePicture(renamedFile);
           picturePath = uploadedPicturePath;
+          await storeProfilePicture(userId, picturePath); 
         }
 
-        await updateProfileField('CHANGE_COMPANY', { userId, company });
-        await updateProfileField('CHANGE_STREET_ADDRESS', { userId, streetAddress });
-        await updateProfileField('CHANGE_EMAIL', { userId, email });
-        await updateProfileField('CHANGE_CITY', { userId, city });
-        await updateProfileField('CHANGE_STATE', { userId, state });
-        await updateProfileField('CHANGE_ZIP', { userId, zip });
-        await updateProfileField('CHANGE_PROFILE_PICTURE', { userId, profilePicture: picturePath });
+        await Promise.all([
+          changeCompanyMutation({ variables: { userId, company } }),
+          changeStreetAddressMutation({ variables: { userId, streetAddress } }),
+          changeEmailMutation({ variables: { userId, email } }),
+          changeCityMutation({ variables: { userId, city } }),
+          changeStateMutation({ variables: { userId, state } }),
+          changeZipMutation({ variables: { userId, zip } }),
+          changeProfilePictureMutation({ variables: { userId, profilePicture: picturePath } }),
+        ]);
 
-        // Store updated user data in IndexedDB
-        await storeUserDataInIndexedDB({
-          company,
+        setUserData({
+          userId,
           email,
           streetAddress,
           city,
           state,
           zip,
+          company,
+          profilePicture: picturePath,
+        });
+
+        await storeUserData({
+          userId,
+          email,
+          streetAddress,
+          city,
+          state,
+          zip,
+          company,
           profilePicture: picturePath,
         });
       } else {
-        // Store updates locally in IndexedDB (not shown here)
-        console.log('Offline mode: Store updates locally in IndexedDB');
+        const offlineUserData = {
+          userId,
+          email,
+          streetAddress,
+          city,
+          state,
+          zip,
+          company,
+          profilePicture: picturePath,
+        };
+
+        await storeUserData(offlineUserData);
+   
+        if (logo) {
+          await storeProfilePicture(userId, logoUrl); 
+          await storeProfileFile(userId, renamedFile); 
+        }
       }
 
       setEmail(email);
