@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import jwtDecode from 'jwt-decode';
-import axios from 'axios';
 import { useQuery, useMutation } from '@apollo/client';
+import axios from 'axios';
 import Sidebar from '../components/sidebar/sidebar';
 import { GET_USER } from '../utils/queries';
 import { CREATE_INVOICE } from '../utils/mutations';
-import { addInvoiceToIndexedDB, getUserData } from '../utils/indexedDB';
+import { addInvoiceToIndexedDB, getInvoicesFromIndexedDB, getUserData } from '../utils/indexedDB';
 import './CreateInvoices.css';
 
 const CreateInvoices = () => {
-  // State variables for form inputs and user data
   const [userData, setUserData] = useState(null);
   const [email, setEmail] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
@@ -19,7 +17,6 @@ const CreateInvoices = () => {
   const [zip, setZip] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
 
-  // Client's invoice details state
   const [clientEmail, setClientEmail] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientAddress, setClientAddress] = useState('');
@@ -30,54 +27,46 @@ const CreateInvoices = () => {
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [dueDate, setDueDate] = useState('');
 
-  // Fetch user ID from decoded JWT token
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
 
-  // Fetch user data using Apollo useQuery hook
   const { loading, error, data } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
   });
 
-  // Apollo useMutation hook for creating invoices
   const [createInvoice] = useMutation(CREATE_INVOICE);
 
-  // Effect to fetch user data from IndexedDB on component mount
   useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
-      const localUserData = await getUserData();
+      const localUserData = await getUserData(); 
       if (localUserData) {
-
-        const { email, streetAddress, city, state, zip, profilePicture, company } = localUserData;
-
+        const { email, streetAddress, city, state, zip, profilePicture, company} = localUserData;
         setEmail(email);
         setStreetAddress(streetAddress);
         setCity(city);
         setState(state);
         setZip(zip);
         setProfilePicture(profilePicture);
-
+        
         let clientCompanyName = '';
-        if (data.getUser.company) {
-          clientCompanyName = data.getUser.company;
+        if (company) {
+          clientCompanyName = company; 
         } else if (data.getUser.firstName) {
-          clientCompanyName = data.getUser.firstName;
+          clientCompanyName = data.getUser.firstName; 
         }
-
+       
         setUserData(localUserData);
+      
       }
     };
-
+  
     fetchUserDataFromIndexedDB();
+  }, []);
+  
 
-  }, [data]); // Depend on data to update when user data changes
-
-  // Computed user name based on company and last name
-  const name = `${userData?.company || ''} ${userData?.lastName || ''}`;
-
-  // User object for displaying user information in the form
-
+  const name = `${userData?.company|| ''} ${userData?.lastName || ''}`;
+console.log('name:' + name)
   const user = {
     email: email,
     name: name,
@@ -92,11 +81,7 @@ const CreateInvoices = () => {
     const invoiceAmountFloat = parseFloat(invoiceAmount);
     const dueDateISO = new Date(dueDate).toISOString();
   
-
-    const uniqueId = uuidv4();
-  
     const variables = {
-      _id: uniqueId,
       invoiceAmount: invoiceAmountFloat,
       paidStatus: paidStatus,
       invoiceNumber: invoiceNumber,
@@ -114,34 +99,21 @@ const CreateInvoices = () => {
       profilePicture: profilePicture,
     };
   
-
+    console.log('Invoice variables:', variables); 
+  
     try {
-      // Check if the invoice with the same invoiceNumber exists in IndexedDB
-      const existingInvoices = await getInvoicesFromIndexedDB();
-      const invoiceExists = existingInvoices.some(inv => inv.invoiceNumber === invoiceNumber);
-  
-      if (invoiceExists) {
-        alert(`Invoice with Invoice Number ${invoiceNumber} already exists in IndexedDB.`);
-        return;
-      }
-  
       if (navigator.onLine) {
-        // Send invoice to server using Apollo createInvoice mutation
         const response = await createInvoice({ variables });
-        console.log('Invoice sent to server:', response.data);
-  
-        // Also send invoice details to server endpoint for additional processing
         await axios.post('/send-invoice', variables);
-        console.log('Invoice details sent to server:', variables);
-      } else {
-        // Save invoice locally to IndexedDB when offline
+        console.log('Invoice sent to server:', variables);
         await addInvoiceToIndexedDB(variables);
         console.log('Invoice saved to IndexedDB:', variables);
+      } else {
+        await addInvoiceToIndexedDB(variables);
+        console.log('Invoice saved to IndexedDB:', variables); 
         alert('Invoice saved locally. It will be sent when you are back online.');
       }
-
   
-      // Clear form fields after successful submission
       setInvoiceAmount('');
       setPaidStatus(false);
       setInvoiceNumber('');
@@ -152,27 +124,22 @@ const CreateInvoices = () => {
       setInvoiceDetails('');
       setDueDate('');
     } catch (error) {
-
-      console.error('Error creating or sending invoice:', error);
+      console.error('Error creating invoice:', error);
     }
   };
   
+  
 
-  // Effect to sync invoices with server when back online
   useEffect(() => {
+
     const syncInvoicesWithServer = async () => {
       if (navigator.onLine) {
         const localInvoices = await getInvoicesFromIndexedDB();
 
         for (const invoice of localInvoices) {
           try {
-            // Use Apollo createInvoice mutation to sync local invoices
             await createInvoice({ variables: invoice });
-            console.log('Invoice synced with server:', invoice);
-
-            // Also send invoice details to server endpoint for additional processing
             await axios.post('/send-invoice', invoice);
-            console.log('Invoice details sent to server:', invoice);
           } catch (error) {
             console.error('Error syncing invoice with server:', error);
           }
@@ -180,13 +147,12 @@ const CreateInvoices = () => {
       }
     };
 
-    // Listen for online event to trigger synchronization
     window.addEventListener('online', syncInvoicesWithServer);
 
     return () => {
       window.removeEventListener('online', syncInvoicesWithServer);
     };
-  }, [createInvoice]); // Depend on createInvoice to update when mutation changes
+  }, [createInvoice]);
 
 
   return (
@@ -217,7 +183,7 @@ const CreateInvoices = () => {
                     <label className="label font-casmono" htmlFor="invoice-num">Invoice#:</label>
                     <input type="text" placeholder="1234ABCD" id="invoice-num" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} maxLength="8" required />
                   </div>
-                  <div className='input'>
+                  <div className='input'> 
                     <label className="label font-casmono" htmlFor="payment-due">Payment Due:</label>
                     <input type="date" id="payment-due" value={dueDate} onChange={(e) => setDueDate(e.target.value)} required />
                   </div>

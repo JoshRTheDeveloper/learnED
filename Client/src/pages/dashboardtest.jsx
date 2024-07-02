@@ -35,7 +35,9 @@ const Home = () => {
     fetchPolicy: 'cache-first',
     onCompleted: async (data) => {
 
+
       setUserData(data.getUser);
+
       await Promise.all(data.getUser.invoices.map(invoice => addInvoiceToIndexedDB(invoice)));
     },
     onError: (error) => {
@@ -52,6 +54,8 @@ const Home = () => {
   useEffect(() => {
     const handleOnline = async () => {
       setIsOffline(false);
+
+
       await syncOfflineMutations();
       refetch();
     };
@@ -60,6 +64,8 @@ const Home = () => {
       setIsOffline(true);
       const invoices = await getInvoicesFromIndexedDB();
       setUserData({ invoices });
+
+
     };
 
     window.addEventListener('online', handleOnline);
@@ -76,10 +82,12 @@ const Home = () => {
   }, [isOffline, refetch]);
 
   useEffect(() => {
+
     if (!isOffline) {
       refetch();
     }
   }, [isOffline, refetch]);
+
 
   const syncOfflineMutations = async () => {
     const offlineMutations = await getOfflineMutations();
@@ -120,6 +128,8 @@ const Home = () => {
 
   const handleDeleteInvoice = async (invoiceId) => {
     if (isOffline) {
+
+
       await addOfflineMutation({ type: 'delete', invoiceId });
       await deleteInvoiceFromIndexedDB(invoiceId);
       setUserData(prevData => ({
@@ -128,6 +138,8 @@ const Home = () => {
       }));
     } else {
       try {
+
+
         await deleteInvoiceMutation({
           variables: { id: invoiceId },
           update: (cache, { data: { deleteInvoice } }) => {
@@ -136,14 +148,18 @@ const Home = () => {
               return;
             }
 
+
+
             cache.modify({
               id: cache.identify(userData),
               fields: {
                 invoices(existingInvoices = [], { readField }) {
+
                   return existingInvoices.filter(invoice => readField('_id', invoice) !== invoiceId);
                 }
               }
             });
+
 
             setUserData(prevData => ({
               ...prevData,
@@ -151,6 +167,7 @@ const Home = () => {
             }));
           },
         });
+
 
         await deleteInvoiceFromIndexedDB(invoiceId);
         refetch();
@@ -161,10 +178,11 @@ const Home = () => {
   };
 
   useEffect(() => {
+
   
   }, [userData]);
 
-  
+
   const invoicesDue = userData?.invoices.filter(invoice => !invoice.paidStatus) || [];
   const invoicesPaid = userData?.invoices.filter(invoice => invoice.paidStatus) || [];
   const filteredInvoicesDue = searchInvoiceNumber
@@ -197,6 +215,7 @@ const Home = () => {
           ) : searchResult.length === 0 ? (
             <p>No results found.</p>
           ) : (
+
             <div className='invoice-list'>
               {searchResult.map(invoice => (
                 <div
@@ -243,6 +262,7 @@ const Home = () => {
                 <p>Paid on: {new Date(invoice.paymentDate).toLocaleDateString()}</p>
               </div>
             ))}
+
           </div>
         </div>
       </div>
@@ -253,6 +273,7 @@ const Home = () => {
           isOpen={isModalOpen}
           onClose={closeModal}
           onDelete={handleDeleteInvoice}
+
         />
       )}
     </>

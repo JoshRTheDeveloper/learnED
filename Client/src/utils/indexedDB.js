@@ -1,8 +1,9 @@
+
 import Dexie from 'dexie';
 
 const db = new Dexie('InvoiceDB');
 
-db.version(4).stores({
+db.version(5).stores({
   invoices: '++id, invoiceNumber, clientEmail, clientName, clientAddress, clientCity, invoiceAmount, dueDate, paidStatus, userID',
   userData: '++id, encryptedUserData, iv, key',
   loginCredentials: '++id, email, encryptedPassword, iv, key',
@@ -10,6 +11,68 @@ db.version(4).stores({
   profilePictures: '++id, userId, profilePictureBlob',
   profileFiles: 'userId,file',
 });
+
+
+
+const generateKeyAndIV = async () => {
+  const key = await crypto.subtle.generateKey(
+    {
+      name: "AES-CBC",
+      length: 256,
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
+  const iv = crypto.getRandomValues(new Uint8Array(16));
+  return { key, iv };
+};
+
+const encryptData = async (data, key, iv) => {
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(JSON.stringify(data));
+  const encryptedBuffer = await crypto.subtle.encrypt(
+    {
+      name: "AES-CBC",
+      iv: iv,
+    },
+    key,
+    dataBuffer
+  );
+  return {
+    encryptedData: new Uint8Array(encryptedBuffer),
+    iv: iv,
+  };
+};
+
+const decryptData = async (encryptedData, key, iv) => {
+  const decryptedBuffer = await crypto.subtle.decrypt(
+    {
+      name: "AES-CBC",
+      iv: iv,
+    },
+    key,
+    encryptedData
+  );
+  const decoder = new TextDecoder();
+  return JSON.parse(decoder.decode(decryptedBuffer));
+};
+
+const exportKey = async (key) => {
+  const exported = await crypto.subtle.exportKey('raw', key);
+  return new Uint8Array(exported);
+};
+
+const importKey = async (keyData) => {
+  return await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    {
+      name: 'AES-CBC',
+    },
+    true,
+    ['encrypt', 'decrypt']
+  );
+};
 
 export const storeLoginCredentials = async (email, password) => {
   try {
@@ -83,66 +146,6 @@ export const getProfilePicture = async () => {
   }
 };
 
-const generateKeyAndIV = async () => {
-  const key = await crypto.subtle.generateKey(
-    {
-      name: "AES-CBC",
-      length: 256,
-    },
-    true,
-    ["encrypt", "decrypt"]
-  );
-  const iv = crypto.getRandomValues(new Uint8Array(16));
-  return { key, iv };
-};
-
-const encryptData = async (data, key, iv) => {
-  const encoder = new TextEncoder();
-  const dataBuffer = encoder.encode(JSON.stringify(data));
-  const encryptedBuffer = await crypto.subtle.encrypt(
-    {
-      name: "AES-CBC",
-      iv: iv,
-    },
-    key,
-    dataBuffer
-  );
-  return {
-    encryptedData: new Uint8Array(encryptedBuffer),
-    iv: iv,
-  };
-};
-
-const decryptData = async (encryptedData, key, iv) => {
-  const decryptedBuffer = await crypto.subtle.decrypt(
-    {
-      name: "AES-CBC",
-      iv: iv,
-    },
-    key,
-    encryptedData
-  );
-  const decoder = new TextDecoder();
-  return JSON.parse(decoder.decode(decryptedBuffer));
-};
-
-const exportKey = async (key) => {
-  const exported = await crypto.subtle.exportKey('raw', key);
-  return new Uint8Array(exported);
-};
-
-const importKey = async (keyData) => {
-  return await crypto.subtle.importKey(
-    'raw',
-    keyData,
-    {
-      name: 'AES-CBC',
-    },
-    true,
-    ['encrypt', 'decrypt']
-  );
-};
-
 export const storeUserData = async (userData) => {
   try {
     const existingRecord = await db.userData.get(1);
@@ -190,14 +193,12 @@ export const getUserPassword = async () => {
 export const getUserData = async () => {
   try {
     const record = await db.userData.get(1);
-   
 
     if (record && record.encryptedUserData && record.iv && record.key) {
       const key = await importKey(new Uint8Array(record.key));
       const iv = new Uint8Array(record.iv);
       const encryptedData = new Uint8Array(record.encryptedUserData);
       const decryptedUserData = await decryptData(encryptedData, key, iv);
-     
 
       return decryptedUserData;
     } else {
@@ -227,41 +228,29 @@ export const getAuthData = async () => {
   }
 };
 
-export const addInvoiceToIndexedDB = async (invoice) => {
+
+export const updateInvoiceInIndexedDB = async (invoiceId, paidStatus) => {
   try {
-    const { key, iv } = await generateKeyAndIV();
-    const exportedKey = await exportKey(key);
+    console.log('Updating invoiceId:', invoiceId, 'with paidStatus:', paidStatus);
 
-    const { encryptedData } = await encryptData(invoice, key, iv);
+    const existingInvoice = await db.invoices.get(invoiceId);
 
-    const encryptedInvoice = {
-      ...invoice,
-      encryptedData: Array.from(encryptedData),
-      iv: Array.from(iv),
-      key: Array.from(exportedKey),
-    };
+    console.log('Existing invoice:', existingInvoice);
 
-    await db.invoices.add(encryptedInvoice);
-  } catch (error) {
-    console.error('Failed to add invoice to IndexedDB:', error);
-  }
-};
+    if (!existingInvoice) {
+      throw new Error(`Invoice with id ${invoiceId} not found in IndexedDB.`);
+    }
 
-export const updateInvoiceInIndexedDB = async (invoice) => {
-  try {
-    const { key, iv } = await generateKeyAndIV();
-    const exportedKey = await exportKey(key);
+    // Update the paidStatus
+    existingInvoice.paidStatus = paidStatus;
 
-    const encryptedInvoice = {
-      ...invoice,
-      encryptedData: Array.from(await encryptData(invoice, key, iv).encryptedData),
-      iv: Array.from(iv),
-      key: Array.from(exportedKey),
-    };
+    // Put the updated invoice back into IndexedDB
+    await db.invoices.put(existingInvoice);
 
-    await db.invoices.put(encryptedInvoice);
+    console.log(`Invoice with id ${invoiceId} updated successfully.`);
   } catch (error) {
     console.error('Failed to update invoice in IndexedDB:', error);
+    throw error;
   }
 };
 
@@ -270,20 +259,10 @@ export const getInvoicesFromIndexedDB = async () => {
     const invoices = await db.invoices.toArray();
     const decryptedInvoices = await Promise.all(
       invoices.map(async (invoice) => {
-        console.log('Invoice Data:', invoice); // Log full invoice data
-
         const key = await importKey(new Uint8Array(invoice.key));
-        console.log('Imported Key:', key); // Log imported key details
-
         const iv = new Uint8Array(invoice.iv);
-        console.log('IV:', iv); // Log IV details
-
         const encryptedData = new Uint8Array(invoice.encryptedData);
-        console.log('Encrypted Data:', encryptedData); // Log encrypted data
-
         const decryptedData = await decryptData(encryptedData, key, iv);
-        console.log('Decrypted Data:', decryptedData); // Log decrypted data
-
         return {
           ...invoice,
           ...decryptedData,
@@ -297,13 +276,61 @@ export const getInvoicesFromIndexedDB = async () => {
   }
 };
 
-export const deleteInvoiceFromIndexedDB = async (id) => {
+export const addInvoiceToIndexedDB = async (invoice) => {
   try {
-    await db.invoices.delete(id);
+    if (!invoice._id) {
+      throw new Error('Invoice must have a unique _id');
+    }
+
+    const { key, iv } = await generateKeyAndIV();
+    const exportedKey = await exportKey(key);
+    const { encryptedData } = await encryptData(invoice, key, iv);
+
+    const encryptedInvoice = {
+      ...invoice,
+      encryptedData: Array.from(encryptedData),
+      iv: Array.from(iv),
+      key: Array.from(exportedKey),
+    };
+
+    await db.invoices.add(encryptedInvoice);
+    console.log(`Invoice with id ${invoice._id} added successfully.`);
   } catch (error) {
-    console.error('Failed to delete invoice from IndexedDB:', error);
+    console.error('Failed to add invoice to IndexedDB:', error);
+    console.log('Invoice object causing the error:', invoice); 
+    throw error; 
   }
 };
+
+
+
+export const deleteInvoiceFromIndexedDB = async (_id) => {
+  try {
+    console.log(`Deleting invoice with _id: ${_id}`);
+
+    // Perform the deletion within a transaction
+    await db.transaction('rw', db.invoices, async () => {
+      // Find the invoice by _id and delete it
+      const invoiceToDelete = await db.invoices.where('_id').equals(_id).first();
+
+      if (!invoiceToDelete) {
+        console.error(`Invoice with _id ${_id} not found in IndexedDB.`);
+        return;
+      }
+
+      const result = await db.invoices.delete(invoiceToDelete.id);
+      if (result === 0) {
+        console.error(`Failed to delete invoice with _id ${_id} from IndexedDB.`);
+      } else {
+        console.log(`Invoice with _id ${_id} deleted successfully.`);
+      }
+    });
+  } catch (error) {
+    console.error('Failed to delete invoice from IndexedDB:', error);
+    throw error;
+  }
+};
+
 
 export const clearIndexedDB = async () => {
   try {
@@ -360,5 +387,7 @@ export const clearOfflineMutations = async () => {
   await store.clear();
   await tx.done;
 };
+
+
 
 export default db;
