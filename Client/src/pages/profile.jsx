@@ -29,6 +29,7 @@ const Profile = () => {
     userError,
     updateProfileField,
     fetchUserDataFromIndexedDB,
+    storeUserDataInIndexedDB,
   } = useDataManagement(userId);
 
   useEffect(() => {
@@ -93,7 +94,7 @@ const Profile = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await axios.post('https://invoicinator3000-d580657ecca9.herokuapp.com/upload', formData, {
+      const response = await axios.post('https://example.com/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'userId': userId,
@@ -125,8 +126,20 @@ const Profile = () => {
         await updateProfileField('CHANGE_STATE', { userId, state });
         await updateProfileField('CHANGE_ZIP', { userId, zip });
         await updateProfileField('CHANGE_PROFILE_PICTURE', { userId, profilePicture: picturePath });
+
+        // Store updated user data in IndexedDB
+        await storeUserDataInIndexedDB({
+          company,
+          email,
+          streetAddress,
+          city,
+          state,
+          zip,
+          profilePicture: picturePath,
+        });
       } else {
-        // Store updates locally (not shown here)
+        // Store updates locally in IndexedDB (not shown here)
+        console.log('Offline mode: Store updates locally in IndexedDB');
       }
 
       setEmail(email);
