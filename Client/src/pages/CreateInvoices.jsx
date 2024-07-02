@@ -71,12 +71,12 @@ const CreateInvoices = () => {
 
     fetchUserDataFromIndexedDB();
 
-  }, [data]); // Depend on data to update when user data changes
+  }, [data]); 
 
-  // Computed user name based on company and last name
+
   const name = `${userData?.company || ''} ${userData?.lastName || ''}`;
 
-  // User object for displaying user information in the form
+
 
   const user = {
     email: email,
@@ -116,32 +116,21 @@ const CreateInvoices = () => {
   
 
     try {
-      // Check if the invoice with the same invoiceNumber exists in IndexedDB
-      const existingInvoices = await getInvoicesFromIndexedDB();
-      const invoiceExists = existingInvoices.some(inv => inv.invoiceNumber === invoiceNumber);
-  
-      if (invoiceExists) {
-        alert(`Invoice with Invoice Number ${invoiceNumber} already exists in IndexedDB.`);
-        return;
-      }
-  
       if (navigator.onLine) {
-        // Send invoice to server using Apollo createInvoice mutation
         const response = await createInvoice({ variables });
         console.log('Invoice sent to server:', response.data);
   
-        // Also send invoice details to server endpoint for additional processing
+     
         await axios.post('/send-invoice', variables);
         console.log('Invoice details sent to server:', variables);
       } else {
-        // Save invoice locally to IndexedDB when offline
+
         await addInvoiceToIndexedDB(variables);
         console.log('Invoice saved to IndexedDB:', variables);
         alert('Invoice saved locally. It will be sent when you are back online.');
       }
-
   
-      // Clear form fields after successful submission
+
       setInvoiceAmount('');
       setPaidStatus(false);
       setInvoiceNumber('');
@@ -152,7 +141,6 @@ const CreateInvoices = () => {
       setInvoiceDetails('');
       setDueDate('');
     } catch (error) {
-
       console.error('Error creating or sending invoice:', error);
     }
   };
