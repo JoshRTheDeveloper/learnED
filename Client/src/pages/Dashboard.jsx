@@ -45,30 +45,49 @@ const Home = () => {
     skip: isOffline,
   });
 
+
   const [markAsPaidMutation] = useMutation(UPDATE_INVOICE);
   const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
 
 
   useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        const invoices = await getInvoicesFromIndexedDB();
-        console.log('Fetched Invoices:', invoices);
-  
-        const invoicesWithUndefinedId = invoices.filter(invoice => !invoice._id);
-        if (invoicesWithUndefinedId.length > 0) {
-          console.warn('Invoices with undefined _id:', invoicesWithUndefinedId);
-        }
-  
-        setUserData({ invoices });
-  
-        invoices.forEach(invoice => {
-          console.log('Invoice ID:', invoice._id);
-        });
-      } catch (error) {
-        console.error('Error fetching invoices from IndexedDB:', error);
-      } finally {
-        setLoading(false);
+    const handleOnline = async () => {
+      setIsOffline(false);
+      setLoading(true);
+      await syncOfflineMutations();
+      refetch();
+    };
+
+    const handleOffline = async () => {
+      setIsOffline(true);
+      const invoices = await getInvoicesFromIndexedDB();
+      setUserData({ invoices });
+      setLoading(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    if (isOffline) {
+      handleOffline();
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [isOffline, refetch]);
+
+  useEffect(() => {
+    refetch();  
+  }, []);
+
+  const syncOfflineMutations = async () => {
+    const offlineMutations = await getOfflineMutations();
+    for (const mutation of offlineMutations) {
+      if (mutation.type === 'delete') {
+        await deleteInvoiceMutation({ variables: { id: mutation.invoiceId } });
+
       }
     };
   
@@ -101,41 +120,52 @@ const Home = () => {
     setIsModalOpen(false);
   };
 
-  const handleDeleteInvoice = async (_id) => {
-    console.log('Deleting invoice with _id:', _id);
-    try {
-      // Delete invoice from the server
-      const { data } = await deleteInvoiceMutation({
-        variables: { invoiceId: _id },
-      });
 
-      // Handle successful deletion response from server
-      console.log('Deleted invoice from server:', data);
-
-      // Delete invoice from IndexedDB
-      await deleteInvoiceFromIndexedDB(_id);
-
-      // Update local state
+  const handleDeleteInvoice = async (invoiceId) => {
+    if (isOffline) {
+  
+      await addOfflineMutation({ type: 'delete', invoiceId });
+      await deleteInvoiceFromIndexedDB(invoiceId);
+ local state
       setUserData(prevData => ({
         ...prevData,
         invoices: prevData.invoices.filter(invoice => invoice._id !== _id),
       }));
 
-      console.log(`Invoice with _id ${_id} deleted successfully.`);
-    } catch (error) {
-      console.error('Error deleting invoice:', error);
-    }
-  };
+    } else {
+      try {
+    
+        await deleteInvoiceMutation({
+          variables: { id: invoiceId },
+          update: (cache, { data: { deleteInvoice } }) => {
+            if (!deleteInvoice.success) {
+              console.error('Error deleting invoice:', deleteInvoice.message);
+              return;
+            }
   
+      
+            cache.modify({
+              id: cache.identify(userData),
+              fields: {
+                invoices(existingInvoices = [], { readField }) {
+                  return existingInvoices.filter(invoice => invoice._id !== invoiceId);
+                }
+              }
+            });
   
+   
+            setUserData(prevData => ({
+              ...prevData,
+              invoices: prevData.invoices.filter(invoice => invoice._id !== invoiceId)
+            }));
+          },
+        });
+  
+        await deleteInvoiceFromIndexedDB(invoiceId);
+        refetch();
+      } catch (error) {
+        console.error('Error deleting invoice:', error);
 
-  const handleUpdatePaidStatus = async (invoiceId, paidStatus) => {
-    try {
-      console.log(`Updating invoiceId: ${invoiceId} with paidStatus: ${paidStatus}`);
-
-      if (!invoiceId) {
-        console.error('invoiceId is undefined or falsy.');
-        return;
       }
 
       await updateInvoiceInIndexedDB(invoiceId, paidStatus);
@@ -213,7 +243,9 @@ const Home = () => {
                     <div className='mark-button'>
                       <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
                       {!invoice.paidStatus && (
-                        <button onClick={(e) => { e.stopPropagation(); handleUpdatePaidStatus(invoice._id, true); }}>Mark as Paid</button>
+
+                        <button onClick={(e) => { e.stopPropagation(); markAsPaidMutation({ variables: { id: invoice._id } }); }}>Mark as Paid</button>
+
                       )}
                       <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
                     </div>
@@ -244,7 +276,9 @@ const Home = () => {
                       <div className='mark-button'>
                         <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
                         {!invoice.paidStatus && (
-                          <button onClick={(e) => { e.stopPropagation(); handleUpdatePaidStatus(invoice._id, true); }}>Mark as Paid</button>
+
+                          <button onClick={(e) => { e.stopPropagation(); markAsPaidMutation({ variables: { id: invoice._id } }); }}>Mark as Paid</button>
+
                         )}
                         <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
                       </div>
