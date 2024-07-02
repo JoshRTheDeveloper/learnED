@@ -38,7 +38,7 @@ const CreateInvoices = () => {
   const { loading, error, data } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
   });
-
+// blah
   // Apollo useMutation hook for creating invoices
   const [createInvoice] = useMutation(CREATE_INVOICE);
 
