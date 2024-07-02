@@ -262,9 +262,9 @@ const Profile = () => {
 
         await storeUserData(offlineUserData);
    
-        if (logo) {
-          await storeProfilePicture(userId, logoUrl); 
-          await storeProfileFile(userId, renamedFile); 
+           if (logo) {
+          await storeProfilePicture(userId, logoUrl); // Save blob for offline use
+          await storeProfileFile(userId, renamedFile); // Save file for later upload
         }
       }
 
