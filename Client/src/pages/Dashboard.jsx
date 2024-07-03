@@ -122,49 +122,57 @@ const Home = () => {
     setIsModalOpen(false);
   };
 
-  const handleDeleteInvoice = async (invoiceId) => {
-    if (isOffline) {
-      try {
-        await addOfflineMutation({ type: 'delete', invoiceId });
-        await deleteInvoiceFromIndexedDB(invoiceId);
+  const handleDeleteInvoice = async (invoiceNumber, isOffline, userData, setUserData, deleteInvoiceMutation, refetch) => {
+    try {
+      if (isOffline) {
+      
+        await addOfflineMutation({ type: 'delete', invoiceNumber });
+        
+     
         setUserData(prevData => ({
           ...prevData,
-          invoices: prevData.invoices.filter(invoice => invoice._id !== invoiceId)
+          invoices: prevData.invoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
         }));
-      } catch (error) {
-        console.error('Error deleting invoice offline:', error);
-      }
-    } else {
-      try {
-        await deleteInvoiceMutation({
-          variables: { id: invoiceId },
+        
+        console.log(`Invoice with invoiceNumber ${invoiceNumber} deleted offline.`);
+      } else {
+     
+        const { data } = await deleteInvoiceMutation({
+          variables: { invoiceNumber },
           update: (cache, { data: { deleteInvoice } }) => {
             if (!deleteInvoice.success) {
               console.error('Error deleting invoice:', deleteInvoice.message);
               return;
             }
-
+  
             cache.modify({
               id: cache.identify(userData),
               fields: {
                 invoices(existingInvoices = [], { readField }) {
-                  return existingInvoices.filter(invoice => invoice._id !== invoiceId);
+                  return existingInvoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber);
                 }
               }
             });
-
+  
             setUserData(prevData => ({
               ...prevData,
-              invoices: prevData.invoices.filter(invoice => invoice._id !== invoiceId)
+              invoices: prevData.invoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
             }));
           },
         });
-
-        await deleteInvoiceFromIndexedDB(invoiceId);
-        refetch();
-      } catch (error) {
-        console.error('Error deleting invoice:', error);
+  
+        console.log(`Invoice with invoiceNumber ${invoiceNumber} deleted online.`);
       }
+  
+     
+      await deleteInvoiceFromIndexedDB(invoiceNumber);
+  
+      // Refetch data if needed
+      if (!isOffline) {
+        refetch();
+      }
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
     }
   };
 
