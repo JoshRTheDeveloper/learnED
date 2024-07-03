@@ -10,7 +10,7 @@ import { addInvoiceToIndexedDB, getUserData } from '../utils/indexedDB';
 import './CreateInvoices.css';
 
 const CreateInvoices = () => {
-  // State variables for form inputs and user data
+
   const [userData, setUserData] = useState(null);
   const [email, setEmail] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
@@ -19,7 +19,7 @@ const CreateInvoices = () => {
   const [zip, setZip] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
 
-  // Client's invoice details state
+
   const [clientEmail, setClientEmail] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientAddress, setClientAddress] = useState('');
@@ -30,20 +30,21 @@ const CreateInvoices = () => {
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [dueDate, setDueDate] = useState('');
 
-  // Fetch user ID from decoded JWT token
+
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
 
-  // Fetch user data using Apollo useQuery hook
+ 
+  const isOnline = navigator.onLine;
   const { loading, error, data } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
+    skip: !isOnline,
   });
-// blah
-  // Apollo useMutation hook for creating invoices
+
   const [createInvoice] = useMutation(CREATE_INVOICE);
 
-  // Effect to fetch user data from IndexedDB on component mount
+  
   useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
       const localUserData = await getUserData();
