@@ -101,8 +101,9 @@ const CreateInvoices = () => {
       if (navigator.onLine) {
         const response = await createInvoice({ variables });
         console.log('Invoice sent to server:', response.data);
-        await axios.post('/send-invoice', variables);
+        // await axios.post('/send-invoice', variables);
         console.log('Invoice details sent to server:', variables);
+        await addInvoiceToIndexedDB(variables);
       } else {
         console.log('Saving invoice to IndexedDB');
         await addInvoiceToIndexedDB(variables);

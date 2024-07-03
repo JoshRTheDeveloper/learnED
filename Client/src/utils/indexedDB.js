@@ -275,8 +275,11 @@ export const getInvoicesFromIndexedDB = async () => {
 
 export const addInvoiceToIndexedDB = async (invoice) => {
   try {
-    if (!invoice._id) {
-      throw new Error('Invoice must have a unique _id');
+    const existingInvoice = await db.invoices.where('invoiceNumber').equals(invoice.invoiceNumber).first();
+
+    if (existingInvoice) {
+      console.warn(`Invoice with invoiceNumber ${invoice.invoiceNumber} already exists in IndexedDB. Skipping modification.`);
+      return;
     }
 
     const { key, iv } = await generateKeyAndIV();
@@ -291,33 +294,30 @@ export const addInvoiceToIndexedDB = async (invoice) => {
     };
 
     await db.invoices.add(encryptedInvoice);
-    console.log(`Invoice with id ${invoice._id} added successfully.`);
+    console.log(`Invoice with invoiceNumber ${invoice.invoiceNumber} added successfully.`);
   } catch (error) {
     console.error('Failed to add invoice to IndexedDB:', error);
-    console.log('Invoice object causing the error:', invoice); 
-    throw error; 
+    throw error;
   }
 };
 
-export const deleteInvoiceFromIndexedDB = async (_id) => {
-  try {
-    console.log(`Deleting invoice with _id: ${_id}`);
 
-    // Perform the deletion within a transaction
+export const deleteInvoiceFromIndexedDB = async (invoiceNumber) => {
+  try {
     await db.transaction('rw', db.invoices, async () => {
-      // Find the invoice by _id and delete it
-      const invoiceToDelete = await db.invoices.where('id').equals(_id).first();
+      // Find the invoice by invoiceNumber and delete it
+      const invoiceToDelete = await db.invoices.where('invoiceNumber').equals(invoiceNumber).first();
 
       if (!invoiceToDelete) {
-        console.error(`Invoice with id ${_id} not found in IndexedDB.`);
+        console.error(`Invoice with invoiceNumber ${invoiceNumber} not found in IndexedDB.`);
         return;
       }
 
       const result = await db.invoices.delete(invoiceToDelete.id);
       if (result === 0) {
-        console.error(`Failed to delete invoice with id ${_id} from IndexedDB.`);
+        console.error(`Failed to delete invoice with invoiceNumber ${invoiceNumber} from IndexedDB.`);
       } else {
-        console.log(`Invoice with id ${_id} deleted successfully.`);
+        console.log(`Invoice with invoiceNumber ${invoiceNumber} deleted successfully from IndexedDB.`);
       }
     });
   } catch (error) {
@@ -325,6 +325,7 @@ export const deleteInvoiceFromIndexedDB = async (_id) => {
     throw error;
   }
 };
+
 
 export const clearIndexedDB = async () => {
   try {

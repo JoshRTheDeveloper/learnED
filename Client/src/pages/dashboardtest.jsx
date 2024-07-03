@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import './dashboard.css';
 import Sidebar from '../components/sidebar/sidebar';
@@ -29,16 +29,19 @@ const Home = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const invoicesAddedToDB = useRef(false);
 
   const { refetch, loading: queryLoading } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
     fetchPolicy: 'cache-first',
     onCompleted: async (data) => {
-
-
+      console.log('Query completed', data);
       setUserData(data.getUser);
-
-      await Promise.all(data.getUser.invoices.map(invoice => addInvoiceToIndexedDB(invoice)));
+      setLoading(false);
+      if (!invoicesAddedToDB.current) {
+        await Promise.all(data.getUser.invoices.map(invoice => addInvoiceToIndexedDB(invoice)));
+        invoicesAddedToDB.current = true;
+      }
     },
     onError: (error) => {
       console.error('Error fetching user data:', error);
@@ -47,15 +50,13 @@ const Home = () => {
     skip: isOffline,
   });
 
-
   const [markAsPaidMutation] = useMutation(UPDATE_INVOICE);
   const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
 
   useEffect(() => {
     const handleOnline = async () => {
       setIsOffline(false);
-
-
+      setLoading(true);
       await syncOfflineMutations();
       refetch();
     };
@@ -64,8 +65,7 @@ const Home = () => {
       setIsOffline(true);
       const invoices = await getInvoicesFromIndexedDB();
       setUserData({ invoices });
-
-
+      setLoading(false);
     };
 
     window.addEventListener('online', handleOnline);
@@ -82,12 +82,8 @@ const Home = () => {
   }, [isOffline, refetch]);
 
   useEffect(() => {
-
-    if (!isOffline) {
-      refetch();
-    }
-  }, [isOffline, refetch]);
-
+    refetch();
+  }, []);
 
   const syncOfflineMutations = async () => {
     const offlineMutations = await getOfflineMutations();
@@ -128,18 +124,18 @@ const Home = () => {
 
   const handleDeleteInvoice = async (invoiceId) => {
     if (isOffline) {
-
-
-      await addOfflineMutation({ type: 'delete', invoiceId });
-      await deleteInvoiceFromIndexedDB(invoiceId);
-      setUserData(prevData => ({
-        ...prevData,
-        invoices: prevData.invoices.filter(invoice => invoice._id !== invoiceId)
-      }));
+      try {
+        await addOfflineMutation({ type: 'delete', invoiceId });
+        await deleteInvoiceFromIndexedDB(invoiceId);
+        setUserData(prevData => ({
+          ...prevData,
+          invoices: prevData.invoices.filter(invoice => invoice._id !== invoiceId)
+        }));
+      } catch (error) {
+        console.error('Error deleting invoice offline:', error);
+      }
     } else {
       try {
-
-
         await deleteInvoiceMutation({
           variables: { id: invoiceId },
           update: (cache, { data: { deleteInvoice } }) => {
@@ -148,18 +144,14 @@ const Home = () => {
               return;
             }
 
-
-
             cache.modify({
               id: cache.identify(userData),
               fields: {
                 invoices(existingInvoices = [], { readField }) {
-
-                  return existingInvoices.filter(invoice => readField('_id', invoice) !== invoiceId);
+                  return existingInvoices.filter(invoice => invoice._id !== invoiceId);
                 }
               }
             });
-
 
             setUserData(prevData => ({
               ...prevData,
@@ -167,7 +159,6 @@ const Home = () => {
             }));
           },
         });
-
 
         await deleteInvoiceFromIndexedDB(invoiceId);
         refetch();
@@ -178,10 +169,16 @@ const Home = () => {
   };
 
   useEffect(() => {
-
-  
+    console.log('userData changed:', userData);
   }, [userData]);
 
+  if (loading || queryLoading) {
+    return <p>Loading user data...</p>;
+  }
+
+  if (!userData) {
+    return <p>No user data available.</p>;
+  }
 
   const invoicesDue = userData?.invoices.filter(invoice => !invoice.paidStatus) || [];
   const invoicesPaid = userData?.invoices.filter(invoice => invoice.paidStatus) || [];
@@ -215,65 +212,105 @@ const Home = () => {
           ) : searchResult.length === 0 ? (
             <p>No results found.</p>
           ) : (
-
-            <div className='invoice-list'>
-              {searchResult.map(invoice => (
-                <div
-                  key={invoice._id}
-                  className='invoice-item'
-                  onClick={() => handleInvoiceClick(invoice)}
-                >
-                  <p>Invoice Number: {invoice.invoiceNumber}</p>
-                  <p>Client: {invoice.clientName}</p>
-                  <p>Amount: ${invoice.invoiceAmount}</p>
-                  <p>Due Date: {new Date(invoice.dueDate).toLocaleDateString()}</p>
-                </div>
-              ))}
+            <div className='search-results'>
+              <h3>Search Results</h3>
+              <ul>
+                {searchResult.map(invoice => (
+                  <li key={invoice._id} onClick={() => handleInvoiceClick(invoice)}>
+                    <div className='due-date-container'>
+                      <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
+                      <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
+                    </div>
+                    <div className='invoice-info'>
+                      <p>Client: {invoice.clientName}</p>
+                      <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
+                      <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
+                    </div>
+                    <div className='mark-button'>
+                      <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
+                      {!invoice.paidStatus && (
+                        <button onClick={(e) => { e.stopPropagation(); markAsPaidMutation({ variables: { id: invoice._id } }); }}>Mark as Paid</button>
+                      )}
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
-          <h2>Due Invoices</h2>
-          <div className='invoice-list'>
-            {filteredInvoicesDue.map(invoice => (
-              <div
-                key={invoice._id}
-                className='invoice-item'
-                onClick={() => handleInvoiceClick(invoice)}
-              >
-                <p>Invoice Number: {invoice.invoiceNumber}</p>
-                <p>Client: {invoice.clientName}</p>
-                <p>Amount: ${invoice.invoiceAmount}</p>
-                <p>Due Date: {new Date(invoice.dueDate).toLocaleDateString()}</p>
-              </div>
-            ))}
-          </div>
+          <div className="total">
+            <div className="row">
+              <h2>Invoices Due</h2>
+              {filteredInvoicesDue.length === 0 ? (
+                <p>No invoices due.</p>
+              ) : (
+                <ul>
+                  {filteredInvoicesDue.map(invoice => (
+                    <li key={invoice._id} onClick={() => handleInvoiceClick(invoice)}>
+                      <div className='due-date-container'>
+                        <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
+                        <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
+                      </div>
+                      <div className='invoice-info'>
+                        <p>Client: {invoice.clientName}</p>
+                        <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
+                        <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
+                      </div>
+                      <div className='mark-button'>
+                        <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
+                        {!invoice.paidStatus && (
+                          <button onClick={(e) => { e.stopPropagation(); markAsPaidMutation({ variables: { id: invoice._id } }); }}>Mark as Paid</button>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
-          <h2>Paid Invoices</h2>
-          <div className='invoice-list'>
-            {invoicesPaid.map(invoice => (
-              <div
-                key={invoice._id}
-                className='invoice-item'
-                onClick={() => handleInvoiceClick(invoice)}
-              >
-                <p>Invoice Number: {invoice.invoiceNumber}</p>
-                <p>Client: {invoice.clientName}</p>
-                <p>Amount: ${invoice.invoiceAmount}</p>
-                <p>Paid on: {new Date(invoice.paymentDate).toLocaleDateString()}</p>
-              </div>
-            ))}
-
+            <div className="row">
+              <h2>Invoices Paid</h2>
+              {invoicesPaid.length === 0 ? (
+                <p>No paid invoices.</p>
+              ) : (
+                <ul>
+                  {invoicesPaid.map(invoice => (
+                    <li key={invoice._id} onClick={() => handleInvoiceClick(invoice)}>
+                      <div className='due-date-container'>
+                        <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
+                        <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
+                      </div>
+                      <div className='invoice-info'>
+                        <p>Client: {invoice.clientName}</p>
+                        <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
+                        <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
+                      </div>
+                      <div className='mark-button'>
+                        <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteInvoice(invoice._id); }}>Delete</button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {selectedInvoice && (
+      {isModalOpen && (
         <InvoiceModal
           invoice={selectedInvoice}
-          isOpen={isModalOpen}
           onClose={closeModal}
-          onDelete={handleDeleteInvoice}
-
+          onSave={(updatedInvoice) => {
+            setSearchResult(prevSearchResult =>
+              prevSearchResult.map(invoice =>
+                invoice._id === updatedInvoice._id ? updatedInvoice : invoice
+              )
+            );
+          }}
         />
       )}
     </>
