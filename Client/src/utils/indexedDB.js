@@ -1,4 +1,3 @@
-
 import Dexie from 'dexie';
 
 const db = new Dexie('InvoiceDB');
@@ -10,9 +9,8 @@ db.version(5).stores({
   auth: '++id, token, userData',
   profilePictures: '++id, userId, profilePictureBlob',
   profileFiles: 'userId,file',
+  offlineMutations: '++id, mutation', // Add this store for offline mutations
 });
-
-
 
 const generateKeyAndIV = async () => {
   const key = await crypto.subtle.generateKey(
@@ -228,7 +226,6 @@ export const getAuthData = async () => {
   }
 };
 
-
 export const updateInvoiceInIndexedDB = async (invoiceId, paidStatus) => {
   try {
     console.log('Updating invoiceId:', invoiceId, 'with paidStatus:', paidStatus);
@@ -302,8 +299,6 @@ export const addInvoiceToIndexedDB = async (invoice) => {
   }
 };
 
-
-
 export const deleteInvoiceFromIndexedDB = async (_id) => {
   try {
     console.log(`Deleting invoice with _id: ${_id}`);
@@ -331,7 +326,6 @@ export const deleteInvoiceFromIndexedDB = async (_id) => {
   }
 };
 
-
 export const clearIndexedDB = async () => {
   try {
     await Promise.all([
@@ -339,6 +333,9 @@ export const clearIndexedDB = async () => {
       db.userData.clear(),
       db.loginCredentials.clear(),
       db.auth.clear(),
+      db.profileFiles.clear(), // Make sure to clear the profileFiles store as well
+      db.profilePictures.clear(), // Clear profilePictures as well
+      db.offlineMutations.clear(), // Clear offlineMutations as well
     ]);
   } catch (error) {
     console.error('Failed to clear IndexedDB:', error);
@@ -364,30 +361,28 @@ export const getProfileFile = async (userId) => {
 };
 
 export const addOfflineMutation = async (mutation) => {
-  const db = await openDB();
-  const tx = db.transaction('offlineMutations', 'readwrite');
-  const store = tx.objectStore('offlineMutations');
-  await store.add(mutation);
-  await tx.done;
+  try {
+    await db.offlineMutations.add(mutation);
+  } catch (error) {
+    console.error('Failed to add offline mutation to IndexedDB:', error);
+  }
 };
 
 export const getOfflineMutations = async () => {
-  const db = await openDB();
-  const tx = db.transaction('offlineMutations', 'readonly');
-  const store = tx.objectStore('offlineMutations');
-  const allMutations = await store.getAll();
-  await tx.done;
-  return allMutations;
+  try {
+    return await db.offlineMutations.toArray();
+  } catch (error) {
+    console.error('Failed to get offline mutations from IndexedDB:', error);
+    return [];
+  }
 };
 
 export const clearOfflineMutations = async () => {
-  const db = await openDB();
-  const tx = db.transaction('offlineMutations', 'readwrite');
-  const store = tx.objectStore('offlineMutations');
-  await store.clear();
-  await tx.done;
+  try {
+    await db.offlineMutations.clear();
+  } catch (error) {
+    console.error('Failed to clear offline mutations from IndexedDB:', error);
+  }
 };
-
-
 
 export default db;
