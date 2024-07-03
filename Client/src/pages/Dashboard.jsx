@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import './dashboard.css';
 import Sidebar from '../components/sidebar/sidebar';
@@ -29,6 +29,7 @@ const Home = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const invoicesAddedToDB = useRef(false);
 
   const { refetch, loading: queryLoading } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
@@ -37,7 +38,10 @@ const Home = () => {
       console.log('Query completed', data);
       setUserData(data.getUser);
       setLoading(false);
-      await Promise.all(data.getUser.invoices.map(invoice => addInvoiceToIndexedDB(invoice)));
+      if (!invoicesAddedToDB.current) {
+        await Promise.all(data.getUser.invoices.map(invoice => addInvoiceToIndexedDB(invoice)));
+        invoicesAddedToDB.current = true;
+      }
     },
     onError: (error) => {
       console.error('Error fetching user data:', error);
@@ -45,7 +49,6 @@ const Home = () => {
     },
     skip: isOffline,
   });
-
 
   const [markAsPaidMutation] = useMutation(UPDATE_INVOICE);
   const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
@@ -79,7 +82,7 @@ const Home = () => {
   }, [isOffline, refetch]);
 
   useEffect(() => {
-    refetch();  
+    refetch();
   }, []);
 
   const syncOfflineMutations = async () => {
@@ -121,7 +124,6 @@ const Home = () => {
 
   const handleDeleteInvoice = async (invoiceId) => {
     if (isOffline) {
-  
       await addOfflineMutation({ type: 'delete', invoiceId });
       await deleteInvoiceFromIndexedDB(invoiceId);
       setUserData(prevData => ({
@@ -130,7 +132,6 @@ const Home = () => {
       }));
     } else {
       try {
-    
         await deleteInvoiceMutation({
           variables: { id: invoiceId },
           update: (cache, { data: { deleteInvoice } }) => {
@@ -138,8 +139,7 @@ const Home = () => {
               console.error('Error deleting invoice:', deleteInvoice.message);
               return;
             }
-  
-      
+
             cache.modify({
               id: cache.identify(userData),
               fields: {
@@ -148,15 +148,14 @@ const Home = () => {
                 }
               }
             });
-  
-   
+
             setUserData(prevData => ({
               ...prevData,
               invoices: prevData.invoices.filter(invoice => invoice._id !== invoiceId)
             }));
           },
         });
-  
+
         await deleteInvoiceFromIndexedDB(invoiceId);
         refetch();
       } catch (error) {

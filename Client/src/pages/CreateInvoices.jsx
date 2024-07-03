@@ -6,7 +6,7 @@ import { useQuery, useMutation } from '@apollo/client';
 import Sidebar from '../components/sidebar/sidebar';
 import { GET_USER } from '../utils/queries';
 import { CREATE_INVOICE } from '../utils/mutations';
-import { addInvoiceToIndexedDB, getUserData } from '../utils/indexedDB';
+import { addInvoiceToIndexedDB, getUserData, getInvoicesFromIndexedDB } from '../utils/indexedDB';
 import './CreateInvoices.css';
 
 const CreateInvoices = () => {
@@ -19,7 +19,6 @@ const CreateInvoices = () => {
   const [zip, setZip] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
 
-
   const [clientEmail, setClientEmail] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientAddress, setClientAddress] = useState('');
@@ -30,12 +29,10 @@ const CreateInvoices = () => {
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [dueDate, setDueDate] = useState('');
 
-
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
 
- 
   const isOnline = navigator.onLine;
   const { loading, error, data } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
@@ -44,40 +41,25 @@ const CreateInvoices = () => {
 
   const [createInvoice] = useMutation(CREATE_INVOICE);
 
-  
   useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
       const localUserData = await getUserData();
       if (localUserData) {
-
-        const { email, streetAddress, city, state, zip, profilePicture, company } = localUserData;
-
+        const { email, streetAddress, city, state, zip, profilePicture } = localUserData;
         setEmail(email);
         setStreetAddress(streetAddress);
         setCity(city);
         setState(state);
         setZip(zip);
         setProfilePicture(profilePicture);
-
-        let clientCompanyName = '';
-        if (data.getUser.company) {
-          clientCompanyName = data.getUser.company;
-        } else if (data.getUser.firstName) {
-          clientCompanyName = data.getUser.firstName;
-        }
-
         setUserData(localUserData);
       }
     };
 
     fetchUserDataFromIndexedDB();
-
-  }, [data]); 
-
+  }, [data]);
 
   const name = `${userData?.company || ''} ${userData?.lastName || ''}`;
-
-
 
   const user = {
     email: email,
@@ -89,13 +71,13 @@ const CreateInvoices = () => {
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
-  
+    console.log('Form submitted');
+    console.log('Is online:', navigator.onLine);
+
     const invoiceAmountFloat = parseFloat(invoiceAmount);
     const dueDateISO = new Date(dueDate).toISOString();
-  
-
     const uniqueId = uuidv4();
-  
+
     const variables = {
       _id: uniqueId,
       invoiceAmount: invoiceAmountFloat,
@@ -114,23 +96,19 @@ const CreateInvoices = () => {
       invoice_details: invoiceDetails,
       profilePicture: profilePicture,
     };
-  
 
     try {
       if (navigator.onLine) {
         const response = await createInvoice({ variables });
         console.log('Invoice sent to server:', response.data);
-  
-     
         await axios.post('/send-invoice', variables);
         console.log('Invoice details sent to server:', variables);
       } else {
-
+        console.log('Saving invoice to IndexedDB');
         await addInvoiceToIndexedDB(variables);
         console.log('Invoice saved to IndexedDB:', variables);
         alert('Invoice saved locally. It will be sent when you are back online.');
       }
-  
 
       setInvoiceAmount('');
       setPaidStatus(false);
@@ -145,21 +123,15 @@ const CreateInvoices = () => {
       console.error('Error creating or sending invoice:', error);
     }
   };
-  
 
-  // Effect to sync invoices with server when back online
   useEffect(() => {
     const syncInvoicesWithServer = async () => {
       if (navigator.onLine) {
         const localInvoices = await getInvoicesFromIndexedDB();
-
         for (const invoice of localInvoices) {
           try {
-            // Use Apollo createInvoice mutation to sync local invoices
             await createInvoice({ variables: invoice });
             console.log('Invoice synced with server:', invoice);
-
-            // Also send invoice details to server endpoint for additional processing
             await axios.post('/send-invoice', invoice);
             console.log('Invoice details sent to server:', invoice);
           } catch (error) {
@@ -169,14 +141,12 @@ const CreateInvoices = () => {
       }
     };
 
-    // Listen for online event to trigger synchronization
     window.addEventListener('online', syncInvoicesWithServer);
 
     return () => {
       window.removeEventListener('online', syncInvoicesWithServer);
     };
-  }, [createInvoice]); // Depend on createInvoice to update when mutation changes
-
+  }, [createInvoice]);
 
   return (
     <>
