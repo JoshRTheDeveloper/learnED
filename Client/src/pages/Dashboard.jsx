@@ -137,29 +137,29 @@ const Home = () => {
         console.log(`Invoice with invoiceNumber ${invoiceNumber} deleted offline.`);
       } else {
      
-        const { data } = await deleteInvoiceMutation({
-          variables: { invoiceNumber },
-          update: (cache, { data: { deleteInvoice } }) => {
-            if (!deleteInvoice.success) {
-              console.error('Error deleting invoice:', deleteInvoice.message);
-              return;
-            }
+        // const { data } = await deleteInvoiceMutation({
+        //   variables: { invoiceNumber },
+        //   update: (cache, { data: { deleteInvoice } }) => {
+        //     if (!deleteInvoice.success) {
+        //       console.error('Error deleting invoice:', deleteInvoice.message);
+        //       return;
+        //     }
   
-            cache.modify({
-              id: cache.identify(userData),
-              fields: {
-                invoices(existingInvoices = [], { readField }) {
-                  return existingInvoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber);
-                }
-              }
-            });
+        //     cache.modify({
+        //       id: cache.identify(userData),
+        //       fields: {
+        //         invoices(existingInvoices = [], { readField }) {
+        //           return existingInvoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber);
+        //         }
+        //       }
+        //     });
   
-            setUserData(prevData => ({
-              ...prevData,
-              invoices: prevData.invoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
-            }));
-          },
-        });
+        //     setUserData(prevData => ({
+        //       ...prevData,
+        //       invoices: prevData.invoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
+        //     }));
+        //   },
+        // });
   
         console.log(`Invoice with invoiceNumber ${invoiceNumber} deleted online.`);
       }
@@ -167,7 +167,7 @@ const Home = () => {
      
       await deleteInvoiceFromIndexedDB(invoiceNumber);
   
-      // Refetch data if needed
+
       if (!isOffline) {
         refetch();
       }
