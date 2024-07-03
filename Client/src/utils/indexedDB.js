@@ -306,18 +306,18 @@ export const deleteInvoiceFromIndexedDB = async (_id) => {
     // Perform the deletion within a transaction
     await db.transaction('rw', db.invoices, async () => {
       // Find the invoice by _id and delete it
-      const invoiceToDelete = await db.invoices.where('_id').equals(_id).first();
+      const invoiceToDelete = await db.invoices.where('id').equals(_id).first();
 
       if (!invoiceToDelete) {
-        console.error(`Invoice with _id ${_id} not found in IndexedDB.`);
+        console.error(`Invoice with id ${_id} not found in IndexedDB.`);
         return;
       }
 
       const result = await db.invoices.delete(invoiceToDelete.id);
       if (result === 0) {
-        console.error(`Failed to delete invoice with _id ${_id} from IndexedDB.`);
+        console.error(`Failed to delete invoice with id ${_id} from IndexedDB.`);
       } else {
-        console.log(`Invoice with _id ${_id} deleted successfully.`);
+        console.log(`Invoice with id ${_id} deleted successfully.`);
       }
     });
   } catch (error) {
