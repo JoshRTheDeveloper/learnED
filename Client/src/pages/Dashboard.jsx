@@ -124,12 +124,16 @@ const Home = () => {
 
   const handleDeleteInvoice = async (invoiceId) => {
     if (isOffline) {
-      await addOfflineMutation({ type: 'delete', invoiceId });
-      await deleteInvoiceFromIndexedDB(invoiceId);
-      setUserData(prevData => ({
-        ...prevData,
-        invoices: prevData.invoices.filter(invoice => invoice._id !== invoiceId)
-      }));
+      try {
+        await addOfflineMutation({ type: 'delete', invoiceId });
+        await deleteInvoiceFromIndexedDB(invoiceId);
+        setUserData(prevData => ({
+          ...prevData,
+          invoices: prevData.invoices.filter(invoice => invoice._id !== invoiceId)
+        }));
+      } catch (error) {
+        console.error('Error deleting invoice offline:', error);
+      }
     } else {
       try {
         await deleteInvoiceMutation({
