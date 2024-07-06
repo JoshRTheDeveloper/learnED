@@ -23,7 +23,6 @@ import {
   CHANGE_STATE,
   CHANGE_ZIP,
 } from '../utils/mutations';
-import useDataManagement from '../../src/hooks/useDataManagement';
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);

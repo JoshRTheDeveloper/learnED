@@ -261,10 +261,12 @@ const Profile = () => {
         };
 
         await storeUserData(offlineUserData);
-   
+
+
         if (logo) {
           await storeProfilePicture(userId, logoUrl); 
           await storeProfileFile(userId, renamedFile); 
+
         }
       }
 

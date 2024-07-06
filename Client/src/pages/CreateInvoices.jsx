@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import jwtDecode from 'jwt-decode';
-import axios from 'axios';
 import { useQuery, useMutation } from '@apollo/client';
+import axios from 'axios';
 import Sidebar from '../components/sidebar/sidebar';
 import { GET_USER } from '../utils/queries';
 import { CREATE_INVOICE } from '../utils/mutations';
-import { addInvoiceToIndexedDB, getUserData, getInvoicesFromIndexedDB } from '../utils/indexedDB';
+import { addInvoiceToIndexedDB, getUserData } from '../utils/indexedDB';
+import MessageModal from '../components/message-modal/message-modal'; // Adjust path as per your project structure
 import './CreateInvoices.css';
 
 const CreateInvoices = () => {
-
   const [userData, setUserData] = useState(null);
   const [email, setEmail] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
@@ -28,19 +28,18 @@ const CreateInvoices = () => {
   const [paidStatus, setPaidStatus] = useState(false);
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [savedLocally, setSavedLocally] = useState(false);
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
 
-  const isOnline = navigator.onLine;
   const { loading, error, data } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
-    skip: !isOnline,
   });
 
   const [createInvoice] = useMutation(CREATE_INVOICE);
-
+  
   useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
       const localUserData = await getUserData();
@@ -57,7 +56,7 @@ const CreateInvoices = () => {
     };
 
     fetchUserDataFromIndexedDB();
-  }, [data]);
+  }, []);
 
   const name = `${userData?.company || ''} ${userData?.lastName || ''}`;
 
@@ -71,15 +70,12 @@ const CreateInvoices = () => {
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
-    console.log('Form submitted');
-    console.log('Is online:', navigator.onLine);
-
+  
     const invoiceAmountFloat = parseFloat(invoiceAmount);
     const dueDateISO = new Date(dueDate).toISOString();
     const uniqueId = uuidv4();
-
+  
     const variables = {
-      _id: uniqueId,
       invoiceAmount: invoiceAmountFloat,
       paidStatus: paidStatus,
       invoiceNumber: invoiceNumber,
@@ -96,21 +92,19 @@ const CreateInvoices = () => {
       invoice_details: invoiceDetails,
       profilePicture: profilePicture,
     };
-
+  
     try {
       if (navigator.onLine) {
         const response = await createInvoice({ variables });
-        console.log('Invoice sent to server:', response.data);
-        // await axios.post('/send-invoice', variables);
-        console.log('Invoice details sent to server:', variables);
-        await addInvoiceToIndexedDB(variables);
+        await axios.post('/send-invoice', variables);
+        console.log('Invoice sent to server:', variables);
       } else {
-        console.log('Saving invoice to IndexedDB');
-        await addInvoiceToIndexedDB(variables);
-        console.log('Invoice saved to IndexedDB:', variables);
-        alert('Invoice saved locally. It will be sent when you are back online.');
+        const indexedDBVariables = { ...variables, _id: uniqueId };
+        await addInvoiceToIndexedDB(indexedDBVariables);
+        console.log('Invoice saved to IndexedDB:', indexedDBVariables);
       }
-
+  
+      setSavedLocally(true);
       setInvoiceAmount('');
       setPaidStatus(false);
       setInvoiceNumber('');
@@ -121,33 +115,10 @@ const CreateInvoices = () => {
       setInvoiceDetails('');
       setDueDate('');
     } catch (error) {
-      console.error('Error creating or sending invoice:', error);
+      console.error('Error saving invoice:', error);
     }
   };
-
-  useEffect(() => {
-    const syncInvoicesWithServer = async () => {
-      if (navigator.onLine) {
-        const localInvoices = await getInvoicesFromIndexedDB();
-        for (const invoice of localInvoices) {
-          try {
-            await createInvoice({ variables: invoice });
-            console.log('Invoice synced with server:', invoice);
-            await axios.post('/send-invoice', invoice);
-            console.log('Invoice details sent to server:', invoice);
-          } catch (error) {
-            console.error('Error syncing invoice with server:', error);
-          }
-        }
-      }
-    };
-
-    window.addEventListener('online', syncInvoicesWithServer);
-
-    return () => {
-      window.removeEventListener('online', syncInvoicesWithServer);
-    };
-  }, [createInvoice]);
+  
 
   return (
     <>
@@ -162,6 +133,9 @@ const CreateInvoices = () => {
                   <h3 className='invoice-h3'>Create Invoice</h3>
                   <div className='back-link'>
                     <a href="/dashboard">← to Dashboard</a>
+                  </div>
+                  <div className='save-message'>
+                    {savedLocally && <h5 className="saved-locally"> *Invoice Saved* </h5>}
                   </div>
                 </div>
               </div>
@@ -231,13 +205,17 @@ const CreateInvoices = () => {
                   <textarea className='details' type="text" placeholder="Details of work provided" id="invoice-details" value={invoiceDetails} onChange={(e) => setInvoiceDetails(e.target.value)}></textarea>
                 </div>
                 <div className='invoice-button'>
-                  <button type="submit" id="send-invoice-button">Send Invoice</button>
+                  <button type="submit" id="send-invoice-button">Save Invoice</button>
                 </div>
               </div>
             </form>
           </div>
         </div>
       </div>
+
+      {savedLocally && (
+        <MessageModal message="Invoice saved locally." onClose={() => setSavedLocally(false)} />
+      )}
     </>
   );
 };

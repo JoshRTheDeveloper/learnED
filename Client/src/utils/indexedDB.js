@@ -9,7 +9,7 @@ db.version(5).stores({
   auth: '++id, token, userData',
   profilePictures: '++id, userId, profilePictureBlob',
   profileFiles: 'userId,file',
-  offlineMutations: '++id, mutation', // Add this store for offline mutations
+  offlineMutations: '++id, mutation', 
 });
 
 const generateKeyAndIV = async () => {
@@ -226,30 +226,38 @@ export const getAuthData = async () => {
   }
 };
 
-export const updateInvoiceInIndexedDB = async (invoiceId, paidStatus) => {
+export const updateInvoiceInIndexedDB = async (invoiceNumber, paidStatus) => {
   try {
-    console.log('Updating invoiceId:', invoiceId, 'with paidStatus:', paidStatus);
+    // Find the invoice by invoice number
+    const invoice = await db.invoices.where('invoiceNumber').equals(invoiceNumber).first();
 
-    const existingInvoice = await db.invoices.get(invoiceId);
-
-    console.log('Existing invoice:', existingInvoice);
-
-    if (!existingInvoice) {
-      throw new Error(`Invoice with id ${invoiceId} not found in IndexedDB.`);
+    if (!invoice) {
+      throw new Error(`Invoice with invoice number ${invoiceNumber} not found in IndexedDB.`);
     }
 
-    // Update the paidStatus
-    existingInvoice.paidStatus = paidStatus;
+   
+    const key = await importKey(new Uint8Array(invoice.key));
+    const iv = new Uint8Array(invoice.iv);
+    const encryptedData = new Uint8Array(invoice.encryptedData);
+    const decryptedData = await decryptData(encryptedData, key, iv);
 
-    // Put the updated invoice back into IndexedDB
-    await db.invoices.put(existingInvoice);
+  
+    decryptedData.paidStatus = paidStatus;
 
-    console.log(`Invoice with id ${invoiceId} updated successfully.`);
+    const { encryptedData: updatedEncryptedData, iv: updatedIV } = await encryptData(decryptedData, key, iv);
+
+  
+    invoice.encryptedData = Array.from(updatedEncryptedData);
+    invoice.iv = Array.from(updatedIV);
+    await db.invoices.put(invoice);
+
+    console.log(`Invoice with invoice number ${invoiceNumber} updated successfully with paidStatus: ${paidStatus}.`);
   } catch (error) {
     console.error('Failed to update invoice in IndexedDB:', error);
     throw error;
   }
 };
+
 
 export const getInvoicesFromIndexedDB = async () => {
   try {
@@ -302,7 +310,8 @@ export const addInvoiceToIndexedDB = async (invoice) => {
 };
 
 
-export const deleteInvoiceFromIndexedDB = async (invoiceNumber) => {
+
+export const deleteInvoiceByNumberFromIndexedDB = async (invoiceNumber) => {
   try {
     await db.transaction('rw', db.invoices, async () => {
       // Find the invoice by invoiceNumber and delete it
@@ -325,6 +334,7 @@ export const deleteInvoiceFromIndexedDB = async (invoiceNumber) => {
     throw error;
   }
 };
+
 
 
 export const clearIndexedDB = async () => {
