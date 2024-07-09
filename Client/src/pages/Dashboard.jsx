@@ -1,30 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@apollo/client';
 import './dashboard.css';
-import { useQuery, useMutation } from '@apollo/client';
 import Sidebar from '../components/sidebar/sidebar';
 import jwtDecode from 'jwt-decode';
 import InvoiceModal from '../components/invoice-modal/invoice-modal';
 import MessageModal from '../components/message-modal/message-modal';
-import { GET_USER } from '../utils/queries';
-import { DELETE_INVOICE } from '../utils/mutations';
 import {
+  getInvoicesFromIndexedDB,
+  addInvoiceToIndexedDB,
   deleteInvoiceByNumberFromIndexedDB,
   updateInvoiceInIndexedDB,
-  addInvoiceToIndexedDB,
-  getUserData
 } from '../utils/indexedDB';
+import { GET_USER } from '../queries';
 
 const Home = () => {
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
 
-  const { loading, error, data, refetch } = useQuery(GET_USER, {
-    variables: { userId },
-    fetchPolicy: 'cache-and-network',
-  });
-
   const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [searchInvoiceNumber, setSearchInvoiceNumber] = useState('');
   const [searchResult, setSearchResult] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -33,22 +28,31 @@ const Home = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
-  const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
 
-  useEffect(() => {
-    if (data && data.getUser) {
-      setUserData(data.getUser);
-
-   
-      data.getUser.invoices.forEach(async invoice => {
-        await addInvoiceToIndexedDB(invoice);
-      });
-    }
-  }, [data]);
-
-  useEffect(() => {
-    refetch(); 
-  }, [refetch]);
+  // Apollo Client useQuery hook to fetch user data from the online database
+  const { data, error, loading: queryLoading } = useQuery(GET_USER, {
+    variables: { id: userId },
+    onCompleted: async (data) => {
+      if (data && data.user) {
+        setUserData(data.user);
+        // Store the invoices in IndexedDB for offline access
+        if (data.user.invoices) {
+          for (const invoice of data.user.invoices) {
+            await addInvoiceToIndexedDB(invoice);
+          }
+        }
+      }
+      setLoading(false);
+    },
+    onError: async () => {
+      // Fallback to fetch data from IndexedDB if online fetch fails
+      const storedInvoices = await getInvoicesFromIndexedDB();
+      if (storedInvoices) {
+        setUserData({ invoices: storedInvoices });
+      }
+      setLoading(false);
+    },
+  });
 
   const handleSearch = () => {
     setSearchLoading(true);
@@ -76,62 +80,32 @@ const Home = () => {
     setIsModalOpen(false);
   };
 
-  const handleDeleteInvoice = async (invoiceId) => {
+  const handleDeleteInvoice = async (invoiceNumber) => {
     try {
-      await deleteInvoiceMutation({
-        variables: { id: invoiceId },
-        update: (cache) => {
-          const existingData = cache.readQuery({
-            query: GET_USER,
-            variables: { userId },
-          });
-
-          const updatedInvoices = existingData.getUser.invoices.filter(
-            invoice => invoice._id !== invoiceId
-          );
-
-          cache.writeQuery({
-            query: GET_USER,
-            variables: { userId },
-            data: {
-              getUser: {
-                ...existingData.getUser,
-                invoices: updatedInvoices,
-              },
-            },
-          });
-        },
-      });
+      await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
 
       setUserData(prevData => ({
         ...prevData,
-        invoices: prevData.invoices.filter(invoice => invoice._id !== invoiceId)
+        invoices: prevData.invoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
       }));
 
       setSearchResult(prevSearchResult =>
-        prevSearchResult.filter(invoice => invoice._id !== invoiceId)
+        prevSearchResult.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
       );
 
-    
-      const invoiceToDelete = userData.invoices.find(invoice => invoice._id === invoiceId);
-      if (invoiceToDelete) {
-        await deleteInvoiceByNumberFromIndexedDB(invoiceToDelete.invoiceNumber);
-      }
-
-      setModalMessage(`Invoice with ID ${invoiceId} deleted.`);
+      setModalMessage(`Invoice with invoiceNumber ${invoiceNumber} deleted.`);
       setShowMessageModal(true);
     } catch (error) {
       console.error('Error deleting invoice:', error);
-      setModalMessage(`Error deleting invoice: ${error.message}`);
-      setShowMessageModal(true);
     }
   };
 
   const handleMarkAsPaid = async (invoiceNumber) => {
     try {
-      // Mark invoice as paid in IndexedDB
+      // Update IndexedDB to mark invoice as paid
       await updateInvoiceInIndexedDB(invoiceNumber, true);
 
+      // Update local state to reflect the change
       setUserData(prevData => ({
         ...prevData,
         invoices: prevData.invoices.map(invoice =>
@@ -149,40 +123,23 @@ const Home = () => {
       setShowMessageModal(true);
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
-      setModalMessage(`Error marking invoice as paid: ${error.message}`);
-      setShowMessageModal(true);
     }
   };
 
-  const handleFetchUserData = async () => {
-    try {
-      const decryptedUserData = await getUserData();
-
-      if (decryptedUserData) {
-        setUserData(decryptedUserData);
-        setModalMessage('User data fetched from IndexedDB.');
-        setShowMessageModal(true);
-      } else {
-        setModalMessage('No user data found in IndexedDB.');
-        setShowMessageModal(true);
-      }
-    } catch (error) {
-      console.error('Failed to fetch user data:', error);
-      setModalMessage(`Error fetching user data: ${error.message}`);
-      setShowMessageModal(true);
-    }
-  };
-
-  if (loading) {
+  if (loading || queryLoading) {
     return <p>Loading user data...</p>;
   }
 
-  if (error || !userData || !userData.invoices) {
-    return <p>Error fetching data or no user data available.</p>;
+  if (error) {
+    console.error('Error fetching user data:', error);
   }
 
-  const invoicesDue = userData.invoices.filter(invoice => !invoice.paidStatus) || [];
-  const invoicesPaid = userData.invoices.filter(invoice => invoice.paidStatus) || [];
+  if (!userData || !userData.invoices) {
+    return <p>No user data available.</p>;
+  }
+
+  const invoicesDue = userData?.invoices.filter(invoice => !invoice.paidStatus) || [];
+  const invoicesPaid = userData?.invoices.filter(invoice => invoice.paidStatus) || [];
   const filteredInvoicesDue = searchInvoiceNumber
     ? invoicesDue.filter(invoice => invoice.invoiceNumber.includes(searchInvoiceNumber))
     : invoicesDue;
@@ -231,7 +188,7 @@ const Home = () => {
                     </div>
                     <div className='button-container'>
                       <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                      <button onClick={() => handleDeleteInvoice(invoice._id)}>Delete</button>
+                      <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
                       {!invoice.paidStatus && (
                         <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
                       )}
@@ -264,7 +221,7 @@ const Home = () => {
                       </div>
                       <div className='button-container'>
                         <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                        <button onClick={() => handleDeleteInvoice(invoice._id)}>Delete</button>
+                        <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
                         {!invoice.paidStatus && (
                           <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
                         )}
@@ -296,7 +253,7 @@ const Home = () => {
                       </div>
                       <div className='button-container'>
                         <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                        <button onClick={() => handleDeleteInvoice(invoice._id)}>Delete</button>
+                        <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
                         {!invoice.paidStatus && (
                           <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
                         )}
@@ -317,10 +274,6 @@ const Home = () => {
       {showMessageModal && (
         <MessageModal message={modalMessage} onClose={() => setShowMessageModal(false)} />
       )}
-
-      <div className="fetch-data-button">
-        <button onClick={handleFetchUserData}>Fetch User Data from IndexedDB</button>
-      </div>
     </>
   );
 };
