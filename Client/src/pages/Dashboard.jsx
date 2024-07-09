@@ -34,43 +34,40 @@ const Home = () => {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
   const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (navigator.onLine) {
-          // Online: Use GraphQL data if available
-          if (data && data.getUser) {
-            setUserData(data.getUser);
-
-            // Store each invoice in IndexedDB for offline access
-            data.getUser.invoices.forEach(async invoice => {
-              await addInvoiceToIndexedDB(invoice);
-            });
-          } else {
-            console.log('No data available from GraphQL.');
-          }
-        } else {
-          // Offline: Fallback to IndexedDB
-          const indexedDBUserData = await getUserData();
-          if (indexedDBUserData) {
-            setUserData(indexedDBUserData);
-          } else {
-            console.log('No user data available in IndexedDB.');
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch user data:', error);
-        // Handle error fetching data
-      }
+    const handleOnline = () => {
+      setIsOffline(false);
+      refetch();
     };
 
-    fetchData();
+    const handleOffline = () => {
+      setIsOffline(true);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [refetch]);
+
+  useEffect(() => {
+    if (data && data.getUser) {
+      setUserData(data.getUser);
+
+      data.getUser.invoices.forEach(async invoice => {
+        await addInvoiceToIndexedDB(invoice);
+      });
+    }
   }, [data]);
 
   useEffect(() => {
-    refetch(); // Ensure data freshness
-  }, [refetch]);
+    refetch();
+  }, [isOffline, refetch]);
 
   const handleSearch = () => {
     setSearchLoading(true);
@@ -134,7 +131,6 @@ const Home = () => {
         prevSearchResult.filter(invoice => invoice._id !== invoiceId)
       );
 
-    
       const invoiceToDelete = userData.invoices.find(invoice => invoice._id === invoiceId);
       if (invoiceToDelete) {
         await deleteInvoiceByNumberFromIndexedDB(invoiceToDelete.invoiceNumber);
