@@ -2,8 +2,8 @@ import Dexie from 'dexie';
 
 const db = new Dexie('InvoiceDB');
 
-db.version(5).stores({
-  invoices: '++id, invoiceNumber, clientEmail, clientName, clientAddress, clientCity, invoiceAmount, dueDate, paidStatus, userID',
+db.version(6).stores({
+  invoices: '++id, _id, invoiceNumber, clientEmail, clientName, clientAddress, clientCity, invoiceAmount, dueDate, paidStatus, userID',
   userData: '++id, encryptedUserData, iv, key',
   loginCredentials: '++id, email, encryptedPassword, iv, key',
   auth: '++id, token, userData',
@@ -11,6 +11,7 @@ db.version(5).stores({
   profileFiles: 'userId,file',
   offlineMutations: '++id, mutation', 
 });
+
 
 const generateKeyAndIV = async () => {
   const key = await crypto.subtle.generateKey(
