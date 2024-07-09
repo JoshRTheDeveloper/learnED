@@ -34,31 +34,12 @@ const Home = () => {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
   const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
-
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOffline(false);
-      refetch();
-    };
-
-    const handleOffline = () => {
-      setIsOffline(true);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [refetch]);
 
   useEffect(() => {
     if (data && data.getUser) {
       setUserData(data.getUser);
 
+   
       data.getUser.invoices.forEach(async invoice => {
         await addInvoiceToIndexedDB(invoice);
       });
@@ -66,8 +47,8 @@ const Home = () => {
   }, [data]);
 
   useEffect(() => {
-    refetch();
-  }, [isOffline, refetch]);
+    refetch(); 
+  }, [refetch]);
 
   const handleSearch = () => {
     setSearchLoading(true);
@@ -131,6 +112,7 @@ const Home = () => {
         prevSearchResult.filter(invoice => invoice._id !== invoiceId)
       );
 
+    
       const invoiceToDelete = userData.invoices.find(invoice => invoice._id === invoiceId);
       if (invoiceToDelete) {
         await deleteInvoiceByNumberFromIndexedDB(invoiceToDelete.invoiceNumber);
