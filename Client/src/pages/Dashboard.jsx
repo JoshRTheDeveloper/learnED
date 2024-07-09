@@ -25,6 +25,15 @@ const Home = () => {
   });
 
   const [userData, setUserData] = useState(null);
+  const [searchInvoiceNumber, setSearchInvoiceNumber] = useState('');
+  const [searchResult, setSearchResult] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
 
   useEffect(() => {
     const fetchData = async () => {
