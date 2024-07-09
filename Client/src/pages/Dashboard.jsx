@@ -11,7 +11,7 @@ import {
   deleteInvoiceByNumberFromIndexedDB,
   updateInvoiceInIndexedDB,
 } from '../utils/indexedDB';
-import { GET_USER } from '../queries';
+import { GET_USER } from '../utils/queries';
 
 const Home = () => {
   const token = localStorage.getItem('authToken');
