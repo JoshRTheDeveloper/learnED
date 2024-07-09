@@ -284,11 +284,14 @@ export const getInvoicesFromIndexedDB = async () => {
 
 export const addInvoiceToIndexedDB = async (invoice) => {
   try {
+    // Ensure _id is converted to string or number
+    const invoiceId = String(invoice._id); // Convert _id to string if necessary
+
     // Check if invoice with the same _id already exists in IndexedDB
-    const existingInvoice = await db.invoices.where('_id').equals(invoice._id).first();
+    const existingInvoice = await db.invoices.where('_id').equals(invoiceId).first();
 
     if (existingInvoice) {
-      console.warn(`Invoice with _id ${invoice._id} already exists in IndexedDB. Skipping modification.`);
+      console.warn(`Invoice with _id ${invoiceId} already exists in IndexedDB. Skipping modification.`);
       return;
     }
 
@@ -303,16 +306,18 @@ export const addInvoiceToIndexedDB = async (invoice) => {
       encryptedData: Array.from(encryptedData),
       iv: Array.from(iv),
       key: Array.from(exportedKey),
+      _id: invoiceId, // Ensure _id is set correctly
     };
 
     // Add the encrypted invoice to IndexedDB
     await db.invoices.add(encryptedInvoice);
-    console.log(`Invoice with _id ${invoice._id} added successfully to IndexedDB.`);
+    console.log(`Invoice with _id ${invoiceId} added successfully to IndexedDB.`);
   } catch (error) {
     console.error('Failed to add invoice to IndexedDB:', error);
     throw error;
   }
 };
+
 
 
 
