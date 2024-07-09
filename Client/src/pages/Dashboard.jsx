@@ -130,9 +130,7 @@ const Home = () => {
     return <p>Loading user data...</p>;
   }
 
-  if (error) {
-    console.error('Error fetching user data:', error);
-  }
+
 
   if (!userData || !userData.invoices) {
     return <p>No user data available.</p>;
