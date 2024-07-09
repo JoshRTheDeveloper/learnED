@@ -87,17 +87,18 @@ const CreateInvoices = () => {
     };
   
     try {
-      const { data } = await createInvoiceMutation({ variables });
-      
-      
-      const createdInvoice = data.createInvoice;
+      if (navigator.onLine) {
+        // Online mode: mutate and add to IndexedDB
+        const { data } = await createInvoiceMutation({ variables });
+        const createdInvoice = data.createInvoice;
+        await addInvoiceToIndexedDB(createdInvoice);
+      } else {
+        // Offline mode: add only to IndexedDB
+        await addInvoiceToIndexedDB(variables); // Directly add variables to IndexedDB
+      }
   
-      // Add the invoice to IndexedDB
-      await addInvoiceToIndexedDB(createdInvoice);
-  
+      // Reset form fields and state
       setSavedLocally(true);
-  
-      // Clear form fields
       setInvoiceAmount('');
       setPaidStatus(false);
       setInvoiceNumber('');
@@ -107,10 +108,13 @@ const CreateInvoices = () => {
       setClientCity('');
       setInvoiceDetails('');
       setDueDate('');
+  
     } catch (error) {
       console.error('Error saving invoice:', error);
+      // Handle error state or notify user
     }
   };
+  
 
   return (
     <>
