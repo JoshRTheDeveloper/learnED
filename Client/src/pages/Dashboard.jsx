@@ -10,7 +10,8 @@ import { DELETE_INVOICE } from '../utils/mutations';
 import {
   deleteInvoiceByNumberFromIndexedDB,
   updateInvoiceInIndexedDB,
-  addInvoiceToIndexedDB
+  addInvoiceToIndexedDB,
+  getUserData
 } from '../utils/indexedDB';
 
 const Home = () => {
@@ -24,30 +25,42 @@ const Home = () => {
   });
 
   const [userData, setUserData] = useState(null);
-  const [searchInvoiceNumber, setSearchInvoiceNumber] = useState('');
-  const [searchResult, setSearchResult] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchError, setSearchError] = useState(null);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showMessageModal, setShowMessageModal] = useState(false);
-  const [modalMessage, setModalMessage] = useState('');
-
-  const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE);
 
   useEffect(() => {
-    if (data && data.getUser) {
-      setUserData(data.getUser);
-      
-      
-      data.getUser.invoices.forEach(async invoice => {
-        await addInvoiceToIndexedDB(invoice);
-      });
-    }
+    const fetchData = async () => {
+      try {
+        if (navigator.onLine) {
+          // Online: Use GraphQL data if available
+          if (data && data.getUser) {
+            setUserData(data.getUser);
+
+            // Store each invoice in IndexedDB for offline access
+            data.getUser.invoices.forEach(async invoice => {
+              await addInvoiceToIndexedDB(invoice);
+            });
+          } else {
+            console.log('No data available from GraphQL.');
+          }
+        } else {
+          // Offline: Fallback to IndexedDB
+          const indexedDBUserData = await getUserData();
+          if (indexedDBUserData) {
+            setUserData(indexedDBUserData);
+          } else {
+            console.log('No user data available in IndexedDB.');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+        // Handle error fetching data
+      }
+    };
+
+    fetchData();
   }, [data]);
 
   useEffect(() => {
-    refetch(); 
+    refetch(); // Ensure data freshness
   }, [refetch]);
 
   const handleSearch = () => {
@@ -112,7 +125,7 @@ const Home = () => {
         prevSearchResult.filter(invoice => invoice._id !== invoiceId)
       );
 
-      
+    
       const invoiceToDelete = userData.invoices.find(invoice => invoice._id === invoiceId);
       if (invoiceToDelete) {
         await deleteInvoiceByNumberFromIndexedDB(invoiceToDelete.invoiceNumber);
@@ -122,15 +135,16 @@ const Home = () => {
       setShowMessageModal(true);
     } catch (error) {
       console.error('Error deleting invoice:', error);
+      setModalMessage(`Error deleting invoice: ${error.message}`);
+      setShowMessageModal(true);
     }
   };
 
   const handleMarkAsPaid = async (invoiceNumber) => {
     try {
-      
+      // Mark invoice as paid in IndexedDB
       await updateInvoiceInIndexedDB(invoiceNumber, true);
 
-   
       setUserData(prevData => ({
         ...prevData,
         invoices: prevData.invoices.map(invoice =>
@@ -148,6 +162,27 @@ const Home = () => {
       setShowMessageModal(true);
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
+      setModalMessage(`Error marking invoice as paid: ${error.message}`);
+      setShowMessageModal(true);
+    }
+  };
+
+  const handleFetchUserData = async () => {
+    try {
+      const decryptedUserData = await getUserData();
+
+      if (decryptedUserData) {
+        setUserData(decryptedUserData);
+        setModalMessage('User data fetched from IndexedDB.');
+        setShowMessageModal(true);
+      } else {
+        setModalMessage('No user data found in IndexedDB.');
+        setShowMessageModal(true);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user data:', error);
+      setModalMessage(`Error fetching user data: ${error.message}`);
+      setShowMessageModal(true);
     }
   };
 
@@ -295,6 +330,10 @@ const Home = () => {
       {showMessageModal && (
         <MessageModal message={modalMessage} onClose={() => setShowMessageModal(false)} />
       )}
+
+      <div className="fetch-data-button">
+        <button onClick={handleFetchUserData}>Fetch User Data from IndexedDB</button>
+      </div>
     </>
   );
 };
