@@ -29,7 +29,8 @@ const Home = () => {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
 
-  const { data, error, loading: queryLoading, refetch } = useQuery(GET_USER, {
+
+  const { data, error, loading: queryLoading } = useQuery(GET_USER, {
     variables: { id: userId },
     onCompleted: async (data) => {
       if (data && data.user) {
@@ -52,19 +53,6 @@ const Home = () => {
       setLoading(false);
     },
   });
-
-  useEffect(() => {
-    const handleOnline = async () => {
-      console.log('Back online, refetching data...');
-      await refetch();
-    };
-
-    window.addEventListener('online', handleOnline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-    };
-  }, [refetch]);
 
   const handleSearch = () => {
     setSearchLoading(true);
@@ -114,6 +102,7 @@ const Home = () => {
 
   const handleMarkAsPaid = async (invoiceNumber) => {
     try {
+     
       await updateInvoiceInIndexedDB(invoiceNumber, true);
 
       // Update local state to reflect the change
@@ -140,6 +129,8 @@ const Home = () => {
   if (loading || queryLoading) {
     return <p>Loading user data...</p>;
   }
+
+
 
   if (!userData || !userData.invoices) {
     return <p>No user data available.</p>;
