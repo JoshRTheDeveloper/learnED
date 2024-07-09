@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation } from '@apollo/client';
 import { v4 as uuidv4 } from 'uuid';
 import jwtDecode from 'jwt-decode';
-import { useQuery, useMutation } from '@apollo/client';
-import axios from 'axios';
 import Sidebar from '../components/sidebar/sidebar';
-import { GET_USER } from '../utils/queries';
-import { CREATE_INVOICE } from '../utils/mutations';
 import { addInvoiceToIndexedDB, getUserData } from '../utils/indexedDB';
-import MessageModal from '../components/message-modal/message-modal'; // Adjust path as per your project structure
+import MessageModal from '../components/message-modal/message-modal'; 
+import { CREATE_INVOICE } from '../utils/mutations';
 import './CreateInvoices.css';
 
 const CreateInvoices = () => {
@@ -34,12 +32,8 @@ const CreateInvoices = () => {
   const decodedToken = jwtDecode(token);
   const userId = decodedToken.data._id;
 
-  const { loading, error, data } = useQuery(GET_USER, {
-    variables: { userId: userId || '' },
-  });
+  const [createInvoiceMutation] = useMutation(CREATE_INVOICE);
 
-  const [createInvoice] = useMutation(CREATE_INVOICE);
-  
   useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
       const localUserData = await getUserData();
@@ -73,7 +67,6 @@ const CreateInvoices = () => {
   
     const invoiceAmountFloat = parseFloat(invoiceAmount);
     const dueDateISO = new Date(dueDate).toISOString();
-    const uniqueId = uuidv4();
   
     const variables = {
       invoiceAmount: invoiceAmountFloat,
@@ -94,17 +87,17 @@ const CreateInvoices = () => {
     };
   
     try {
-      if (navigator.onLine) {
-        const response = await createInvoice({ variables });
-        await axios.post('/send-invoice', variables);
-        console.log('Invoice sent to server:', variables);
-      } else {
-        const indexedDBVariables = { ...variables, _id: uniqueId };
-        await addInvoiceToIndexedDB(indexedDBVariables);
-        console.log('Invoice saved to IndexedDB:', indexedDBVariables);
-      }
+      const { data } = await createInvoiceMutation({ variables });
+      
+      
+      const createdInvoice = data.createInvoice;
+  
+      // Add the invoice to IndexedDB
+      await addInvoiceToIndexedDB(createdInvoice);
   
       setSavedLocally(true);
+  
+      // Clear form fields
       setInvoiceAmount('');
       setPaidStatus(false);
       setInvoiceNumber('');
@@ -118,7 +111,6 @@ const CreateInvoices = () => {
       console.error('Error saving invoice:', error);
     }
   };
-  
 
   return (
     <>
