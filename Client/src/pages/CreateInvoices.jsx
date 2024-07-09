@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { v4 as uuidv4 } from 'uuid';
 import jwtDecode from 'jwt-decode';
 import Sidebar from '../components/sidebar/sidebar';
 import { addInvoiceToIndexedDB, getUserData } from '../utils/indexedDB';
-import MessageModal from '../components/message-modal/message-modal'; 
+import MessageModal from '../components/message-modal/message-modal';
 import { CREATE_INVOICE } from '../utils/mutations';
+import { v4 as uuidv4 } from 'uuid'; // Import uuidv4
 import './CreateInvoices.css';
 
 const CreateInvoices = () => {
@@ -64,10 +64,10 @@ const CreateInvoices = () => {
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
-  
+
     const invoiceAmountFloat = parseFloat(invoiceAmount);
     const dueDateISO = new Date(dueDate).toISOString();
-  
+
     const variables = {
       invoiceAmount: invoiceAmountFloat,
       paidStatus: paidStatus,
@@ -85,18 +85,18 @@ const CreateInvoices = () => {
       invoice_details: invoiceDetails,
       profilePicture: profilePicture,
     };
-  
+
     try {
       if (navigator.onLine) {
-        // Online mode: mutate and add to IndexedDB
         const { data } = await createInvoiceMutation({ variables });
         const createdInvoice = data.createInvoice;
         await addInvoiceToIndexedDB(createdInvoice);
       } else {
-        // Offline mode: add only to IndexedDB
-        await addInvoiceToIndexedDB(variables); // Directly add variables to IndexedDB
+        // Generate a unique ID using uuidv4 for offline mode
+        variables._id = uuidv4();
+        await addInvoiceToIndexedDB(variables);
       }
-  
+
       // Reset form fields and state
       setSavedLocally(true);
       setInvoiceAmount('');
@@ -108,13 +108,12 @@ const CreateInvoices = () => {
       setClientCity('');
       setInvoiceDetails('');
       setDueDate('');
-  
+
     } catch (error) {
       console.error('Error saving invoice:', error);
       // Handle error state or notify user
     }
   };
-  
 
   return (
     <>
@@ -210,7 +209,10 @@ const CreateInvoices = () => {
       </div>
 
       {savedLocally && (
-        <MessageModal message="Invoice saved locally." onClose={() => setSavedLocally(false)} />
+        <MessageModal
+          message="Invoice Saved Locally."
+          onClose={() => setSavedLocally(false)}
+        />
       )}
     </>
   );
