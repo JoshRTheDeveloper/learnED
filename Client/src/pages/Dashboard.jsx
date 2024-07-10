@@ -87,7 +87,7 @@ const Home = () => {
       console.log(`Attempting to delete invoice with number: ${invoiceNumber}`);
 
       // Fetch invoice details from IndexedDB
-      const invoice = await getInvoiceByNumberFromIndexedDB(invoiceNumber);
+      const invoice = await getInvoiceFromIndexedDB(invoiceNumber);
 
       if (!invoice) {
         throw new Error(`Invoice with number ${invoiceNumber} not found in IndexedDB.`);
