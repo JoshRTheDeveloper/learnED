@@ -9,9 +9,8 @@ db.version(6).stores({
   auth: '++id, token, userData',
   profilePictures: '++id, userId, profilePictureBlob',
   profileFiles: 'userId,file',
-  offlineMutations: '++id, mutation', 
+  offlineMutations: '++id, mutationType, variables',
 });
-
 
 const generateKeyAndIV = async () => {
   const key = await crypto.subtle.generateKey(
@@ -122,12 +121,12 @@ export const getLoginCredentials = async () => {
 
 export const storeProfilePicture = async (userId, profilePictureBlob) => {
   try {
-    const existingRecord = await db.profilePictures.get(1);
+    const existingRecord = await db.profilePictures.get({ userId });
 
     if (existingRecord) {
-      await db.profilePictures.update(1, { userId, profilePictureBlob });
+      await db.profilePictures.update(existingRecord.id, { profilePictureBlob });
     } else {
-      await db.profilePictures.put({ id: 1, userId, profilePictureBlob });
+      await db.profilePictures.put({ userId, profilePictureBlob });
     }
   } catch (error) {
     console.error('Failed to store profile picture in IndexedDB:', error);
@@ -135,9 +134,9 @@ export const storeProfilePicture = async (userId, profilePictureBlob) => {
   }
 };
 
-export const getProfilePicture = async () => {
+export const getProfilePicture = async (userId) => {
   try {
-    const profilePicture = await db.profilePictures.get(1);
+    const profilePicture = await db.profilePictures.get({ userId });
     return profilePicture ? profilePicture.profilePictureBlob : null;
   } catch (error) {
     console.error('Failed to get profile picture from IndexedDB:', error);
@@ -169,26 +168,6 @@ export const storeUserData = async (userData) => {
   }
 };
 
-export const getUserPassword = async () => {
-  try {
-    const record = await db.userData.get(1);
-    if (record && record.encryptedUserData && record.iv && record.key) {
-      const key = await importKey(new Uint8Array(record.key));
-      const iv = new Uint8Array(record.iv);
-      const encryptedData = new Uint8Array(record.encryptedUserData);
-
-      const decryptedUserData = await decryptData(encryptedData, key, iv);
-      return decryptedUserData.password; // Return only the decrypted password
-    } else {
-      console.error('Missing data in IndexedDB record:', record);
-    }
-    return null;
-  } catch (error) {
-    console.error('Failed to get user password securely from IndexedDB:', error);
-    return null;
-  }
-};
-
 export const getUserData = async () => {
   try {
     const record = await db.userData.get(1);
@@ -212,7 +191,7 @@ export const getUserData = async () => {
 
 export const storeAuthData = async (token, userData) => {
   try {
-    await db.auth.put({ token, userData });
+    await db.auth.put({ id: 1, token, userData });
   } catch (error) {
     console.error('Failed to store authentication data in IndexedDB:', error);
   }
@@ -229,25 +208,21 @@ export const getAuthData = async () => {
 
 export const updateInvoiceInIndexedDB = async (invoiceNumber, paidStatus) => {
   try {
-    // Find the invoice by invoice number
     const invoice = await db.invoices.where('invoiceNumber').equals(invoiceNumber).first();
 
     if (!invoice) {
       throw new Error(`Invoice with invoice number ${invoiceNumber} not found in IndexedDB.`);
     }
 
-   
     const key = await importKey(new Uint8Array(invoice.key));
     const iv = new Uint8Array(invoice.iv);
     const encryptedData = new Uint8Array(invoice.encryptedData);
     const decryptedData = await decryptData(encryptedData, key, iv);
 
-  
     decryptedData.paidStatus = paidStatus;
 
     const { encryptedData: updatedEncryptedData, iv: updatedIV } = await encryptData(decryptedData, key, iv);
 
-  
     invoice.encryptedData = Array.from(updatedEncryptedData);
     invoice.iv = Array.from(updatedIV);
     await db.invoices.put(invoice);
@@ -258,7 +233,6 @@ export const updateInvoiceInIndexedDB = async (invoiceNumber, paidStatus) => {
     throw error;
   }
 };
-
 
 export const getInvoicesFromIndexedDB = async () => {
   try {
@@ -284,135 +258,71 @@ export const getInvoicesFromIndexedDB = async () => {
 
 export const addInvoiceToIndexedDB = async (invoice) => {
   try {
-    // Ensure _id is converted to string or number
     const invoiceId = String(invoice._id); // Convert _id to string if necessary
 
     console.log('Attempting to add invoice to IndexedDB:', invoiceId);
-
-    // Check if invoice with the same _id already exists in IndexedDB
-    const existingInvoice = await db.invoices.where('_id').equals(invoiceId).first();
+    const existingInvoice = await db.invoices.get({ _id: invoiceId });
 
     if (existingInvoice) {
-      console.warn(`Invoice with _id ${invoiceId} already exists in IndexedDB. Skipping modification.`);
+      console.log(`Invoice with _id ${invoiceId} already exists in IndexedDB. Skipping insertion.`);
       return;
     }
 
-    console.log('No existing invoice found with _id:', invoiceId);
-
-    // Encrypt the invoice data if needed
     const { key, iv } = await generateKeyAndIV();
     const exportedKey = await exportKey(key);
-    const { encryptedData } = await encryptData(invoice, key, iv);
+    const { encryptedData, iv: encryptionIV } = await encryptData(invoice, key, iv);
 
-    console.log('Invoice data encrypted successfully.');
-
-    // Prepare the invoice object to store in IndexedDB
     const encryptedInvoice = {
-      ...invoice,
+      _id: invoiceId,
       encryptedData: Array.from(encryptedData),
-      iv: Array.from(iv),
+      iv: Array.from(encryptionIV),
       key: Array.from(exportedKey),
-      _id: invoiceId, // Ensure _id is set correctly
+      invoiceNumber: invoice.invoiceNumber, 
     };
 
-    console.log('Adding encrypted invoice to IndexedDB:', encryptedInvoice);
+    await db.invoices.put(encryptedInvoice);
 
-    // Add the encrypted invoice to IndexedDB
-    await db.invoices.add(encryptedInvoice);
-
-    console.log(`Invoice with _id ${invoiceId} added successfully to IndexedDB.`);
+    console.log('Invoice added to IndexedDB:', invoiceId);
   } catch (error) {
     console.error('Failed to add invoice to IndexedDB:', error);
     throw error;
   }
 };
 
-
-
-
-
-export const deleteInvoiceByNumberFromIndexedDB = async (invoiceNumber) => {
+export const removeInvoiceFromIndexedDB = async (invoiceNumber) => {
   try {
-    await db.transaction('rw', db.invoices, async () => {
-      // Find the invoice by invoiceNumber and delete it
-      const invoiceToDelete = await db.invoices.where('invoiceNumber').equals(invoiceNumber).first();
-
-      if (!invoiceToDelete) {
-        console.error(`Invoice with invoiceNumber ${invoiceNumber} not found in IndexedDB.`);
-        return;
-      }
-
-      const result = await db.invoices.delete(invoiceToDelete.id);
-      if (result === 0) {
-        console.error(`Failed to delete invoice with invoiceNumber ${invoiceNumber} from IndexedDB.`);
-      } else {
-        console.log(`Invoice with invoiceNumber ${invoiceNumber} deleted successfully from IndexedDB.`);
-      }
-    });
+    await db.invoices.where('invoiceNumber').equals(invoiceNumber).delete();
   } catch (error) {
-    console.error('Failed to delete invoice from IndexedDB:', error);
+    console.error('Failed to remove invoice from IndexedDB:', error);
     throw error;
   }
 };
 
-
-
-export const clearIndexedDB = async () => {
+export const storeOfflineMutation = async (mutationType, variables) => {
   try {
-    await Promise.all([
-      db.invoices.clear(),
-      db.userData.clear(),
-      db.loginCredentials.clear(),
-      db.auth.clear(),
-      db.profileFiles.clear(), // Make sure to clear the profileFiles store as well
-      db.profilePictures.clear(), // Clear profilePictures as well
-      db.offlineMutations.clear(), // Clear offlineMutations as well
-    ]);
+    await db.offlineMutations.put({ mutationType, variables });
   } catch (error) {
-    console.error('Failed to clear IndexedDB:', error);
-  }
-};
-
-export const storeProfileFile = async (userId, file) => {
-  try {
-    await db.profileFiles.put({ userId, file });
-  } catch (error) {
-    console.error('Failed to store profile file in IndexedDB:', error);
-  }
-};
-
-export const getProfileFile = async (userId) => {
-  try {
-    const result = await db.profileFiles.get(userId);
-    return result ? result.file : null;
-  } catch (error) {
-    console.error('Failed to get profile file from IndexedDB:', error);
-    return null;
-  }
-};
-
-export const addOfflineMutation = async (mutation) => {
-  try {
-    await db.offlineMutations.add(mutation);
-  } catch (error) {
-    console.error('Failed to add offline mutation to IndexedDB:', error);
+    console.error('Failed to store offline mutation in IndexedDB:', error);
+    throw error;
   }
 };
 
 export const getOfflineMutations = async () => {
   try {
-    return await db.offlineMutations.toArray();
+    const offlineMutations = await db.offlineMutations.toArray();
+    return offlineMutations.map((mutation) => ({ mutationType: mutation.mutationType, variables: mutation.variables }));
   } catch (error) {
     console.error('Failed to get offline mutations from IndexedDB:', error);
     return [];
   }
 };
 
-export const clearOfflineMutations = async () => {
+export const removeOfflineMutation = async (id) => {
   try {
-    await db.offlineMutations.clear();
+    await db.offlineMutations.delete(id);
   } catch (error) {
-    console.error('Failed to clear offline mutations from IndexedDB:', error);
+    console.error('Failed to remove offline mutation from IndexedDB:', error);
+    throw error;
   }
 };
 

@@ -5,7 +5,8 @@ import Sidebar from '../components/sidebar/sidebar';
 import { addInvoiceToIndexedDB, getUserData } from '../utils/indexedDB';
 import MessageModal from '../components/message-modal/message-modal';
 import { CREATE_INVOICE } from '../utils/mutations';
-import { v4 as uuidv4 } from 'uuid'; // Import uuidv4
+import { v4 as uuidv4 } from 'uuid'; 
+import { storeOfflineMutation } from '../utils/indexedDB'; 
 import './CreateInvoices.css';
 
 const CreateInvoices = () => {
@@ -92,13 +93,13 @@ const CreateInvoices = () => {
         const createdInvoice = data.createInvoice;
         await addInvoiceToIndexedDB(createdInvoice);
       } else {
-        // Generate a unique ID using uuidv4 for offline mode
-        variables._id = uuidv4();
-        await addInvoiceToIndexedDB(variables);
+       
+        const offlineMutationId = uuidv4();
+        await storeOfflineMutation('CREATE_INVOICE', { id: offlineMutationId, variables });
+        setSavedLocally(true);
       }
 
-      // Reset form fields and state
-      setSavedLocally(true);
+     
       setInvoiceAmount('');
       setPaidStatus(false);
       setInvoiceNumber('');
@@ -111,7 +112,7 @@ const CreateInvoices = () => {
 
     } catch (error) {
       console.error('Error saving invoice:', error);
-      // Handle error state or notify user
+     
     }
   };
 
