@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, from } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import './dashboard.css';
 import Sidebar from '../components/sidebar/sidebar';
 import jwtDecode from 'jwt-decode';
@@ -7,17 +7,12 @@ import InvoiceModal from '../components/invoice-modal/invoice-modal';
 import MessageModal from '../components/message-modal/message-modal';
 import {
   getInvoicesFromIndexedDB,
+  addInvoiceToIndexedDB,
   deleteInvoiceByNumberFromIndexedDB,
   updateInvoiceInIndexedDB,
 } from '../utils/indexedDB';
-import {
-  GET_USER,
-} from '../utils/queries';
-import {  CREATE_INVOICE,
-  UPDATE_INVOICE,
-  DELETE_INVOICE,
-} from '../utils/mutations'
-
+import { GET_USER } from '../utils/queries';
+import { DELETE_INVOICE, UPDATE_INVOICE, CREATE_INVOICE } from '../utils/mutations';
 
 const Home = () => {
   const token = localStorage.getItem('authToken');
@@ -35,88 +30,119 @@ const Home = () => {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
 
-  const { data: userDataQuery, error: userError, loading: userLoading, refetch: refetchUserData } = useQuery(GET_USER, {
+  const { data, error, loading: queryLoading } = useQuery(GET_USER, {
     variables: { id: userId },
     onCompleted: async (data) => {
       if (data && data.user) {
         setUserData(data.user);
 
-        // Sync IndexedDB with online database on initial load
-        await syncIndexedDBWithOnlineDB(data.user.invoices);
+        // Compare online data with IndexedDB data and sync if necessary
+        await syncDataWithIndexedDB(data.user.invoices);
       }
       setLoading(false);
     },
-    onError: async (error) => {
-      console.error('Error fetching user data:', error);
-      // Handle error fetching user data
+    onError: async () => {
+      const storedInvoices = await getInvoicesFromIndexedDB();
+      if (storedInvoices) {
+        setUserData({ invoices: storedInvoices });
+      }
       setLoading(false);
     },
   });
 
-  useEffect(() => {
-    // Function to compare and update IndexedDB with online database
-    const syncIndexedDBWithOnlineDB = async (invoices) => {
-      try {
-        const storedInvoices = await getInvoicesFromIndexedDB();
-
-        // Clear existing invoices in OnlineDB (if needed)
-        await clearOnlineDB();
-
-        // Update OnlineDB with data from IndexedDB
-        for (const invoice of storedInvoices) {
-          const existingInvoice = invoices.find((inv) => inv.invoiceNumber === invoice.invoiceNumber);
-
-          if (!existingInvoice) {
-            await createInvoice({
-              variables: {
-                invoiceAmount: invoice.invoiceAmount,
-                paidStatus: invoice.paidStatus,
-                invoiceNumber: invoice.invoiceNumber,
-                companyName: invoice.companyName,
-                companyEmail: invoice.companyEmail,
-                clientName: invoice.clientName,
-                clientEmail: invoice.clientEmail,
-                dueDate: invoice.dueDate,
-                userID: userId,
-                invoice_details: invoice.invoice_details,
-              },
-            });
-          }
-        }
-
-        // Optionally, update local state or perform additional actions after synchronization
-        const updatedUserData = await refetchUserData();
-        setUserData(updatedUserData);
-      } catch (error) {
-        console.error('Error syncing IndexedDB with online DB:', error);
-      }
-    };
-
-    if (userDataQuery && userDataQuery.user && userDataQuery.user.invoices) {
-      syncIndexedDBWithOnlineDB(userDataQuery.user.invoices);
-    }
-  }, [userDataQuery]);
-
   const [createInvoice] = useMutation(CREATE_INVOICE, {
     onError: (error) => {
       console.error('Error creating invoice:', error);
-      // Handle error creating invoice
     },
   });
 
   const [updateInvoice] = useMutation(UPDATE_INVOICE, {
     onError: (error) => {
       console.error('Error updating invoice:', error);
-      // Handle error updating invoice
     },
   });
 
   const [deleteInvoice] = useMutation(DELETE_INVOICE, {
     onError: (error) => {
       console.error('Error deleting invoice:', error);
-      // Handle error deleting invoice
     },
   });
+
+  useEffect(() => {
+    // Sync online data with IndexedDB data
+    const syncDataWithIndexedDB = async (onlineInvoices) => {
+      try {
+        const indexedDBInvoices = await getInvoicesFromIndexedDB();
+
+        // Determine new, updated, and deleted invoices
+        const onlineInvoiceNumbers = onlineInvoices.map((invoice) => invoice.invoiceNumber);
+        const indexedDBInvoiceNumbers = indexedDBInvoices.map((invoice) => invoice.invoiceNumber);
+
+        // New invoices in online data that need to be added to IndexedDB
+        const newInvoices = onlineInvoices.filter(
+          (invoice) => !indexedDBInvoiceNumbers.includes(invoice.invoiceNumber)
+        );
+
+        // Invoices in IndexedDB that are not in online data need to be deleted
+        const deletedInvoices = indexedDBInvoices.filter(
+          (invoice) => !onlineInvoiceNumbers.includes(invoice.invoiceNumber)
+        );
+
+        // Updated invoices (check for changes in properties like paidStatus)
+        const updatedInvoices = onlineInvoices.filter((onlineInvoice) => {
+          const indexedDBInvoice = indexedDBInvoices.find(
+            (invoice) => invoice.invoiceNumber === onlineInvoice.invoiceNumber
+          );
+          return (
+            indexedDBInvoice &&
+            JSON.stringify(indexedDBInvoice) !== JSON.stringify(onlineInvoice)
+          );
+        });
+
+        // Perform mutations to synchronize data
+        for (const invoice of newInvoices) {
+          await addInvoiceToIndexedDB(invoice); // Add to IndexedDB
+          await createInvoice({ variables: { ...invoice, userID: userId } }); // Create in Online DB
+        }
+
+        for (const invoice of deletedInvoices) {
+          await deleteInvoiceByNumberFromIndexedDB(invoice.invoiceNumber); // Delete from IndexedDB
+          await deleteInvoice({ variables: { invoiceNumber: invoice.invoiceNumber } }); // Delete from Online DB
+        }
+
+        for (const invoice of updatedInvoices) {
+          await updateInvoiceInIndexedDB(invoice.invoiceNumber, invoice.paidStatus); // Update IndexedDB
+          await updateInvoice({ variables: { id: invoice._id, paidStatus: invoice.paidStatus } }); // Update Online DB
+        }
+
+        // Refresh userData after synchronization
+        setUserData({ ...data.user, invoices: onlineInvoices });
+      } catch (error) {
+        console.error('Error syncing data with IndexedDB:', error);
+      }
+    };
+
+    if (data && data.user && data.user.invoices) {
+      syncDataWithIndexedDB(data.user.invoices);
+    }
+  }, [data, createInvoice, updateInvoice, deleteInvoice]);
+
+  const handleSearch = () => {
+    setSearchLoading(true);
+    setSearchError(null);
+
+    try {
+      const filteredInvoices = userData?.invoices.filter(
+        (invoice) => invoice.invoiceNumber.includes(searchInvoiceNumber)
+      ) || [];
+
+      setSearchResult(filteredInvoices);
+    } catch (error) {
+      setSearchError(error);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
   const handleInvoiceClick = (invoice) => {
     setSelectedInvoice(invoice);
@@ -131,18 +157,17 @@ const Home = () => {
     try {
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
 
-      // Delete invoice from online DB if necessary
-      await deleteInvoice({
-        variables: { invoiceNumber },
-      });
-
       setUserData((prevData) => ({
         ...prevData,
-        invoices: prevData.invoices.filter((invoice) => invoice.invoiceNumber !== invoiceNumber),
+        invoices: prevData.invoices.filter(
+          (invoice) => invoice.invoiceNumber !== invoiceNumber
+        ),
       }));
 
       setSearchResult((prevSearchResult) =>
-        prevSearchResult.filter((invoice) => invoice.invoiceNumber !== invoiceNumber)
+        prevSearchResult.filter(
+          (invoice) => invoice.invoiceNumber !== invoiceNumber
+        )
       );
 
       setModalMessage(`Invoice with invoiceNumber ${invoiceNumber} deleted.`);
@@ -156,22 +181,20 @@ const Home = () => {
     try {
       await updateInvoiceInIndexedDB(invoiceNumber, true);
 
-      // Update invoice in online DB
-      await updateInvoice({
-        variables: { id: invoiceNumber, paidStatus: true },
-      });
-
-      // Update local state to reflect the change
       setUserData((prevData) => ({
         ...prevData,
         invoices: prevData.invoices.map((invoice) =>
-          invoice.invoiceNumber === invoiceNumber ? { ...invoice, paidStatus: true } : invoice
+          invoice.invoiceNumber === invoiceNumber
+            ? { ...invoice, paidStatus: true }
+            : invoice
         ),
       }));
 
       setSearchResult((prevSearchResult) =>
         prevSearchResult.map((invoice) =>
-          invoice.invoiceNumber === invoiceNumber ? { ...invoice, paidStatus: true } : invoice
+          invoice.invoiceNumber === invoiceNumber
+            ? { ...invoice, paidStatus: true }
+            : invoice
         )
       );
 
@@ -182,26 +205,7 @@ const Home = () => {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchInvoiceNumber.trim()) {
-      setSearchResult([]);
-      return;
-    }
-
-    setSearchLoading(true);
-    try {
-      const filteredInvoices = userData.invoices.filter((invoice) =>
-        invoice.invoiceNumber.includes(searchInvoiceNumber)
-      );
-      setSearchResult(filteredInvoices);
-      setSearchLoading(false);
-    } catch (error) {
-      setSearchError(error);
-      setSearchLoading(false);
-    }
-  };
-
-  if (loading || userLoading) {
+  if (loading || queryLoading) {
     return <p>Loading user data...</p>;
   }
 
@@ -209,10 +213,14 @@ const Home = () => {
     return <p>No user data available.</p>;
   }
 
-  const invoicesDue = userData.invoices.filter((invoice) => !invoice.paidStatus);
-  const invoicesPaid = userData.invoices.filter((invoice) => invoice.paidStatus);
+  const invoicesDue =
+    userData?.invoices.filter((invoice) => !invoice.paidStatus) || [];
+  const invoicesPaid =
+    userData?.invoices.filter((invoice) => invoice.paidStatus) || [];
   const filteredInvoicesDue = searchInvoiceNumber
-    ? invoicesDue.filter((invoice) => invoice.invoiceNumber.includes(searchInvoiceNumber))
+    ? invoicesDue.filter((invoice) =>
+        invoice.invoiceNumber.includes(searchInvoiceNumber)
+      )
     : invoicesDue;
 
   return (
@@ -247,24 +255,47 @@ const Home = () => {
                 {searchResult.map((invoice) => (
                   <li key={invoice._id}>
                     <div className="due-date-container">
-                      <p className="invoice-number">Invoice Number: {invoice.invoiceNumber}</p>
+                      <p className="invoice-number">
+                        Invoice Number: {invoice.invoiceNumber}
+                      </p>
                       <p className="due-date">
                         {' '}
-                        Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()}{' '}
+                        Due Date:{' '}
+                        {new Date(
+                          parseInt(invoice.dueDate)
+                        ).toLocaleDateString()}{' '}
                       </p>
                     </div>
                     <div className="invoice-info">
                       <p>Client: {invoice.clientName}</p>
                       {invoice.invoiceAmount && (
-                        <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
+                        <p>
+                          Amount: ${parseFloat(
+                            invoice.invoiceAmount.toString()
+                          ).toFixed(2)}
+                        </p>
                       )}
-                      <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
+                      <p>
+                        Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}
+                      </p>
                     </div>
                     <div className="button-container">
-                      <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                      <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
+                      <button onClick={() => handleInvoiceClick(invoice)}>
+                        Info
+                      </button>
+                      <button
+                        onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}
+                      >
+                        Delete
+                      </button>
                       {!invoice.paidStatus && (
-                        <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
+                        <button
+                          onClick={() =>
+                            handleMarkAsPaid(invoice.invoiceNumber)
+                          }
+                        >
+                          Mark as Paid
+                        </button>
                       )}
                     </div>
                   </li>
@@ -283,24 +314,48 @@ const Home = () => {
                   {filteredInvoicesDue.map((invoice) => (
                     <li key={invoice._id}>
                       <div className="due-date-container">
-                        <p className="invoice-number">Invoice Number: {invoice.invoiceNumber}</p>
+                        <p className="invoice-number">
+                          Invoice Number: {invoice.invoiceNumber}
+                        </p>
                         <p className="due-date">
                           {' '}
-                          Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()}{' '}
+                          Due Date:{' '}
+                          {new Date(
+                            parseInt(invoice.dueDate)
+                          ).toLocaleDateString()}{' '}
                         </p>
                       </div>
                       <div className="invoice-info">
                         <p>Client: {invoice.clientName}</p>
                         {invoice.invoiceAmount && (
-                          <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
+                          <p>
+                            Amount: ${parseFloat(
+                              invoice.invoiceAmount.toString()
+                            ).toFixed(2)}
+                          </p>
                         )}
-                        <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
+                        <p>
+                          Paid Status:{' '}
+                          {invoice.paidStatus ? 'Paid' : 'Not Paid'}
+                        </p>
                       </div>
                       <div className="button-container">
-                        <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                        <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
+                        <button onClick={() => handleInvoiceClick(invoice)}>
+                          Info
+                        </button>
+                        <button
+                          onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}
+                        >
+                          Delete
+                        </button>
                         {!invoice.paidStatus && (
-                          <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
+                          <button
+                            onClick={() =>
+                              handleMarkAsPaid(invoice.invoiceNumber)
+                            }
+                          >
+                            Mark as Paid
+                          </button>
                         )}
                       </div>
                     </li>
@@ -308,31 +363,59 @@ const Home = () => {
                 </ul>
               )}
             </div>
+
             <div className="row">
               <h2>Invoices Paid</h2>
               {invoicesPaid.length === 0 ? (
-                <p>No invoices paid.</p>
+                <p>No paid invoices.</p>
               ) : (
                 <ul>
                   {invoicesPaid.map((invoice) => (
                     <li key={invoice._id}>
                       <div className="due-date-container">
-                        <p className="invoice-number">Invoice Number: {invoice.invoiceNumber}</p>
+                        <p className="invoice-number">
+                          Invoice Number: {invoice.invoiceNumber}
+                        </p>
                         <p className="due-date">
                           {' '}
-                          Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()}{' '}
+                          Due Date:{' '}
+                          {new Date(
+                            parseInt(invoice.dueDate)
+                          ).toLocaleDateString()}{' '}
                         </p>
                       </div>
                       <div className="invoice-info">
                         <p>Client: {invoice.clientName}</p>
                         {invoice.invoiceAmount && (
-                          <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
+                          <p>
+                            Amount: ${parseFloat(
+                              invoice.invoiceAmount.toString()
+                            ).toFixed(2)}
+                          </p>
                         )}
-                        <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
+                        <p>
+                          Paid Status:{' '}
+                          {invoice.paidStatus ? 'Paid' : 'Not Paid'}
+                        </p>
                       </div>
                       <div className="button-container">
-                        <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                        <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
+                        <button onClick={() => handleInvoiceClick(invoice)}>
+                          Info
+                        </button>
+                        <button
+                          onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}
+                        >
+                          Delete
+                        </button>
+                        {!invoice.paidStatus && (
+                          <button
+                            onClick={() =>
+                              handleMarkAsPaid(invoice.invoiceNumber)
+                            }
+                          >
+                            Mark as Paid
+                          </button>
+                        )}
                       </div>
                     </li>
                   ))}
@@ -344,16 +427,15 @@ const Home = () => {
       </div>
 
       {isModalOpen && (
-        <InvoiceModal
-          invoice={selectedInvoice}
-          closeModal={closeModal}
-          refetchUserData={refetchUserData}
-          setModalMessage={setModalMessage}
-          setShowMessageModal={setShowMessageModal}
-        />
+        <InvoiceModal invoice={selectedInvoice} onClose={closeModal} />
       )}
 
-      {showMessageModal && <MessageModal message={modalMessage} closeModal={() => setShowMessageModal(false)} />}
+      {showMessageModal && (
+        <MessageModal
+          message={modalMessage}
+          onClose={() => setShowMessageModal(false)}
+        />
+      )}
     </>
   );
 };
