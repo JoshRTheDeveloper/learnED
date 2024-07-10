@@ -86,9 +86,6 @@ const Home = () => {
       setModalMessage(`Invoice with invoiceNumber ${selectedInvoice.invoiceNumber} deleted.`);
       setShowMessageModal(true);
     },
-    onError: (error) => {
-      console.error('Error deleting invoice:', error);
-    },
   });
   
   const handleDeleteInvoice = async (invoiceNumber) => {
