@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 import './dashboard.css';
 import Sidebar from '../components/sidebar/sidebar';
 import jwtDecode from 'jwt-decode';
@@ -12,7 +12,6 @@ import {
   updateInvoiceInIndexedDB,
 } from '../utils/indexedDB';
 import { GET_USER } from '../utils/queries';
-import { CREATE_INVOICE, UPDATE_INVOICE, DELETE_INVOICE } from '../utils/mutations';
 
 const Home = () => {
   const token = localStorage.getItem('authToken');
@@ -30,87 +29,28 @@ const Home = () => {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
 
+
   const { data, error, loading: queryLoading } = useQuery(GET_USER, {
     variables: { id: userId },
     onCompleted: async (data) => {
       if (data && data.user) {
         setUserData(data.user);
 
-        // Sync IndexedDB with online database on initial load
-        await syncIndexedDBWithOnlineDB(data.user.invoices);
+        if (data.user.invoices) {
+          for (const invoice of data.user.invoices) {
+            await addInvoiceToIndexedDB(invoice);
+          }
+        }
       }
       setLoading(false);
     },
     onError: async () => {
-      // Handle error fetching user data or GraphQL query
+      // Fallback to fetch data from IndexedDB if online fetch fails
       const storedInvoices = await getInvoicesFromIndexedDB();
       if (storedInvoices) {
         setUserData({ invoices: storedInvoices });
       }
       setLoading(false);
-    },
-  });
-
-  useEffect(() => {
-    // Function to compare and update IndexedDB with online database
-    const syncIndexedDBWithOnlineDB = async (onlineInvoices) => {
-      try {
-        const storedInvoices = await getInvoicesFromIndexedDB();
-
-        // Compare and sync logic
-        for (const invoice of storedInvoices) {
-          const existingInvoice = onlineInvoices.find((inv) => inv.invoiceNumber === invoice.invoiceNumber);
-
-          if (!existingInvoice) {
-            // If invoice exists in IndexedDB but not in online DB, create it
-            await createInvoice({
-              variables: {
-                invoiceAmount: invoice.invoiceAmount,
-                paidStatus: invoice.paidStatus,
-                invoiceNumber: invoice.invoiceNumber,
-                companyName: invoice.companyName,
-                companyEmail: invoice.companyEmail,
-                clientName: invoice.clientName,
-                clientEmail: invoice.clientEmail,
-                dueDate: invoice.dueDate,
-                userID: userId,
-                invoice_details: invoice.invoice_details,
-              },
-            });
-          }
-        }
-
-        // Update local state or refetch user data after synchronization
-        const updatedUserData = await refetchUserData(); // Implement refetchUserData as per your use case
-        setUserData(updatedUserData);
-      } catch (error) {
-        console.error('Error syncing IndexedDB with online DB:', error);
-      }
-    };
-
-    if (data && data.user && data.user.invoices) {
-      syncIndexedDBWithOnlineDB(data.user.invoices);
-    }
-  }, [data]); // Run whenever data changes (i.e., onCompleted of useQuery)
-
-  const [createInvoice] = useMutation(CREATE_INVOICE, {
-    onError: (error) => {
-      console.error('Error creating invoice:', error);
-      // Handle error creating invoice
-    },
-  });
-
-  const [updateInvoice] = useMutation(UPDATE_INVOICE, {
-    onError: (error) => {
-      console.error('Error updating invoice:', error);
-      // Handle error updating invoice
-    },
-  });
-
-  const [deleteInvoice] = useMutation(DELETE_INVOICE, {
-    onError: (error) => {
-      console.error('Error deleting invoice:', error);
-      // Handle error deleting invoice
     },
   });
 
@@ -144,7 +84,6 @@ const Home = () => {
     try {
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
 
-      // Update local state (userData) after deleting invoice
       setUserData(prevData => ({
         ...prevData,
         invoices: prevData.invoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
@@ -156,19 +95,6 @@ const Home = () => {
 
       setModalMessage(`Invoice with invoiceNumber ${invoiceNumber} deleted.`);
       setShowMessageModal(true);
-
-      // Delete invoice mutation
-      await deleteInvoice({
-        variables: {
-          invoiceNumber: invoiceNumber,
-          userID: userId
-        }
-      });
-
-      // Optionally sync IndexedDB with updated online database
-      const updatedUserData = await refetchUserData(); // Implement refetchUserData as per your use case
-      setUserData(updatedUserData);
-
     } catch (error) {
       console.error('Error deleting invoice:', error);
     }
@@ -176,10 +102,10 @@ const Home = () => {
 
   const handleMarkAsPaid = async (invoiceNumber) => {
     try {
-      // Update IndexedDB locally
+     
       await updateInvoiceInIndexedDB(invoiceNumber, true);
 
-      // Update local state (userData) after marking invoice as paid
+      // Update local state to reflect the change
       setUserData(prevData => ({
         ...prevData,
         invoices: prevData.invoices.map(invoice =>
@@ -195,20 +121,6 @@ const Home = () => {
 
       setModalMessage(`Invoice with invoiceNumber ${invoiceNumber} marked as paid.`);
       setShowMessageModal(true);
-
-      // Update invoice mutation
-      await updateInvoice({
-        variables: {
-          invoiceNumber: invoiceNumber,
-          paidStatus: true,
-          userID: userId
-        }
-      });
-
-      // Optionally sync IndexedDB with updated online database
-      const updatedUserData = await refetchUserData(); // Implement refetchUserData as per your use case
-      setUserData(updatedUserData);
-
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
     }
@@ -217,6 +129,8 @@ const Home = () => {
   if (loading || queryLoading) {
     return <p>Loading user data...</p>;
   }
+
+
 
   if (!userData || !userData.invoices) {
     return <p>No user data available.</p>;
@@ -283,77 +197,81 @@ const Home = () => {
             </div>
           )}
 
-          {invoicesDue.length > 0 && (
-            <div className='due-invoices'>
-              <h3>Due Invoices</h3>
-              <ul>
-                {filteredInvoicesDue.map(invoice => (
-                  <li key={invoice._id}>
-                    <div className='due-date-container'>
-                      <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
-                      <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
-                    </div>
-                    <div className='invoice-info'>
-                      <p>Client: {invoice.clientName}</p>
-                      {invoice.invoiceAmount && (
-                        <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
-                      )}
-                      <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
-                    </div>
-                    <div className='button-container'>
-                      <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                      <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
-                      {!invoice.paidStatus && (
-                        <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+          <div className="total">
+            <div className="row">
+              <h2>Invoices Due</h2>
+              {filteredInvoicesDue.length === 0 ? (
+                <p>No invoices due.</p>
+              ) : (
+                <ul>
+                  {filteredInvoicesDue.map(invoice => (
+                    <li key={invoice._id}>
+                      <div className='due-date-container'>
+                        <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
+                        <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
+                      </div>
+                      <div className='invoice-info'>
+                        <p>Client: {invoice.clientName}</p>
+                        {invoice.invoiceAmount && (
+                          <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
+                        )}
+                        <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
+                      </div>
+                      <div className='button-container'>
+                        <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
+                        <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
+                        {!invoice.paidStatus && (
+                          <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-          )}
 
-          {invoicesPaid.length > 0 && (
-            <div className='paid-invoices'>
-              <h3>Paid Invoices</h3>
-              <ul>
-                {invoicesPaid.map(invoice => (
-                  <li key={invoice._id}>
-                    <div className='due-date-container'>
-                      <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
-                      <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
-                    </div>
-                    <div className='invoice-info'>
-                      <p>Client: {invoice.clientName}</p>
-                      {invoice.invoiceAmount && (
-                        <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
-                      )}
-                      <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
-                    </div>
-                    <div className='button-container'>
-                      <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                      <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+            <div className="row">
+              <h2>Invoices Paid</h2>
+              {invoicesPaid.length === 0 ? (
+                <p>No paid invoices.</p>
+              ) : (
+                <ul>
+                  {invoicesPaid.map(invoice => (
+                    <li key={invoice._id}>
+                      <div className='due-date-container'>
+                        <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
+                        <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
+                      </div>
+                      <div className='invoice-info'>
+                        <p>Client: {invoice.clientName}</p>
+                        {invoice.invoiceAmount && (
+                          <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
+                        )}
+                        <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
+                      </div>
+                      <div className='button-container'>
+                        <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
+                        <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
+                        {!invoice.paidStatus && (
+                          <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-          )}
-
-          {isModalOpen && (
-            <InvoiceModal
-              invoice={selectedInvoice}
-              closeModal={closeModal}
-              handleDeleteInvoice={handleDeleteInvoice}
-              handleMarkAsPaid={handleMarkAsPaid}
-            />
-          )}
-
-          {showMessageModal && (
-            <MessageModal message={modalMessage} closeModal={() => setShowMessageModal(false)} />
-          )}
+          </div>
         </div>
       </div>
+
+      {isModalOpen && (
+        <InvoiceModal invoice={selectedInvoice} onClose={closeModal} />
+      )}
+
+      {showMessageModal && (
+        <MessageModal message={modalMessage} onClose={() => setShowMessageModal(false)} />
+      )}
     </>
   );
 };
