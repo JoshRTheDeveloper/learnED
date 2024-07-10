@@ -24,7 +24,11 @@ function Nav() {
     }
 
     const handleOnlineStatusChange = () => {
-      setOnlineStatus(navigator.onLine ? 'Online' : 'Offline');
+      const isOnline = navigator.onLine;
+      setOnlineStatus(isOnline ? 'Online' : 'Offline');
+      if (isOnline) {
+        executeStoredMutations();
+      }
     };
 
     window.addEventListener('online', handleOnlineStatusChange);
@@ -93,12 +97,6 @@ function Nav() {
       console.error('Failed to get offline mutations:', error);
     }
   };
-
-  useEffect(() => {
-    if (navigator.onLine) {
-      executeStoredMutations();
-    }
-  }, []);
 
   if (Auth.loggedIn()) {
     return (
