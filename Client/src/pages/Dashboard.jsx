@@ -92,9 +92,10 @@ const Home = () => {
       if (!invoice) {
         throw new Error(`Invoice with number ${invoiceNumber} not found in IndexedDB.`);
       }
-
+console.log(invoice)
       // Assume invoice._id is the ID used in the online database
       const invoiceId = invoice._id;
+      const userId = invoice.userId
 
       // Delete from IndexedDB first
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
