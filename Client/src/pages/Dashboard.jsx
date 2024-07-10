@@ -95,7 +95,7 @@ const Home = () => {
 console.log(invoice)
       // Assume invoice._id is the ID used in the online database
       const invoiceId = invoice._id;
-      const userId = invoice.userId
+      const userId = invoice.user
 
       // Delete from IndexedDB first
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
