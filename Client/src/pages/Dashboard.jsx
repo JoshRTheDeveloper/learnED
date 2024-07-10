@@ -31,6 +31,7 @@ const Home = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data, error, loading: queryLoading, refetch } = useQuery(GET_USER, {
     variables: { id: userId },
@@ -83,6 +84,12 @@ const Home = () => {
 
   const [deleteInvoice] = useMutation(DELETE_INVOICE);
   const handleDeleteInvoice = async (invoiceNumber) => {
+    if (isDeleting) {
+      return; // If already deleting, prevent multiple clicks
+    }
+
+    setIsDeleting(true); // Set deleting state to true
+
     try {
       console.log(`Attempting to delete invoice with number: ${invoiceNumber}`);
 
@@ -92,26 +99,22 @@ const Home = () => {
       if (!invoice) {
         throw new Error(`Invoice with number ${invoiceNumber} not found in IndexedDB.`);
       }
-console.log(invoice)
+
       // Assume invoice._id is the ID used in the online database
       const invoiceId = invoice._id;
-      const userId = invoice.user
-console.log("user:", userId)
+
       // Delete from IndexedDB first
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
       console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
 
       // Execute the mutation to delete the invoice from the online DB
       const { data: deleteData } = await deleteInvoice({
-      
-        variables: { id: invoiceId,   userId: userId },
+        variables: { id: invoiceId },
       });
       console.log(`Successfully deleted invoice from server:`, deleteData);
 
-  
-       await refetch();
-       console.log(`Refetched user data after deletion`);
-
+      await refetch();
+      console.log(`Refetched user data after deletion`);
     } catch (error) {
       console.error('Error deleting invoice:', error);
 
@@ -122,6 +125,8 @@ console.log("user:", userId)
       });
       setModalMessage(`Invoice deletion added to offline queue.`);
       setShowMessageModal(true);
+    } finally {
+      setIsDeleting(false); // Reset deleting state
     }
   };
   
