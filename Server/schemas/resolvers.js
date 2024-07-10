@@ -307,30 +307,33 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
     return await Invoice.findByIdAndUpdate(_id, updateData, { new: true }).populate('user');
   },
 
-  deleteInvoice: async (parent, { invoiceNumber }) => {
+  deleteInvoice: async (parent, { _id }) => {
     try {
-      // Find and delete the invoice based on invoiceNumber
-      const deletedInvoice = await Invoice.findOneAndDelete({ invoiceNumber }).populate('user');
+
+      const deletedInvoice = await Invoice.findByIdAndDelete(_id).populate('user');
   
-      // If no invoice found, return error message
       if (!deletedInvoice) {
+       
         return { success: false, message: 'Invoice not found' };
       }
   
-      // Remove the invoice reference from the user document
+    
       await User.updateOne(
         { _id: deletedInvoice.user._id },
-        { $pull: { invoices: { invoiceNumber } } }
+        { $pull: { invoices: _id } }
       );
   
-      // Return success message
+    
       return { success: true, message: 'Invoice deleted successfully' };
     } catch (error) {
+    
       console.error('Error deleting invoice:', error);
       return { success: false, message: 'An error occurred while deleting the invoice' };
     }
   }
-  },
+  
+},
+
 
 };
 

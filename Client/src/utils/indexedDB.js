@@ -145,6 +145,21 @@ export const getProfilePicture = async () => {
   }
 };
 
+export const getInvoiceFromIndexedDB = async (invoiceNumber) => {
+  try {
+  
+    await db.open();
+
+
+    const invoice = await db.invoices.where('invoiceNumber').equals(invoiceNumber).first();
+
+    return invoice;
+  } catch (error) {
+    console.error('Error getting invoice from IndexedDB:', error);
+    throw new Error('Failed to get invoice from IndexedDB');
+  }
+};
+
 export const storeUserData = async (userData) => {
   try {
     const existingRecord = await db.userData.get(1);

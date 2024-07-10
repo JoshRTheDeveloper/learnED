@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import './dashboard.css';
 import Sidebar from '../components/sidebar/sidebar';
 import jwtDecode from 'jwt-decode';
@@ -7,13 +7,13 @@ import InvoiceModal from '../components/invoice-modal/invoice-modal';
 import MessageModal from '../components/message-modal/message-modal';
 import {
   getInvoicesFromIndexedDB,
+  getInvoiceFromIndexedDB,
   addInvoiceToIndexedDB,
   deleteInvoiceByNumberFromIndexedDB,
   updateInvoiceInIndexedDB,
   addOfflineMutation,
 } from '../utils/indexedDB';
-import { GET_USER } from '../utils/queries';
-import { useMutation } from '@apollo/client';
+import { GET_USER, GET_INVOICE } from '../utils/queries';
 import { UPDATE_INVOICE, DELETE_INVOICE } from '../utils/mutations';
 
 const Home = () => {
@@ -32,7 +32,7 @@ const Home = () => {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
 
-  const { data, error, loading: queryLoading } = useQuery(GET_USER, {
+  const { data, error, loading: queryLoading, refetch } = useQuery(GET_USER, {
     variables: { id: userId },
     onCompleted: async (data) => {
       if (data && data.user) {
@@ -81,37 +81,53 @@ const Home = () => {
     setIsModalOpen(false);
   };
 
-  const [deleteInvoice] = useMutation(DELETE_INVOICE, {
-    onCompleted: () => {
-      setModalMessage(`Invoice with invoiceNumber ${selectedInvoice.invoiceNumber} deleted.`);
-      setShowMessageModal(true);
-    },
-    onError: (error) => {
-      console.error('Error deleting invoice:', error);
-    },
-  });
-  
+  const [deleteInvoice] = useMutation(DELETE_INVOICE);
   const handleDeleteInvoice = async (invoiceNumber) => {
     try {
-      
-      await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
+      // Log start of delete process
+      console.log(`Attempting to delete invoice with number: ${invoiceNumber}`);
   
-
-      await deleteInvoice({
-        variables: { invoiceNumber },
+      // Delete from IndexedDB first and fetch the invoice
+      const invoice = await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
+      console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
+  
+      // If invoice is not found in IndexedDB, handle the error or log it
+      if (!invoice) {
+        throw new Error(`Invoice with number ${invoiceNumber} not found in IndexedDB.`);
+      }
+  
+      // Fetch invoice details from online DB using GraphQL query
+      const { data } = await client.query({
+        query: GET_INVOICE,
+        variables: { id: invoice._id }, // Assuming invoice._id is the _id of the invoice in Dexie
       });
+  
+      // Extract the _id from the fetched invoice data
+      const invoiceId = data.getInvoice._id;
+  
+      // Execute the mutation to delete the invoice from the online DB
+      const { deleteData } = await deleteInvoice({
+        variables: { id: invoiceId },
+      });
+      console.log(`Successfully deleted invoice from server: ${deleteData}`);
+  
+      // Refetch the user data to update the UI if needed
+      await refetch();
+      console.log(`Refetched user data after deletion`);
+  
     } catch (error) {
-      console.error('Error deleting invoice234342:', error);
-    
+      console.error('Error deleting invoice:', error);
+  
+      // If deletion fails, add to offline queue or handle error as needed
       await addOfflineMutation({
-        mutation: 'DELETE_INVOICE', 
-        variables: { invoiceNumber },
+        mutation: 'DELETE_INVOICE',
+        variables: { invoiceNumber }, // Assuming invoiceNumber is passed for offline handling
       });
       setModalMessage(`Invoice deletion added to offline queue.`);
       setShowMessageModal(true);
     }
   };
-
+  
   const [markAsPaid] = useMutation(UPDATE_INVOICE, {
     onCompleted: async () => {
       try {
@@ -289,7 +305,7 @@ const Home = () => {
       )}
 
       {showMessageModal && (
-        <MessageModal message={modalMessage} close={() => setShowMessageModal(false)} />
+        <MessageModal message={modalMessage} onClose={() => setShowMessageModal(false)} />
       )}
     </>
   );
