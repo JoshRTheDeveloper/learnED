@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation, from } from '@apollo/client';
 import './dashboard.css';
 import Sidebar from '../components/sidebar/sidebar';
 import jwtDecode from 'jwt-decode';
@@ -12,10 +12,12 @@ import {
 } from '../utils/indexedDB';
 import {
   GET_USER,
-  CREATE_INVOICE,
+} from '../utils/queries';
+import {  CREATE_INVOICE,
   UPDATE_INVOICE,
   DELETE_INVOICE,
-} from '../utils/queries';
+} from '../utils/mutations'
+
 
 const Home = () => {
   const token = localStorage.getItem('authToken');
