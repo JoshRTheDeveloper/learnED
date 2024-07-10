@@ -364,9 +364,9 @@ export const clearIndexedDB = async () => {
       db.userData.clear(),
       db.loginCredentials.clear(),
       db.auth.clear(),
-      db.profileFiles.clear(), // Make sure to clear the profileFiles store as well
-      db.profilePictures.clear(), // Clear profilePictures as well
-      db.offlineMutations.clear(), // Clear offlineMutations as well
+      db.profileFiles.clear(), 
+      db.profilePictures.clear(), 
+      db.offlineMutations.clear(), 
     ]);
   } catch (error) {
     console.error('Failed to clear IndexedDB:', error);

@@ -10,8 +10,11 @@ import {
   addInvoiceToIndexedDB,
   deleteInvoiceByNumberFromIndexedDB,
   updateInvoiceInIndexedDB,
+  addOfflineMutation,
 } from '../utils/indexedDB';
 import { GET_USER } from '../utils/queries';
+import { useMutation } from '@apollo/client';
+import { UPDATE_INVOICE, DELETE_INVOICE } from '../utils/mutations';
 
 const Home = () => {
   const token = localStorage.getItem('authToken');
@@ -29,7 +32,6 @@ const Home = () => {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
 
-
   const { data, error, loading: queryLoading } = useQuery(GET_USER, {
     variables: { id: userId },
     onCompleted: async (data) => {
@@ -45,7 +47,6 @@ const Home = () => {
       setLoading(false);
     },
     onError: async () => {
-      // Fallback to fetch data from IndexedDB if online fetch fails
       const storedInvoices = await getInvoicesFromIndexedDB();
       if (storedInvoices) {
         setUserData({ invoices: storedInvoices });
@@ -80,57 +81,71 @@ const Home = () => {
     setIsModalOpen(false);
   };
 
+  const [deleteInvoice] = useMutation(DELETE_INVOICE, {
+    onCompleted: async () => {
+      try {
+        await deleteInvoiceByNumberFromIndexedDB(selectedInvoice.invoiceNumber);
+        setModalMessage(`Invoice with invoiceNumber ${selectedInvoice.invoiceNumber} deleted.`);
+        setShowMessageModal(true);
+      } catch (error) {
+        console.error('Error deleting invoice locally:', error);
+      }
+    },
+    onError: (error) => {
+      console.error('Error deleting invoice:', error);
+    },
+  });
+
   const handleDeleteInvoice = async (invoiceNumber) => {
     try {
-      await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
-
-      setUserData(prevData => ({
-        ...prevData,
-        invoices: prevData.invoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
-      }));
-
-      setSearchResult(prevSearchResult =>
-        prevSearchResult.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
-      );
-
-      setModalMessage(`Invoice with invoiceNumber ${invoiceNumber} deleted.`);
-      setShowMessageModal(true);
+      await deleteInvoice({
+        variables: { invoiceNumber },
+      });
     } catch (error) {
       console.error('Error deleting invoice:', error);
+      await addOfflineMutation({
+        mutation: 'DELETE_INVOICE', // Replace with your actual mutation identifier
+        variables: { invoiceNumber },
+      });
+      setModalMessage(`Invoice deletion added to offline queue.`);
+      setShowMessageModal(true);
     }
   };
 
+  const [markAsPaid] = useMutation(UPDATE_INVOICE, {
+    onCompleted: async () => {
+      try {
+        await updateInvoiceInIndexedDB(selectedInvoice.invoiceNumber, true);
+        setModalMessage(`Invoice with invoiceNumber ${selectedInvoice.invoiceNumber} marked as paid.`);
+        setShowMessageModal(true);
+      } catch (error) {
+        console.error('Error updating invoice locally:', error);
+      }
+    },
+    onError: (error) => {
+      console.error('Error marking invoice as paid:', error);
+    },
+  });
+
   const handleMarkAsPaid = async (invoiceNumber) => {
     try {
-     
-      await updateInvoiceInIndexedDB(invoiceNumber, true);
-
-      // Update local state to reflect the change
-      setUserData(prevData => ({
-        ...prevData,
-        invoices: prevData.invoices.map(invoice =>
-          invoice.invoiceNumber === invoiceNumber ? { ...invoice, paidStatus: true } : invoice
-        )
-      }));
-
-      setSearchResult(prevSearchResult =>
-        prevSearchResult.map(invoice =>
-          invoice.invoiceNumber === invoiceNumber ? { ...invoice, paidStatus: true } : invoice
-        )
-      );
-
-      setModalMessage(`Invoice with invoiceNumber ${invoiceNumber} marked as paid.`);
-      setShowMessageModal(true);
+      await markAsPaid({
+        variables: { invoiceNumber, paidStatus: true },
+      });
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
+      await addOfflineMutation({
+        mutation: 'UPDATE_INVOICE', // Replace with your actual mutation identifier
+        variables: { invoiceNumber, paidStatus: true },
+      });
+      setModalMessage(`Mark as paid added to offline queue.`);
+      setShowMessageModal(true);
     }
   };
 
   if (loading || queryLoading) {
     return <p>Loading user data...</p>;
   }
-
-
 
   if (!userData || !userData.invoices) {
     return <p>No user data available.</p>;
@@ -266,11 +281,15 @@ const Home = () => {
       </div>
 
       {isModalOpen && (
-        <InvoiceModal invoice={selectedInvoice} onClose={closeModal} />
+        <InvoiceModal
+          invoice={selectedInvoice}
+          closeModal={closeModal}
+          markAsPaid={handleMarkAsPaid}
+        />
       )}
 
       {showMessageModal && (
-        <MessageModal message={modalMessage} onClose={() => setShowMessageModal(false)} />
+        <MessageModal message={modalMessage} close={() => setShowMessageModal(false)} />
       )}
     </>
   );
