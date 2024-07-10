@@ -289,6 +289,16 @@ export const addInvoiceToIndexedDB = async (invoice) => {
   }
 };
 
+export const getProfileFile = async (userId, file) => {
+  try {
+    const profileFile = await db.profileFiles.get({ userId, file });
+    return profileFile ? profileFile.fileBlob : null;
+  } catch (error) {
+    console.error('Failed to get profile file from IndexedDB:', error);
+    return null;
+  }
+};
+
 export const deleteInvoiceByNumberFromIndexedDB = async (invoiceNumber) => {
   try {
     await db.invoices.where('invoiceNumber').equals(invoiceNumber).delete();
