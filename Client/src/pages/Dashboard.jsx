@@ -7,13 +7,12 @@ import InvoiceModal from '../components/invoice-modal/invoice-modal';
 import MessageModal from '../components/message-modal/message-modal';
 import {
   getInvoicesFromIndexedDB,
-  getInvoiceFromIndexedDB,
   addInvoiceToIndexedDB,
   deleteInvoiceByNumberFromIndexedDB,
   updateInvoiceInIndexedDB,
   addOfflineMutation,
 } from '../utils/indexedDB';
-import { GET_USER, GET_INVOICE } from '../utils/queries';
+import { GET_USER } from '../utils/queries';
 import { UPDATE_INVOICE, DELETE_INVOICE } from '../utils/mutations';
 
 const Home = () => {
@@ -31,7 +30,6 @@ const Home = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data, error, loading: queryLoading, refetch } = useQuery(GET_USER, {
     variables: { id: userId },
@@ -84,44 +82,38 @@ const Home = () => {
 
   const [deleteInvoice] = useMutation(DELETE_INVOICE);
   
-  const handleDeleteInvoice = async (invoiceId, invoiceNumber) => {
+  const handleDeleteInvoice = async (invoiceNumber) => {
     try {
-      console.log(`Attempting to delete invoice with ID: ${invoiceId} and number: ${invoiceNumber}`);
-  
-      // Fetch invoice details from IndexedDB using invoiceNumber if needed
-      const invoice = await getInvoiceFromIndexedDB(invoiceNumber);
-  
-      if (!invoice) {
-        throw new Error(`Invoice with number ${invoiceNumber} not found in IndexedDB.`);
-      }
+      // Log start of delete process
+      console.log(`Attempting to delete invoice with number: ${invoiceNumber}`);
   
       // Delete from IndexedDB first
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
       console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
   
-      // Execute the mutation to delete the invoice from the online DB using invoiceId
-      const { data: deleteData } = await deleteInvoice({
-        variables: { id: invoiceId },
+      // Then execute the mutation
+      const { data } = await deleteInvoice({
+        variables: { invoiceNumber },
       });
-      console.log(`Successfully deleted invoice from server:`, deleteData);
+      console.log(`Successfully deleted invoice from server: ${data}`);
   
-      // Refetch user data after deletion
+      // Refetch the user data to update the UI
       await refetch();
       console.log(`Refetched user data after deletion`);
   
     } catch (error) {
       console.error('Error deleting invoice:', error);
   
-      // If deletion fails, add to offline queue or handle error as needed
+      // If deletion fails, add to offline queue
       await addOfflineMutation({
-        mutation: 'DELETE_INVOICE',
-        variables: { invoiceNumber }, // Assuming invoiceNumber is passed for offline handling
+        mutation: 'DELETE_INVOICE', // Replace with your actual mutation identifier
+        variables: { invoiceNumber },
       });
       setModalMessage(`Invoice deletion added to offline queue.`);
       setShowMessageModal(true);
     }
   };
-  
+
   const [markAsPaid] = useMutation(UPDATE_INVOICE, {
     onCompleted: async () => {
       try {
@@ -211,9 +203,9 @@ const Home = () => {
                     </div>
                     <div className='button-container'>
                       <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                      <button onClick={() => handleDeleteInvoice(invoice._id, invoice.invoiceNumber)}>Delete</button>
+                      <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
                       {!invoice.paidStatus && (
-                        <button onClick={() => handleMarkAsPaid(invoice._id, invoice.invoiceNumber)}>Mark as Paid</button>
+                        <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
                       )}
                     </div>
                   </li>
@@ -242,13 +234,13 @@ const Home = () => {
                         )}
                         <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
                       </div>
-                        <div className='button-container'>
-                          <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                          <button onClick={() => handleDeleteInvoice(invoice._id, invoice.invoiceNumber)}>Delete</button>
-                          {!invoice.paidStatus && (
-                            <button onClick={() => handleMarkAsPaid(invoice._id, invoice.invoiceNumber)}>Mark as Paid</button>
-                          )}
-                        </div>
+                      <div className='button-container'>
+                        <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
+                        <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
+                        {!invoice.paidStatus && (
+                          <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -276,9 +268,9 @@ const Home = () => {
                       </div>
                       <div className='button-container'>
                         <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                        <button onClick={() => handleDeleteInvoice(invoice._id, invoice.invoiceNumber)}>Delete</button>
+                        <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
                         {!invoice.paidStatus && (
-                          <button onClick={() => handleMarkAsPaid(invoice._id, invoice.invoiceNumber)}>Mark as Paid</button>
+                          <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
                         )}
                       </div>
                     </li>
@@ -299,7 +291,7 @@ const Home = () => {
       )}
 
       {showMessageModal && (
-        <MessageModal message={modalMessage} onClose={() => setShowMessageModal(false)} />
+        <MessageModal message={modalMessage} close={() => setShowMessageModal(false)} />
       )}
     </>
   );
