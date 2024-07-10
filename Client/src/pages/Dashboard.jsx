@@ -81,32 +81,30 @@ const Home = () => {
     setIsModalOpen(false);
   };
 
-  const handleDeleteInvoice = async (invoiceNumber, selectedInvoice, setModalMessage, setShowMessageModal) => {
+  const [deleteInvoice] = useMutation(DELETE_INVOICE, {
+    onCompleted: () => {
+      setModalMessage(`Invoice with invoiceNumber ${selectedInvoice.invoiceNumber} deleted.`);
+      setShowMessageModal(true);
+    },
+    onError: (error) => {
+      console.error('Error deleting invoice:', error);
+    },
+  });
+  
+  const handleDeleteInvoice = async (invoiceNumber) => {
     try {
-      // Delete locally from IndexedDB
+      
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
   
-      // Use Apollo Client to delete from online database
-      const [deleteInvoice] = useMutation(DELETE_INVOICE, {
-        onCompleted: () => {
-          setModalMessage(`Invoice with invoiceNumber ${invoiceNumber} deleted.`);
-          setShowMessageModal(true);
-        },
-        onError: (error) => {
-          console.error('Error deleting invoice:', error);
-          // Handle errors if necessary
-        },
-      });
-  
+
       await deleteInvoice({
         variables: { invoiceNumber },
       });
     } catch (error) {
-      console.error('Error deleting invoice:', error);
-  
-      // Handle offline mutation or other error scenarios
+      console.error('Error deleting invoice234342:', error);
+    
       await addOfflineMutation({
-        mutation: 'DELETE_INVOICE',
+        mutation: 'DELETE_INVOICE', 
         variables: { invoiceNumber },
       });
       setModalMessage(`Invoice deletion added to offline queue.`);
