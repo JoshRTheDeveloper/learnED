@@ -84,36 +84,35 @@ const Home = () => {
   const [deleteInvoice] = useMutation(DELETE_INVOICE);
   const handleDeleteInvoice = async (invoiceNumber) => {
     try {
-      // Log start of delete process
       console.log(`Attempting to delete invoice with number: ${invoiceNumber}`);
 
-        // Fetch invoice details from online DB using GraphQL query
-        const { data } = await client.query({
-          query: GET_INVOICE,
-          variables: { id: invoice._id }, // Assuming invoice._id is the _id of the invoice in Dexie
-        });
-    
-        // Extract the _id from the fetched invoice data
-        const invoiceId = data.getInvoice._id;
-        
-      // Delete from IndexedDB first and fetch the invoice
-      const invoice = await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
+      // Fetch invoice details from IndexedDB
+      const invoice = await getInvoiceByNumberFromIndexedDB(invoiceNumber);
+
+      if (!invoice) {
+        throw new Error(`Invoice with number ${invoiceNumber} not found in IndexedDB.`);
+      }
+
+      // Assume invoice._id is the ID used in the online database
+      const invoiceId = invoice._id;
+
+      // Delete from IndexedDB first
+      await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
       console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
-  
-     
+
       // Execute the mutation to delete the invoice from the online DB
-      const { deleteData } = await deleteInvoice({
+      const { data: deleteData } = await deleteInvoice({
         variables: { id: invoiceId },
       });
-      console.log(`Successfully deleted invoice from server: ${deleteData}`);
+      console.log(`Successfully deleted invoice from server:`, deleteData);
+
   
-      // Refetch the user data to update the UI if needed
-      await refetch();
-      console.log(`Refetched user data after deletion`);
-  
+       await refetch();
+       console.log(`Refetched user data after deletion`);
+
     } catch (error) {
       console.error('Error deleting invoice:', error);
-  
+
       // If deletion fails, add to offline queue or handle error as needed
       await addOfflineMutation({
         mutation: 'DELETE_INVOICE',
