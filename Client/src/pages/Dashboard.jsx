@@ -11,7 +11,6 @@ import {
   deleteInvoiceByNumberFromIndexedDB,
   updateInvoiceInIndexedDB,
   addOfflineMutation,
-  clearOfflineMutations, // Ensure you have this function to clear offline mutations
 } from '../utils/indexedDB';
 import { GET_USER } from '../utils/queries';
 import { useMutation } from '@apollo/client';
@@ -82,42 +81,52 @@ const Home = () => {
     setIsModalOpen(false);
   };
 
-  const [deleteInvoiceMutation] = useMutation(DELETE_INVOICE, {
+  const [deleteInvoice] = useMutation(DELETE_INVOICE, {
+    onCompleted: async () => {
+      try {
+        await deleteInvoiceByNumberFromIndexedDB(selectedInvoice.invoiceNumber);
+        setModalMessage(`Invoice with invoiceNumber ${selectedInvoice.invoiceNumber} deleted.`);
+        setShowMessageModal(true);
+      } catch (error) {
+        console.error('Error deleting invoice locally:', error);
+      }
+    },
     onError: (error) => {
       console.error('Error deleting invoice:', error);
     },
   });
-
+  
   const handleDeleteInvoice = async (invoiceNumber) => {
     try {
-      // Delete locally from IndexedDB first
+      // First delete from IndexedDB
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
-
-      // Execute mutation to delete from online database
-      await deleteInvoiceMutation({
+  
+      // Then execute the mutation
+      await deleteInvoice({
         variables: { invoiceNumber },
-        update: (cache) => {
-          // Update local Apollo cache if needed
-        },
       });
-
-      setModalMessage(`Invoice with invoiceNumber ${invoiceNumber} deleted.`);
-      setShowMessageModal(true);
     } catch (error) {
-      console.error('Error deleting invoice locally:', error);
-
-      // Store offline mutation for synchronization later
+      console.error('Error deleting invoice:', error);
+      // If deletion fails, add to offline queue
       await addOfflineMutation({
         mutation: 'DELETE_INVOICE', // Replace with your actual mutation identifier
         variables: { invoiceNumber },
       });
-
       setModalMessage(`Invoice deletion added to offline queue.`);
       setShowMessageModal(true);
     }
   };
 
-  const [markAsPaidMutation] = useMutation(UPDATE_INVOICE, {
+  const [markAsPaid] = useMutation(UPDATE_INVOICE, {
+    onCompleted: async () => {
+      try {
+        await updateInvoiceInIndexedDB(selectedInvoice.invoiceNumber, true);
+        setModalMessage(`Invoice with invoiceNumber ${selectedInvoice.invoiceNumber} marked as paid.`);
+        setShowMessageModal(true);
+      } catch (error) {
+        console.error('Error updating invoice locally:', error);
+      }
+    },
     onError: (error) => {
       console.error('Error marking invoice as paid:', error);
     },
@@ -125,78 +134,19 @@ const Home = () => {
 
   const handleMarkAsPaid = async (invoiceNumber) => {
     try {
-      // Update locally in IndexedDB first
-      await updateInvoiceInIndexedDB(invoiceNumber, true);
-
-      // Execute mutation to mark as paid in online database
-      await markAsPaidMutation({
+      await markAsPaid({
         variables: { invoiceNumber, paidStatus: true },
-        update: (cache) => {
-          // Update local Apollo cache if needed
-        },
       });
-
-      setModalMessage(`Invoice with invoiceNumber ${invoiceNumber} marked as paid.`);
-      setShowMessageModal(true);
     } catch (error) {
-      console.error('Error updating invoice locally:', error);
-
-      // Store offline mutation for synchronization later
+      console.error('Error marking invoice as paid:', error);
       await addOfflineMutation({
         mutation: 'UPDATE_INVOICE', // Replace with your actual mutation identifier
         variables: { invoiceNumber, paidStatus: true },
       });
-
       setModalMessage(`Mark as paid added to offline queue.`);
       setShowMessageModal(true);
     }
   };
-
-  useEffect(() => {
-    // Check if online and process offline mutations
-    const processOfflineMutations = async () => {
-      // Check if navigator is online
-      if (navigator.onLine) {
-        // Fetch and process offline mutations
-        const offlineMutations = await getOfflineMutations();
-        for (const mutation of offlineMutations) {
-          switch (mutation.mutation) {
-            case 'DELETE_INVOICE':
-              await deleteInvoiceMutation({
-                variables: mutation.variables,
-                update: (cache) => {
-                  // Update local Apollo cache if needed
-                },
-              });
-              await deleteInvoiceByNumberFromIndexedDB(mutation.variables.invoiceNumber);
-              break;
-            case 'UPDATE_INVOICE':
-              await markAsPaidMutation({
-                variables: mutation.variables,
-                update: (cache) => {
-                  // Update local Apollo cache if needed
-                },
-              });
-              await updateInvoiceInIndexedDB(mutation.variables.invoiceNumber, true);
-              break;
-            default:
-              console.warn('Unknown mutation type in offline queue:', mutation);
-          }
-        }
-        // Clear offline mutations after processing
-        await clearOfflineMutations();
-      }
-    };
-
-    processOfflineMutations();
-
-    // Listen for online status changes
-    window.addEventListener('online', processOfflineMutations);
-
-    return () => {
-      window.removeEventListener('online', processOfflineMutations);
-    };
-  }, [deleteInvoiceMutation, markAsPaidMutation]);
 
   if (loading || queryLoading) {
     return <p>Loading user data...</p>;
