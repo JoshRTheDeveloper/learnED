@@ -96,7 +96,7 @@ console.log(invoice)
       // Assume invoice._id is the ID used in the online database
       const invoiceId = invoice._id;
       const userId = invoice.user
-
+console.log("user:", userId)
       // Delete from IndexedDB first
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
       console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
