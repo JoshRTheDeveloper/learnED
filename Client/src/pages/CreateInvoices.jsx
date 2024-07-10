@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import jwtDecode from 'jwt-decode';
 import Sidebar from '../components/sidebar/sidebar';
-import { addInvoiceToIndexedDB, getUserData } from '../utils/indexedDB';
 import MessageModal from '../components/message-modal/message-modal';
 import { CREATE_INVOICE } from '../utils/mutations';
-import { v4 as uuidv4 } from 'uuid'; 
+import { addInvoiceToIndexedDB, getUserData, addOfflineMutation } from '../utils/indexedDB'; // Update import for offline functions
+import { v4 as uuidv4 } from 'uuid';
 import './CreateInvoices.css';
 
 const CreateInvoices = () => {
@@ -94,7 +94,7 @@ const CreateInvoices = () => {
       } else {
         // Generate a unique ID using uuidv4 for offline mode
         variables._id = uuidv4();
-        await addInvoiceToIndexedDB(variables);
+        await addOfflineMutation({ mutation: CREATE_INVOICE, variables });
       }
 
       // Reset form fields and state
@@ -197,23 +197,33 @@ const CreateInvoices = () => {
               <div className="invoice-bottom">
                 <label className="label-item font-casmono" htmlFor="invoice-details">Invoice&nbsp; Details:</label>
                 <div id="details-container">
-                  <textarea className='details' type="text" placeholder="Details of work provided" id="invoice-details" value={invoiceDetails} onChange={(e) => setInvoiceDetails(e.target.value)}></textarea>
+                  <textarea className='details' type="text" placeholder="Details of work provided" id="invoice-details" value={invoiceDetails} onChange={(e) => setInvoiceDetails(e.target.value)} required />
                 </div>
-                <div className='invoice-button'>
-                  <button type="submit" id="send-invoice-button">Save Invoice</button>
+                <label className="label-item font-casmono" htmlFor="payment-terms">Payment&nbsp; Terms:</label>
+                <div id="payment-terms">   
+                  <input className='details' type="text" placeholder="Payment due in 30 days" id="payment-terms" value={dueDate} required />
+                </div>
+              </div>
+              <div className="invoice-payment-bottom">
+                <label className="label-item font-casmono" htmlFor="paid-status">Paid</label>
+                <div id="paid-status">
+                  <input type="checkbox" id="paid-status" checked={paidStatus} onChange={(e) => setPaidStatus(e.target.checked)} />
+                </div>
+              </div>
+              <div className='line'></div>
+              <div className='buttons'>
+                <div className='button1'>
+                  <button className="btn light" onClick={props.goBack}>Back</button>
+                </div>
+                <div className='button2'>
+                  <button className="btn dark" type="submit">Create</button>
                 </div>
               </div>
             </form>
           </div>
         </div>
       </div>
-
-      {savedLocally && (
-        <MessageModal
-          message="Invoice Saved Locally."
-          onClose={() => setSavedLocally(false)}
-        />
-      )}
+      <MessageModal />
     </>
   );
 };
