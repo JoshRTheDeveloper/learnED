@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 import './dashboard.css';
 import Sidebar from '../components/sidebar/sidebar';
 import jwtDecode from 'jwt-decode';
@@ -10,12 +10,8 @@ import {
   addInvoiceToIndexedDB,
   deleteInvoiceByNumberFromIndexedDB,
   updateInvoiceInIndexedDB,
-  storeOfflineMutation,
-  getOfflineMutations,
-  removeOfflineMutation
 } from '../utils/indexedDB';
 import { GET_USER } from '../utils/queries';
-import { DELETE_INVOICE, UPDATE_INVOICE } from '../utils/mutations';
 
 const Home = () => {
   const token = localStorage.getItem('authToken');
@@ -32,6 +28,7 @@ const Home = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
+
 
   const { data, error, loading: queryLoading } = useQuery(GET_USER, {
     variables: { id: userId },
@@ -56,36 +53,6 @@ const Home = () => {
       setLoading(false);
     },
   });
-
-  const [deleteInvoice] = useMutation(DELETE_INVOICE, {
-    onError: async (error) => {
-      console.error('Error deleting invoice:', error);
-      await storeOfflineMutation({ type: 'deleteInvoice', variables: { invoiceNumber: currentInvoiceNumber } });
-    }
-  });
-
-  const [markAsPaid] = useMutation(UPDATE_INVOICE, {
-    onError: async (error) => {
-      console.error('Error marking invoice as paid:', error);
-      await storeOfflineMutation({ type: 'markAsPaid', variables: { invoiceNumber: currentInvoiceNumber } });
-    }
-  });
-
-  useEffect(() => {
-    const processOfflineMutations = async () => {
-      const offlineMutations = await getOfflineMutations();
-      for (const mutation of offlineMutations) {
-        if (mutation.type === 'deleteInvoice') {
-          await deleteInvoice({ variables: { invoiceNumber: mutation.variables.invoiceNumber } });
-        } else if (mutation.type === 'markAsPaid') {
-          await markAsPaid({ variables: { invoiceNumber: mutation.variables.invoiceNumber } });
-        }
-        await removeOfflineMutation(mutation.id);
-      }
-    };
-
-    processOfflineMutations();
-  }, [deleteInvoice, markAsPaid]);
 
   const handleSearch = () => {
     setSearchLoading(true);
@@ -115,8 +82,6 @@ const Home = () => {
 
   const handleDeleteInvoice = async (invoiceNumber) => {
     try {
-      await deleteInvoice({ variables: { invoiceNumber } });
-
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
 
       setUserData(prevData => ({
@@ -137,10 +102,10 @@ const Home = () => {
 
   const handleMarkAsPaid = async (invoiceNumber) => {
     try {
-      await markAsPaid({ variables: { invoiceNumber } });
-
+     
       await updateInvoiceInIndexedDB(invoiceNumber, true);
 
+      // Update local state to reflect the change
       setUserData(prevData => ({
         ...prevData,
         invoices: prevData.invoices.map(invoice =>
@@ -164,6 +129,8 @@ const Home = () => {
   if (loading || queryLoading) {
     return <p>Loading user data...</p>;
   }
+
+
 
   if (!userData || !userData.invoices) {
     return <p>No user data available.</p>;
