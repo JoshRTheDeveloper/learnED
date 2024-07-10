@@ -100,12 +100,7 @@ const Home = () => {
       const invoice = await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
       console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
   
-      // If invoice is not found in IndexedDB, handle the error or log it
-      if (!invoice) {
-        throw new Error(`Invoice with number ${invoiceNumber} not found in IndexedDB.`);
-      }
-  
-  
+     
       // Execute the mutation to delete the invoice from the online DB
       const { deleteData } = await deleteInvoice({
         variables: { id: invoiceId },
