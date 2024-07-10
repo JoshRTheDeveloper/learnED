@@ -42,6 +42,21 @@ const encryptData = async (data, key, iv) => {
   };
 };
 
+export const storeProfileFile = async (userId, file) => {
+  try {
+    const existingRecord = await db.profileFiles.get(userId);
+
+    if (existingRecord) {
+      await db.profileFiles.update(userId, { file });
+    } else {
+      await db.profileFiles.put({ userId, file });
+    }
+  } catch (error) {
+    console.error('Failed to store profile file in IndexedDB:', error);
+    throw error;
+  }
+};
+
 const decryptData = async (encryptedData, key, iv) => {
   const decryptedBuffer = await crypto.subtle.decrypt(
     {
@@ -308,6 +323,8 @@ export const deleteInvoiceByNumberFromIndexedDB = async (invoiceNumber) => {
     throw error;
   }
 };
+
+
 
 export const removeInvoiceFromIndexedDB = async (invoiceNumber) => {
   try {
