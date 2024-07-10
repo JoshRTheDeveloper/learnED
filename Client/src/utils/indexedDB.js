@@ -289,6 +289,16 @@ export const addInvoiceToIndexedDB = async (invoice) => {
   }
 };
 
+export const deleteInvoiceByNumberFromIndexedDB = async (invoiceNumber) => {
+  try {
+    await db.invoices.where('invoiceNumber').equals(invoiceNumber).delete();
+    console.log(`Invoice with invoiceNumber ${invoiceNumber} deleted from IndexedDB.`);
+  } catch (error) {
+    console.error('Failed to delete invoice from IndexedDB:', error);
+    throw error;
+  }
+};
+
 export const removeInvoiceFromIndexedDB = async (invoiceNumber) => {
   try {
     await db.invoices.where('invoiceNumber').equals(invoiceNumber).delete();
