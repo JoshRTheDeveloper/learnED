@@ -86,7 +86,16 @@ const Home = () => {
     try {
       // Log start of delete process
       console.log(`Attempting to delete invoice with number: ${invoiceNumber}`);
-  
+
+        // Fetch invoice details from online DB using GraphQL query
+        const { data } = await client.query({
+          query: GET_INVOICE,
+          variables: { id: invoice._id }, // Assuming invoice._id is the _id of the invoice in Dexie
+        });
+    
+        // Extract the _id from the fetched invoice data
+        const invoiceId = data.getInvoice._id;
+        
       // Delete from IndexedDB first and fetch the invoice
       const invoice = await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
       console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
@@ -96,14 +105,6 @@ const Home = () => {
         throw new Error(`Invoice with number ${invoiceNumber} not found in IndexedDB.`);
       }
   
-      // Fetch invoice details from online DB using GraphQL query
-      const { data } = await client.query({
-        query: GET_INVOICE,
-        variables: { id: invoice._id }, // Assuming invoice._id is the _id of the invoice in Dexie
-      });
-  
-      // Extract the _id from the fetched invoice data
-      const invoiceId = data.getInvoice._id;
   
       // Execute the mutation to delete the invoice from the online DB
       const { deleteData } = await deleteInvoice({
