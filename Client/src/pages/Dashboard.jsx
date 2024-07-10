@@ -83,40 +83,35 @@ const Home = () => {
   };
 
   const [deleteInvoice] = useMutation(DELETE_INVOICE);
-  const handleDeleteInvoice = async (invoiceNumber) => {
+  
+  const handleDeleteInvoice = async (invoiceId, invoiceNumber) => {
     try {
-      console.log(`Attempting to delete invoice with number: ${invoiceNumber}`);
-
-      // Fetch invoice details from IndexedDB
+      console.log(`Attempting to delete invoice with ID: ${invoiceId} and number: ${invoiceNumber}`);
+  
+      // Fetch invoice details from IndexedDB using invoiceNumber if needed
       const invoice = await getInvoiceFromIndexedDB(invoiceNumber);
-
+  
       if (!invoice) {
         throw new Error(`Invoice with number ${invoiceNumber} not found in IndexedDB.`);
       }
-console.log(invoice)
-      // Assume invoice._id is the ID used in the online database
-      const invoiceId = invoice._id;
-      const userId = invoice.user._id;
-
-console.log("user:", userId)
+  
       // Delete from IndexedDB first
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
       console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
-
-      // Execute the mutation to delete the invoice from the online DB
+  
+      // Execute the mutation to delete the invoice from the online DB using invoiceId
       const { data: deleteData } = await deleteInvoice({
-      
-        variables: { id: invoiceId, userId: userId },
+        variables: { id: invoiceId },
       });
       console.log(`Successfully deleted invoice from server:`, deleteData);
-
   
-       await refetch();
-       console.log(`Refetched user data after deletion`);
-
+      // Refetch user data after deletion
+      await refetch();
+      console.log(`Refetched user data after deletion`);
+  
     } catch (error) {
       console.error('Error deleting invoice:', error);
-
+  
       // If deletion fails, add to offline queue or handle error as needed
       await addOfflineMutation({
         mutation: 'DELETE_INVOICE',
@@ -216,9 +211,9 @@ console.log("user:", userId)
                     </div>
                     <div className='button-container'>
                       <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                      <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
+                      <button onClick={() => handleDeleteInvoice(invoice._id, invoice.invoiceNumber)}>Delete</button>
                       {!invoice.paidStatus && (
-                        <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
+                        <button onClick={() => handleMarkAsPaid(invoice._id, invoice.invoiceNumber)}>Mark as Paid</button>
                       )}
                     </div>
                   </li>
@@ -247,13 +242,13 @@ console.log("user:", userId)
                         )}
                         <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
                       </div>
-                      <div className='button-container'>
-                        <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                        <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
-                        {!invoice.paidStatus && (
-                          <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
-                        )}
-                      </div>
+                        <div className='button-container'>
+                          <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
+                          <button onClick={() => handleDeleteInvoice(invoice._id, invoice.invoiceNumber)}>Delete</button>
+                          {!invoice.paidStatus && (
+                            <button onClick={() => handleMarkAsPaid(invoice._id, invoice.invoiceNumber)}>Mark as Paid</button>
+                          )}
+                        </div>
                     </li>
                   ))}
                 </ul>
@@ -281,9 +276,9 @@ console.log("user:", userId)
                       </div>
                       <div className='button-container'>
                         <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                        <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
+                        <button onClick={() => handleDeleteInvoice(invoice._id, invoice.invoiceNumber)}>Delete</button>
                         {!invoice.paidStatus && (
-                          <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
+                          <button onClick={() => handleMarkAsPaid(invoice._id, invoice.invoiceNumber)}>Mark as Paid</button>
                         )}
                       </div>
                     </li>
