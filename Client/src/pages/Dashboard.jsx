@@ -14,7 +14,8 @@ import {
   getOfflineMutations,
   removeOfflineMutation
 } from '../utils/indexedDB';
-import { GET_USER, DELETE_INVOICE, MARK_AS_PAID } from '../utils/queries';
+import { GET_USER } from '../utils/queries';
+import { DELETE_INVOICE, UPDATE_INVOICE } from '../utils/mutations';
 
 const Home = () => {
   const token = localStorage.getItem('authToken');
@@ -63,7 +64,7 @@ const Home = () => {
     }
   });
 
-  const [markAsPaid] = useMutation(MARK_AS_PAID, {
+  const [markAsPaid] = useMutation(UPDATE_INVOICE, {
     onError: async (error) => {
       console.error('Error marking invoice as paid:', error);
       await storeOfflineMutation({ type: 'markAsPaid', variables: { invoiceNumber: currentInvoiceNumber } });
