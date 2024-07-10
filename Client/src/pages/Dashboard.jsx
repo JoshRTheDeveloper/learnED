@@ -82,14 +82,9 @@ const Home = () => {
   };
 
   const [deleteInvoice] = useMutation(DELETE_INVOICE, {
-    onCompleted: async () => {
-      try {
-        await deleteInvoiceByNumberFromIndexedDB(selectedInvoice.invoiceNumber);
-        setModalMessage(`Invoice with invoiceNumber ${selectedInvoice.invoiceNumber} deleted.`);
-        setShowMessageModal(true);
-      } catch (error) {
-        console.error('Error deleting invoice locally:', error);
-      }
+    onCompleted: () => {
+      setModalMessage(`Invoice with invoiceNumber ${selectedInvoice.invoiceNumber} deleted.`);
+      setShowMessageModal(true);
     },
     onError: (error) => {
       console.error('Error deleting invoice:', error);
@@ -98,18 +93,18 @@ const Home = () => {
   
   const handleDeleteInvoice = async (invoiceNumber) => {
     try {
-      // First delete from IndexedDB
+      
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
   
-      // Then execute the mutation
+
       await deleteInvoice({
         variables: { invoiceNumber },
       });
     } catch (error) {
       console.error('Error deleting invoice:', error);
-      // If deletion fails, add to offline queue
+    
       await addOfflineMutation({
-        mutation: 'DELETE_INVOICE', // Replace with your actual mutation identifier
+        mutation: 'DELETE_INVOICE', 
         variables: { invoiceNumber },
       });
       setModalMessage(`Invoice deletion added to offline queue.`);
