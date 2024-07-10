@@ -102,6 +102,7 @@ const Home = () => {
 
       // Execute the mutation to delete the invoice from the online DB
       const { data: deleteData } = await deleteInvoice({
+        userId: userId,
         variables: { id: invoiceId },
       });
       console.log(`Successfully deleted invoice from server:`, deleteData);
