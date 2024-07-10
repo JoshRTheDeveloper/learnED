@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import './dashboard.css';
 import Sidebar from '../components/sidebar/sidebar';
 import jwtDecode from 'jwt-decode';
@@ -7,11 +7,15 @@ import InvoiceModal from '../components/invoice-modal/invoice-modal';
 import MessageModal from '../components/message-modal/message-modal';
 import {
   getInvoicesFromIndexedDB,
-  addInvoiceToIndexedDB,
   deleteInvoiceByNumberFromIndexedDB,
   updateInvoiceInIndexedDB,
 } from '../utils/indexedDB';
-import { GET_USER } from '../utils/queries';
+import {
+  GET_USER,
+  CREATE_INVOICE,
+  UPDATE_INVOICE,
+  DELETE_INVOICE,
+} from '../utils/queries';
 
 const Home = () => {
   const token = localStorage.getItem('authToken');
@@ -29,47 +33,88 @@ const Home = () => {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
 
-
-  const { data, error, loading: queryLoading } = useQuery(GET_USER, {
+  const { data: userDataQuery, error: userError, loading: userLoading, refetch: refetchUserData } = useQuery(GET_USER, {
     variables: { id: userId },
     onCompleted: async (data) => {
       if (data && data.user) {
         setUserData(data.user);
 
-        if (data.user.invoices) {
-          for (const invoice of data.user.invoices) {
-            await addInvoiceToIndexedDB(invoice);
-          }
-        }
+        // Sync IndexedDB with online database on initial load
+        await syncIndexedDBWithOnlineDB(data.user.invoices);
       }
       setLoading(false);
     },
-    onError: async () => {
-      // Fallback to fetch data from IndexedDB if online fetch fails
-      const storedInvoices = await getInvoicesFromIndexedDB();
-      if (storedInvoices) {
-        setUserData({ invoices: storedInvoices });
-      }
+    onError: async (error) => {
+      console.error('Error fetching user data:', error);
+      // Handle error fetching user data
       setLoading(false);
     },
   });
 
-  const handleSearch = () => {
-    setSearchLoading(true);
-    setSearchError(null);
+  useEffect(() => {
+    // Function to compare and update IndexedDB with online database
+    const syncIndexedDBWithOnlineDB = async (invoices) => {
+      try {
+        const storedInvoices = await getInvoicesFromIndexedDB();
 
-    try {
-      const filteredInvoices = userData?.invoices.filter(
-        invoice => invoice.invoiceNumber.includes(searchInvoiceNumber)
-      ) || [];
+        // Clear existing invoices in OnlineDB (if needed)
+        await clearOnlineDB();
 
-      setSearchResult(filteredInvoices);
-    } catch (error) {
-      setSearchError(error);
-    } finally {
-      setSearchLoading(false);
+        // Update OnlineDB with data from IndexedDB
+        for (const invoice of storedInvoices) {
+          const existingInvoice = invoices.find((inv) => inv.invoiceNumber === invoice.invoiceNumber);
+
+          if (!existingInvoice) {
+            await createInvoice({
+              variables: {
+                invoiceAmount: invoice.invoiceAmount,
+                paidStatus: invoice.paidStatus,
+                invoiceNumber: invoice.invoiceNumber,
+                companyName: invoice.companyName,
+                companyEmail: invoice.companyEmail,
+                clientName: invoice.clientName,
+                clientEmail: invoice.clientEmail,
+                dueDate: invoice.dueDate,
+                userID: userId,
+                invoice_details: invoice.invoice_details,
+              },
+            });
+          }
+        }
+
+        // Optionally, update local state or perform additional actions after synchronization
+        const updatedUserData = await refetchUserData();
+        setUserData(updatedUserData);
+      } catch (error) {
+        console.error('Error syncing IndexedDB with online DB:', error);
+      }
+    };
+
+    if (userDataQuery && userDataQuery.user && userDataQuery.user.invoices) {
+      syncIndexedDBWithOnlineDB(userDataQuery.user.invoices);
     }
-  };
+  }, [userDataQuery]);
+
+  const [createInvoice] = useMutation(CREATE_INVOICE, {
+    onError: (error) => {
+      console.error('Error creating invoice:', error);
+      // Handle error creating invoice
+    },
+  });
+
+  const [updateInvoice] = useMutation(UPDATE_INVOICE, {
+    onError: (error) => {
+      console.error('Error updating invoice:', error);
+      // Handle error updating invoice
+    },
+  });
+
+  const [deleteInvoice] = useMutation(DELETE_INVOICE, {
+    onError: (error) => {
+      console.error('Error deleting invoice:', error);
+      // Handle error deleting invoice
+    },
+  });
 
   const handleInvoiceClick = (invoice) => {
     setSelectedInvoice(invoice);
@@ -84,13 +129,18 @@ const Home = () => {
     try {
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
 
-      setUserData(prevData => ({
+      // Delete invoice from online DB if necessary
+      await deleteInvoice({
+        variables: { invoiceNumber },
+      });
+
+      setUserData((prevData) => ({
         ...prevData,
-        invoices: prevData.invoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
+        invoices: prevData.invoices.filter((invoice) => invoice.invoiceNumber !== invoiceNumber),
       }));
 
-      setSearchResult(prevSearchResult =>
-        prevSearchResult.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
+      setSearchResult((prevSearchResult) =>
+        prevSearchResult.filter((invoice) => invoice.invoiceNumber !== invoiceNumber)
       );
 
       setModalMessage(`Invoice with invoiceNumber ${invoiceNumber} deleted.`);
@@ -102,19 +152,23 @@ const Home = () => {
 
   const handleMarkAsPaid = async (invoiceNumber) => {
     try {
-     
       await updateInvoiceInIndexedDB(invoiceNumber, true);
 
+      // Update invoice in online DB
+      await updateInvoice({
+        variables: { id: invoiceNumber, paidStatus: true },
+      });
+
       // Update local state to reflect the change
-      setUserData(prevData => ({
+      setUserData((prevData) => ({
         ...prevData,
-        invoices: prevData.invoices.map(invoice =>
+        invoices: prevData.invoices.map((invoice) =>
           invoice.invoiceNumber === invoiceNumber ? { ...invoice, paidStatus: true } : invoice
-        )
+        ),
       }));
 
-      setSearchResult(prevSearchResult =>
-        prevSearchResult.map(invoice =>
+      setSearchResult((prevSearchResult) =>
+        prevSearchResult.map((invoice) =>
           invoice.invoiceNumber === invoiceNumber ? { ...invoice, paidStatus: true } : invoice
         )
       );
@@ -126,20 +180,37 @@ const Home = () => {
     }
   };
 
-  if (loading || queryLoading) {
+  const handleSearch = async () => {
+    if (!searchInvoiceNumber.trim()) {
+      setSearchResult([]);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const filteredInvoices = userData.invoices.filter((invoice) =>
+        invoice.invoiceNumber.includes(searchInvoiceNumber)
+      );
+      setSearchResult(filteredInvoices);
+      setSearchLoading(false);
+    } catch (error) {
+      setSearchError(error);
+      setSearchLoading(false);
+    }
+  };
+
+  if (loading || userLoading) {
     return <p>Loading user data...</p>;
   }
-
-
 
   if (!userData || !userData.invoices) {
     return <p>No user data available.</p>;
   }
 
-  const invoicesDue = userData?.invoices.filter(invoice => !invoice.paidStatus) || [];
-  const invoicesPaid = userData?.invoices.filter(invoice => invoice.paidStatus) || [];
+  const invoicesDue = userData.invoices.filter((invoice) => !invoice.paidStatus);
+  const invoicesPaid = userData.invoices.filter((invoice) => invoice.paidStatus);
   const filteredInvoicesDue = searchInvoiceNumber
-    ? invoicesDue.filter(invoice => invoice.invoiceNumber.includes(searchInvoiceNumber))
+    ? invoicesDue.filter((invoice) => invoice.invoiceNumber.includes(searchInvoiceNumber))
     : invoicesDue;
 
   return (
@@ -147,16 +218,16 @@ const Home = () => {
       <div className="app">
         <Sidebar />
         <div className="main-content">
-          <div className='search-bar-div'>
+          <div className="search-bar-div">
             <h2>Search Invoices</h2>
             <input
-              className='search-bar-input'
+              className="search-bar-input"
               type="text"
               value={searchInvoiceNumber}
               onChange={(e) => setSearchInvoiceNumber(e.target.value)}
               placeholder="Search by Invoice Number"
             />
-            <div className='search-button-div'>
+            <div className="search-button-div">
               <button onClick={handleSearch}>Search</button>
             </div>
           </div>
@@ -168,23 +239,26 @@ const Home = () => {
           ) : searchResult.length === 0 ? (
             <p>No results found.</p>
           ) : (
-            <div className='search-results'>
+            <div className="search-results">
               <h3>Search Results</h3>
               <ul>
-                {searchResult.map(invoice => (
+                {searchResult.map((invoice) => (
                   <li key={invoice._id}>
-                    <div className='due-date-container'>
-                      <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
-                      <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
+                    <div className="due-date-container">
+                      <p className="invoice-number">Invoice Number: {invoice.invoiceNumber}</p>
+                      <p className="due-date">
+                        {' '}
+                        Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()}{' '}
+                      </p>
                     </div>
-                    <div className='invoice-info'>
+                    <div className="invoice-info">
                       <p>Client: {invoice.clientName}</p>
                       {invoice.invoiceAmount && (
                         <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
                       )}
                       <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
                     </div>
-                    <div className='button-container'>
+                    <div className="button-container">
                       <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
                       <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
                       {!invoice.paidStatus && (
@@ -204,20 +278,23 @@ const Home = () => {
                 <p>No invoices due.</p>
               ) : (
                 <ul>
-                  {filteredInvoicesDue.map(invoice => (
+                  {filteredInvoicesDue.map((invoice) => (
                     <li key={invoice._id}>
-                      <div className='due-date-container'>
-                        <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
-                        <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
+                      <div className="due-date-container">
+                        <p className="invoice-number">Invoice Number: {invoice.invoiceNumber}</p>
+                        <p className="due-date">
+                          {' '}
+                          Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()}{' '}
+                        </p>
                       </div>
-                      <div className='invoice-info'>
+                      <div className="invoice-info">
                         <p>Client: {invoice.clientName}</p>
                         {invoice.invoiceAmount && (
                           <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
                         )}
                         <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
                       </div>
-                      <div className='button-container'>
+                      <div className="button-container">
                         <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
                         <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
                         {!invoice.paidStatus && (
@@ -229,32 +306,31 @@ const Home = () => {
                 </ul>
               )}
             </div>
-
             <div className="row">
               <h2>Invoices Paid</h2>
               {invoicesPaid.length === 0 ? (
-                <p>No paid invoices.</p>
+                <p>No invoices paid.</p>
               ) : (
                 <ul>
-                  {invoicesPaid.map(invoice => (
+                  {invoicesPaid.map((invoice) => (
                     <li key={invoice._id}>
-                      <div className='due-date-container'>
-                        <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
-                        <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
+                      <div className="due-date-container">
+                        <p className="invoice-number">Invoice Number: {invoice.invoiceNumber}</p>
+                        <p className="due-date">
+                          {' '}
+                          Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()}{' '}
+                        </p>
                       </div>
-                      <div className='invoice-info'>
+                      <div className="invoice-info">
                         <p>Client: {invoice.clientName}</p>
                         {invoice.invoiceAmount && (
                           <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
                         )}
                         <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
                       </div>
-                      <div className='button-container'>
+                      <div className="button-container">
                         <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
                         <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
-                        {!invoice.paidStatus && (
-                          <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
-                        )}
                       </div>
                     </li>
                   ))}
@@ -266,12 +342,16 @@ const Home = () => {
       </div>
 
       {isModalOpen && (
-        <InvoiceModal invoice={selectedInvoice} onClose={closeModal} />
+        <InvoiceModal
+          invoice={selectedInvoice}
+          closeModal={closeModal}
+          refetchUserData={refetchUserData}
+          setModalMessage={setModalMessage}
+          setShowMessageModal={setShowMessageModal}
+        />
       )}
 
-      {showMessageModal && (
-        <MessageModal message={modalMessage} onClose={() => setShowMessageModal(false)} />
-      )}
+      {showMessageModal && <MessageModal message={modalMessage} closeModal={() => setShowMessageModal(false)} />}
     </>
   );
 };
