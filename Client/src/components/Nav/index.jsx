@@ -6,7 +6,7 @@ import SignupModal from '../signup-modal/modal';
 import LoginModal from '../login-modal/login-modal';
 import { useNavigate } from "react-router-dom";
 import { useApolloClient } from '@apollo/client';
-import { clearOfflineMutations, getOfflineMutations } from '../../utils/indexedDB'; 
+import { clearOfflineMutation, getOfflineMutations } from '../../utils/indexedDB'; 
 import { CREATE_INVOICE, DELETE_INVOICE } from '../../utils/mutations';
 import './index.css';
 
@@ -91,7 +91,7 @@ function Nav() {
   
           if (!mutationType || !variables || !id) {
             console.warn('Malformed mutation object:', mutation);
-            continue; // Skip malformed mutation objects
+            continue; 
           }
   
           let result;
