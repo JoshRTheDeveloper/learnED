@@ -80,7 +80,7 @@ function Nav() {
       const storedMutations = await getOfflineMutations();
       for (const mutation of storedMutations) {
         try {
-          const { mutation: mutationType, variables } = mutation; // Destructure mutationType from mutation object
+          const { mutation: mutationType, variables, id } = mutation; // Destructure mutationType from mutation object
   
           let result;
   
@@ -97,6 +97,7 @@ function Nav() {
               result = await client.mutate({
                 mutation: DELETE_INVOICE,
                 variables,
+                id,
               });
               console.log('Successfully executed deleteInvoice mutation:', result);
               break;
