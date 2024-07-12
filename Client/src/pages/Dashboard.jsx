@@ -81,33 +81,39 @@ const Home = () => {
   };
 
   const [deleteInvoice] = useMutation(DELETE_INVOICE);
-  
+
   const handleDeleteInvoice = async (invoiceNumber) => {
     try {
-    
       console.log(`Attempting to delete invoice with number: ${invoiceNumber}`);
-  
-    
+
+      // Step 1: Delete invoice from IndexedDB
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
       console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
-  
-      // Then execute the mutation
+
+      // Update local UI state to remove the deleted invoice
+      setUserData(prevUserData => ({
+        ...prevUserData,
+        invoices: prevUserData.invoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
+      }));
+
+      // Step 2: Delete invoice via GraphQL mutation
       const { data } = await deleteInvoice({
         variables: { invoiceNumber },
       });
       console.log(`Successfully deleted invoice from server: ${data}`);
-  
-      
 
-  
+      setModalMessage(`Invoice deleted`);
+      setShowMessageModal(true);
+
     } catch (error) {
       console.error('Error deleting invoice:', error);
-  
-     
+
+      // Handle offline mutation or error cases
       await addOfflineMutation({
-        mutation: 'DELETE_INVOICE', 
+        mutation: 'DELETE_INVOICE',
         variables: { invoiceNumber },
       });
+
       setModalMessage(`Invoice deletion added to offline queue.`);
       setShowMessageModal(true);
     }
@@ -136,15 +142,13 @@ const Home = () => {
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
       await addOfflineMutation({
-        mutation: 'UPDATE_INVOICE', 
+        mutation: 'UPDATE_INVOICE',
         variables: { invoiceNumber, paidStatus: true },
       });
       setModalMessage(`Mark as paid added to offline queue.`);
       setShowMessageModal(true);
     }
   };
-
-  
 
   if (loading || queryLoading) {
     return <p>Loading user data...</p>;
