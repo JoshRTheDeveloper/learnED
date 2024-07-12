@@ -80,7 +80,7 @@ function Nav() {
       const storedMutations = await getOfflineMutations(); // Assume getOfflineMutations retrieves stored mutations
       for (const mutation of storedMutations) {
         try {
-          const { mutation: mutationType, variables } = mutation;
+          const { mutation, variables } = mutation;
   
           // Determine which mutation to execute based on the mutation type
           let result;

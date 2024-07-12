@@ -406,12 +406,9 @@ export const getProfileFile = async (userId) => {
   }
 };
 
-export const addOfflineMutation = async ({ mutationType, variables }) => {
+export const addOfflineMutation = async (mutation) => {
   try {
-    await db.offlineMutations.add({
-      mutationType,
-      variables,
-    });
+    await db.offlineMutations.add(mutation);
   } catch (error) {
     console.error('Failed to add offline mutation to IndexedDB:', error);
   }
