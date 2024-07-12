@@ -95,7 +95,7 @@ const CreateInvoices = () => {
       
         variables._id = uuidv4();
         await addInvoiceToIndexedDB(variables);
-        await addOfflineMutation({ mutation: CREATE_INVOICE, variables });
+        await addOfflineMutation({ mutation: 'CREATE_INVOICE', variables });
       }
 
       // Reset form fields and state
