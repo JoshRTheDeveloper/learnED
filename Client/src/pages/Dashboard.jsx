@@ -108,11 +108,11 @@ const Home = () => {
     } catch (error) {
       console.error('Error deleting invoice:', error);
   
-      const variables = {
-              invoiceNumber: invoiceNumber
-      };
       await addOfflineMutation({
-        mutation: 'DELETE_INVOICE', variables});
+        
+        mutation: 'DELETE_INVOICE', 
+        variables: { invoiceNumber },
+      });
   
       setModalMessage(`Invoice deletion added to offline queue.`);
       setShowMessageModal(true);
