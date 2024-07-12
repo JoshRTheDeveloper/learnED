@@ -78,10 +78,21 @@ function Nav() {
   const executeStoredMutations = async () => {
     try {
       const storedMutations = await getOfflineMutations();
-      console.log(storedMutations)
+      console.log('Stored mutations:', storedMutations);
+  
+      if (!Array.isArray(storedMutations) || storedMutations.length === 0) {
+        console.log('No offline mutations found');
+        return;
+      }
+  
       for (const mutation of storedMutations) {
         try {
-          const { mutation: mutationType, variables} = mutation; // Destructure mutationType from mutation object
+          const { mutation: mutationType, variables, id } = mutation;
+  
+          if (!mutationType || !variables || !id) {
+            console.warn('Malformed mutation object:', mutation);
+            continue; // Skip malformed mutation objects
+          }
   
           let result;
   
@@ -104,19 +115,20 @@ function Nav() {
   
             default:
               console.warn('Unknown mutation type:', mutationType);
-              continue; // Skip to the next iteration if the mutation type is unknown
+              continue;
           }
   
-          // Assuming you clear the executed mutation from offline queue after successful execution
-          await clearOfflineMutation(mutation.id);
+          await clearOfflineMutation(id);
+          console.log(`Cleared mutation with id ${id} from offline storage`);
         } catch (error) {
-          console.error(`Error executing stored ${mutationType} mutation:`, error);
+          console.error(`Error executing stored ${mutation.mutation} mutation:`, error);
         }
       }
     } catch (error) {
       console.error('Failed to get offline mutations:', error);
     }
   };
+  
   
 
   if (Auth.loggedIn()) {

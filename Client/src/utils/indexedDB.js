@@ -423,11 +423,12 @@ export const getOfflineMutations = async () => {
   }
 };
 
-export const clearOfflineMutations = async () => {
+const clearOfflineMutation = async (id) => {
   try {
-    await db.offlineMutations.clear();
+    await db.offlineMutations.delete(id);
+    console.log(`Offline mutation with id ${id} cleared successfully`);
   } catch (error) {
-    console.error('Failed to clear offline mutations from IndexedDB:', error);
+    console.error(`Failed to clear offline mutation with id ${id}:`, error);
   }
 };
 

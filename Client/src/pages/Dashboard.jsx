@@ -86,7 +86,6 @@ const Home = () => {
     try {
       console.log(`Attempting to delete invoice with number: ${invoiceNumber}`);
   
-      // Step 1: Delete invoice from IndexedDB
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
       console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
   
