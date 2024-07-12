@@ -89,6 +89,7 @@ function Nav() {
               result = await client.mutate({
                 mutation: CREATE_INVOICE,
                 variables,
+                id,
               });
               console.log('Successfully executed createInvoice mutation:', result);
               break;
