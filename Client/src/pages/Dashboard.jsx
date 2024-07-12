@@ -110,7 +110,7 @@ const Home = () => {
   
       
       await addOfflineMutation({
-        mutation: DELETE_INVOICE, 
+        mutationType: 'DELETE_INVOICE', 
         variables: { invoiceNumber },
       });
   
