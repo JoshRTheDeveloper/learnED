@@ -78,6 +78,7 @@ function Nav() {
   const executeStoredMutations = async () => {
     try {
       const storedMutations = await getOfflineMutations();
+      console.log(storedMutations)
       for (const mutation of storedMutations) {
         try {
           const { mutation: mutationType, variables} = mutation; // Destructure mutationType from mutation object
