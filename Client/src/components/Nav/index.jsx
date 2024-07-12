@@ -7,7 +7,7 @@ import LoginModal from '../login-modal/login-modal';
 import { useNavigate } from "react-router-dom";
 import { useApolloClient } from '@apollo/client';
 import { clearOfflineMutations, getOfflineMutations } from '../../utils/indexedDB'; 
-import { CREATE_INVOICE } from '../../utils/mutations';
+import { CREATE_INVOICE, DELETE_INVOICE } from '../../utils/mutations';
 import './index.css';
 
 function Nav() {
@@ -75,22 +75,39 @@ function Nav() {
     }
   };
 
-  const executeStoredMutations = async () => {
+  const executeStoredMutations = async (client) => {
     try {
-      const storedMutations = await getOfflineMutations();
+      const storedMutations = await getOfflineMutations(); 
       for (const mutation of storedMutations) {
         try {
-          const { variables } = mutation;
-          const result = await client.mutate({
-            mutation: CREATE_INVOICE, // Adjust mutation according to your setup
-            variables,
-          });
-
-          console.log('Successfully executed createInvoice mutation:', result);
-
-          await clearOfflineMutations(); // Clear all offline mutations after successful execution
+          const { mutation: mutationType, variables } = mutation;
+  
+     
+          let result;
+          switch (mutationType) {
+            case 'CREATE_INVOICE':
+              result = await client.mutate({
+                mutation: CREATE_INVOICE,
+                variables,
+              });
+              break;
+            case 'DELETE_INVOICE':
+              result = await client.mutate({
+                mutation: DELETE_INVOICE,
+                variables,
+              });
+              break;
+            default:
+              console.warn('Unknown mutation type:', mutationType);
+              continue; 
+          }
+  
+          console.log(`Successfully executed ${mutationType} mutation:`, result);
+  
+          
+          await clearOfflineMutation(mutation.id); 
         } catch (error) {
-          console.error('Error executing stored createInvoice mutation:', error);
+          console.error(`Error executing stored ${mutationType} mutation:`, error);
         }
       }
     } catch (error) {
