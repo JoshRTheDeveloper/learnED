@@ -244,7 +244,7 @@ export const getAuthData = async () => {
 
 export const updateInvoiceInIndexedDB = async (invoiceNumber, paidStatus) => {
   try {
-    // Find the invoice by invoice number
+  
     const invoice = await db.invoices.where('invoiceNumber').equals(invoiceNumber).first();
 
     if (!invoice) {

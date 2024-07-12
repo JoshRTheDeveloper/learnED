@@ -118,26 +118,25 @@ const Home = () => {
     }
   };
 
-  const [markAsPaid] = useMutation(UPDATE_INVOICE, {
-    onCompleted: async () => {
-      try {
-        await updateInvoiceInIndexedDB(selectedInvoice.invoiceNumber, true);
-        setModalMessage(`Invoice with invoiceNumber ${selectedInvoice.invoiceNumber} marked as paid.`);
-        setShowMessageModal(true);
-      } catch (error) {
-        console.error('Error updating invoice locally:', error);
-      }
-    },
-    onError: (error) => {
-      console.error('Error marking invoice as paid:', error);
-    },
-  });
+  const [updateInvoice] = useMutation(UPDATE_INVOICE); 
+  // {
+  //   onCompleted: async () => {
+  //     try {
+  //       await updateInvoiceInIndexedDB(selectedInvoice.invoiceNumber, true);
+  //       setModalMessage(`Invoice with invoiceNumber ${selectedInvoice.invoiceNumber} marked as paid.`);
+  //       setShowMessageModal(true);
+  //     } catch (error) {
+  //       console.error('Error updating invoice locally:', error);
+  //     }
+  //   },
+  //   onError: (error) => {
+  //     console.error('Error marking invoice as paid:', error);
+  //   },
+  // });
 
   const handleMarkAsPaid = async (invoiceNumber) => {
     try {
-      await markAsPaid({
-        variables: { invoiceNumber, paidStatus: true },
-      });
+      await updateInvoiceInIndexedDB(invoiceNumber, true);
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
       await addOfflineMutation({
