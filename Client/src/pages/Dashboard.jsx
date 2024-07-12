@@ -85,35 +85,35 @@ const Home = () => {
   const handleDeleteInvoice = async (invoiceNumber) => {
     try {
       console.log(`Attempting to delete invoice with number: ${invoiceNumber}`);
-
-      // Step 1: Delete invoice from IndexedDB
+  
+      
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
       console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
-
-      // Update local UI state to remove the deleted invoice
+  
+  
       setUserData(prevUserData => ({
         ...prevUserData,
         invoices: prevUserData.invoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
       }));
-
-      // Step 2: Delete invoice via GraphQL mutation
+  
+     
       const { data } = await deleteInvoice({
         variables: { invoiceNumber },
       });
-      console.log(`Successfully deleted invoice from server: ${data}`);
-
+      console.log(`Successfully deleted invoice from server:`, data);
+  
       setModalMessage(`Invoice deleted`);
       setShowMessageModal(true);
-
+  
     } catch (error) {
       console.error('Error deleting invoice:', error);
-
-      // Handle offline mutation or error cases
+  
+      
       await addOfflineMutation({
-        mutation: 'DELETE_INVOICE',
+        mutationType: 'DELETE_INVOICE', 
         variables: { invoiceNumber },
       });
-
+  
       setModalMessage(`Invoice deletion added to offline queue.`);
       setShowMessageModal(true);
     }

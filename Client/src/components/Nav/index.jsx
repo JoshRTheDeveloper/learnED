@@ -77,33 +77,37 @@ function Nav() {
 
   const executeStoredMutations = async (client) => {
     try {
-      const storedMutations = await getOfflineMutations(); 
+      const storedMutations = await getOfflineMutations(); // Assume getOfflineMutations retrieves stored mutations
       for (const mutation of storedMutations) {
         try {
-          const { variables } = mutation;
+          const { mutation: mutationType, variables } = mutation;
   
+          // Determine which mutation to execute based on the mutation type
           let result;
-          if (mutation.operation === 'CREATE_INVOICE') {
-            result = await client.mutate({
-              mutation: CREATE_INVOICE,
-              variables,
-            });
-          } else if (mutation.operation === 'DELETE_INVOICE') {
-            result = await client.mutate({
-              mutation: DELETE_INVOICE,
-              variables,
-            });
-          } else {
-            console.warn('Unknown operation:', mutation.operation);
-            continue; 
+          switch (mutationType) {
+            case 'CREATE_INVOICE':
+              result = await client.mutate({
+                mutation: CREATE_INVOICE,
+                variables,
+              });
+              break;
+            case 'DELETE_INVOICE':
+              result = await client.mutate({
+                mutation: DELETE_INVOICE,
+                variables,
+              });
+              break;
+            default:
+              console.warn('Unknown mutation type:', mutationType);
+              continue; // Skip to the next iteration if the mutation type is unknown
           }
   
-          console.log(`Successfully executed ${mutation.operation} mutation:`, result);
+          console.log(`Successfully executed ${mutationType} mutation:`, result);
   
-         
-          await clearOfflineMutation(mutation.id); 
+          // Clear the executed mutation from the offline queue
+          await clearOfflineMutation(mutation.id); // Assuming clearOfflineMutation clears a specific mutation by its ID
         } catch (error) {
-          console.error(`Error executing stored mutation:`, error);
+          console.error(`Error executing stored ${mutationType} mutation:`, error);
         }
       }
     } catch (error) {
