@@ -80,23 +80,43 @@ function Nav() {
       const storedMutations = await getOfflineMutations();
       for (const mutation of storedMutations) {
         try {
-          const { variables } = mutation;
-          const result = await client.mutate({
-            mutation: CREATE_INVOICE,
-            variables,
-          });
-
-          console.log('Successfully executed createInvoice mutation:', result);
-
-          await clearOfflineMutations(); 
+          const { mutation: mutationType, variables } = mutation; // Destructure mutationType from mutation object
+  
+          let result;
+  
+          switch (mutationType) {
+            case 'CREATE_INVOICE':
+              result = await client.mutate({
+                mutation: CREATE_INVOICE,
+                variables,
+              });
+              console.log('Successfully executed createInvoice mutation:', result);
+              break;
+  
+            case 'DELETE_INVOICE':
+              result = await client.mutate({
+                mutation: DELETE_INVOICE,
+                variables,
+              });
+              console.log('Successfully executed deleteInvoice mutation:', result);
+              break;
+  
+            default:
+              console.warn('Unknown mutation type:', mutationType);
+              continue; // Skip to the next iteration if the mutation type is unknown
+          }
+  
+          // Assuming you clear the executed mutation from offline queue after successful execution
+          await clearOfflineMutation(mutation.id);
         } catch (error) {
-          console.error('Error executing stored createInvoice mutation:', error);
+          console.error(`Error executing stored ${mutationType} mutation:`, error);
         }
       }
     } catch (error) {
       console.error('Failed to get offline mutations:', error);
     }
   };
+  
 
   if (Auth.loggedIn()) {
     return (
