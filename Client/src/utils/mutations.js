@@ -228,8 +228,8 @@ export const UPDATE_INVOICE = gql`
 `;
 
 export const DELETE_INVOICE = gql`
-  mutation deleteInvoice($id: ID!) {
-    deleteInvoice(_id: $id) {
+  mutation deleteInvoice($invoiceNumber: String!) {
+    deleteInvoice(invoiceNumber: $invoiceNumber) {
       success
       message
     }

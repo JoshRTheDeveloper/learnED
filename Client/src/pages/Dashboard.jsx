@@ -12,7 +12,7 @@ import {
   updateInvoiceInIndexedDB,
   addOfflineMutation,
 } from '../utils/indexedDB';
-import { GET_USER } from '../utils/queries';
+import { GET_USER, GET_INVOICE } from '../utils/queries';
 import { UPDATE_INVOICE, DELETE_INVOICE } from '../utils/mutations';
 
 const Home = () => {
@@ -84,10 +84,10 @@ const Home = () => {
   
   const handleDeleteInvoice = async (invoiceNumber) => {
     try {
-      // Log start of delete process
+    
       console.log(`Attempting to delete invoice with number: ${invoiceNumber}`);
   
-      // Delete from IndexedDB first
+    
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
       console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
   
@@ -97,16 +97,15 @@ const Home = () => {
       });
       console.log(`Successfully deleted invoice from server: ${data}`);
   
-      // Refetch the user data to update the UI
-      await refetch();
-      console.log(`Refetched user data after deletion`);
+      
+
   
     } catch (error) {
       console.error('Error deleting invoice:', error);
   
-      // If deletion fails, add to offline queue
+     
       await addOfflineMutation({
-        mutation: 'DELETE_INVOICE', // Replace with your actual mutation identifier
+        mutation: 'DELETE_INVOICE', 
         variables: { invoiceNumber },
       });
       setModalMessage(`Invoice deletion added to offline queue.`);
@@ -137,13 +136,15 @@ const Home = () => {
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
       await addOfflineMutation({
-        mutation: 'UPDATE_INVOICE', // Replace with your actual mutation identifier
+        mutation: 'UPDATE_INVOICE', 
         variables: { invoiceNumber, paidStatus: true },
       });
       setModalMessage(`Mark as paid added to offline queue.`);
       setShowMessageModal(true);
     }
   };
+
+  
 
   if (loading || queryLoading) {
     return <p>Loading user data...</p>;
@@ -291,7 +292,7 @@ const Home = () => {
       )}
 
       {showMessageModal && (
-        <MessageModal message={modalMessage} close={() => setShowMessageModal(false)} />
+        <MessageModal message={modalMessage} onClose={() => setShowMessageModal(false)} />
       )}
     </>
   );
