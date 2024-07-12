@@ -423,7 +423,7 @@ export const getOfflineMutations = async () => {
   }
 };
 
-const clearOfflineMutation = async (id) => {
+export const clearOfflineMutation = async (id) => {
   try {
     await db.offlineMutations.delete(id);
     console.log(`Offline mutation with id ${id} cleared successfully`);
