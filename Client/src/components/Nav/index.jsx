@@ -95,6 +95,7 @@ function Nav() {
           }
   
           let result;
+          console.log(`Executing mutation type: ${mutationType} with variables:`, variables);
   
           switch (mutationType) {
             case 'CREATE_INVOICE':
@@ -112,14 +113,14 @@ function Nav() {
               });
               console.log('Successfully executed deleteInvoice mutation:', result);
               break;
-
-              case 'UPDATE_INVOICE':
-                result = await client.mutate({
-                  mutation: UPDATE_INVOICE,
-                  variables,
-                });
-                console.log('Successfully executed updateInvoice mutation:', result);
-                break;
+  
+            case 'UPDATE_INVOICE':
+              result = await client.mutate({
+                mutation: UPDATE_INVOICE,
+                variables,
+              });
+              console.log('Successfully executed updateInvoice mutation:', result);
+              break;
   
             default:
               console.warn('Unknown mutation type:', mutationType);
@@ -130,12 +131,15 @@ function Nav() {
           console.log(`Cleared mutation with id ${id} from offline storage`);
         } catch (error) {
           console.error(`Error executing stored ${mutation.mutation} mutation:`, error);
+          console.log('GraphQL Error Details:', error?.graphQLErrors);
+          console.log('Network Error Details:', error?.networkError);
         }
       }
     } catch (error) {
       console.error('Failed to get offline mutations:', error);
     }
   };
+  
   
   
 
