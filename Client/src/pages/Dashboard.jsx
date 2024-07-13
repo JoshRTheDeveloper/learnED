@@ -122,14 +122,23 @@ const Home = () => {
     try {
       await updateInvoiceInIndexedDB(invoiceNumber, true);
       
-      // Update the state to reflect the change
+    
       setUserData(prevUserData => ({
         ...prevUserData,
         invoices: prevUserData.invoices.map(invoice =>
           invoice.invoiceNumber === invoiceNumber ? { ...invoice, paidStatus: true } : invoice
         )
       }));
-      
+
+ 
+    const invoice = userData.invoices.find(invoice => invoice.invoiceNumber === invoiceNumber);
+    const invoiceId = invoice?._id;
+
+    
+    await updateInvoice({
+      variables: { id: invoiceId, paidStatus: true },
+    });
+
       setModalMessage(`Invoice marked as paid.`);
       setShowMessageModal(true);
     } catch (error) {
