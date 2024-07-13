@@ -7,7 +7,7 @@ import LoginModal from '../login-modal/login-modal';
 import { useNavigate } from "react-router-dom";
 import { useApolloClient } from '@apollo/client';
 import { clearOfflineMutation, getOfflineMutations } from '../../utils/indexedDB'; 
-import { CREATE_INVOICE, DELETE_INVOICE } from '../../utils/mutations';
+import { CREATE_INVOICE, DELETE_INVOICE, UPDATE_INVOICE } from '../../utils/mutations';
 import './index.css';
 
 function Nav() {
@@ -112,6 +112,14 @@ function Nav() {
               });
               console.log('Successfully executed deleteInvoice mutation:', result);
               break;
+
+              case 'UPDATE_INVOICE':
+                result = await client.mutate({
+                  mutation: UPDATE_INVOICE,
+                  variables,
+                });
+                console.log('Successfully executed updateInvoice mutation:', result);
+                break;
   
             default:
               console.warn('Unknown mutation type:', mutationType);
