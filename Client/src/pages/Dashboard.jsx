@@ -94,42 +94,50 @@ const Home = () => {
         invoices: prevUserData.invoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
       }));
   
-      const { data } = await deleteInvoice({
-        variables: { invoiceNumber },
-      });
-      console.log(`Successfully deleted invoice from server:`, data);
-  
-      setModalMessage(`Invoice deleted`);
-      setShowMessageModal(true);
-  
+      // Check if online
+      if (navigator.onLine) {
+        const { data } = await deleteInvoice({
+          variables: { invoiceNumber },
+        });
+        console.log(`Successfully deleted invoice from server:`, data);
+        setModalMessage(`Invoice deleted`);
+        setShowMessageModal(true);
+      } else {
+        // Add to offline mutation queue
+        await addOfflineMutation({
+          mutation: 'DELETE_INVOICE',
+          variables: { invoiceNumber },
+        });
+        setModalMessage(`Invoice deletion added to offline queue.`);
+        setShowMessageModal(true);
+      }
     } catch (error) {
       console.error('Error deleting invoice:', error);
   
-      await addOfflineMutation({
-        
-        mutation: 'DELETE_INVOICE', 
-        variables: { invoiceNumber },
-      });
-  
-      setModalMessage(`Invoice deletion added to offline queue.`);
-      setShowMessageModal(true);
+      // Add to offline mutation queue if not already added (for unexpected errors)
+      if (!navigator.onLine) {
+        await addOfflineMutation({
+          mutation: 'DELETE_INVOICE',
+          variables: { invoiceNumber },
+        });
+        setModalMessage(`Invoice deletion added to offline queue.`);
+        setShowMessageModal(true);
+      }
     }
   };
  
     const [updateInvoice] = useMutation(UPDATE_INVOICE);
   
     const handleMarkAsPaid = async (invoiceNumber) => {
-      let invoice; // Declare invoice variable outside of the try block
       try {
-      
-        invoice = userData.invoices.find(inv => inv.invoiceNumber === invoiceNumber);
+        let invoice = userData.invoices.find(inv => inv.invoiceNumber === invoiceNumber);
         if (!invoice) {
           throw new Error(`Invoice with number ${invoiceNumber} not found`);
         }
-  
+    
         // Update invoice in IndexedDB
         await updateInvoiceInIndexedDB(invoiceNumber, true);
-  
+    
         // Update state to reflect the change
         setUserData(prevUserData => ({
           ...prevUserData,
@@ -137,23 +145,34 @@ const Home = () => {
             inv.invoiceNumber === invoiceNumber ? { ...inv, paidStatus: true } : inv
           )
         }));
-  
-        // Execute the update invoice mutation
-        await updateInvoice({
-          variables: { invoiceNumber, paidStatus: true },
-        });
-  
-        setModalMessage(`Invoice marked as paid.`);
-        setShowMessageModal(true);
+    
+        // Check if online
+        if (navigator.onLine) {
+          // Execute the update invoice mutation
+          await updateInvoice({
+            variables: { invoiceNumber, paidStatus: true },
+          });
+          console.log(`Successfully marked invoice ${invoiceNumber} as paid.`);
+          setModalMessage(`Invoice marked as paid.`);
+          setShowMessageModal(true);
+        } else {
+          // Add to offline mutation queue
+          await addOfflineMutation({
+            mutation: 'UPDATE_INVOICE',
+            variables: { invoiceNumber, paidStatus: true },
+          });
+          setModalMessage(`Mark as paid added to offline queue.`);
+          setShowMessageModal(true);
+        }
       } catch (error) {
         console.error('Error marking invoice as paid:', error);
-  
+    
         // Handle offline mutation
         await addOfflineMutation({
           mutation: 'UPDATE_INVOICE',
           variables: { invoiceNumber, paidStatus: true },
         });
-  
+    
         setModalMessage(`Mark as paid added to offline queue.`);
         setShowMessageModal(true);
       }
