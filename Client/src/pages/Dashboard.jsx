@@ -151,6 +151,7 @@ const handleMarkAsPaid = async (invoiceNumber) => {
     console.error('Error marking invoice as paid:', error);
     // Ensure the invoice variable is defined before accessing its _id
     const invoiceId = invoice ? invoice._id : null;
+    console.log(invoiceId)
     await addOfflineMutation({
       mutation: 'UPDATE_INVOICE',
       variables: { id: invoiceId, paidStatus: true },
