@@ -21,20 +21,20 @@ const Sidebar = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      let userData, profilePicUrl;
+      let userData, profilePicData;
 
       if (userDataFromDB && userDataFromDB.user) {
         userData = userDataFromDB.user;
-        profilePicUrl = userData.profilePictureUrl;
+        profilePicData = userData.profilePictureUrl; 
       } else {
         userData = await getUserData(userId);
-        profilePicUrl = await getProfilePicture(userId);
+        profilePicData = await getProfilePicture(userId); 
       }
 
       if (userData) {
         setUserFirstName(userData.firstName);
         setUserLastName(userData.lastName);
-        setProfilePicture(profilePicUrl || '');
+        setProfilePicture(profilePicData || '');
       }
     };
 
@@ -45,7 +45,11 @@ const Sidebar = () => {
     <div className='content'>
       <div className='sidebar'>
         <div className='profile-picture-div'>
-          {profilePicture && <img src={profilePicture} className='profile-picture2' alt='Profile' />}
+          {profilePicture && typeof profilePicture === 'string' ? (
+            <img src={profilePicture} className='profile-picture2' alt='Profile' />
+          ) : (
+            <span>Loading profile picture...</span>
+          )}
         </div>
         {userFirstName && userLastName && <h2>Welcome, {userFirstName} {userLastName}!</h2>}
         <ul>
