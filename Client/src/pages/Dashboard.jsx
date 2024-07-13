@@ -135,10 +135,8 @@ const Home = () => {
           throw new Error(`Invoice with number ${invoiceNumber} not found`);
         }
     
-        // Update invoice in IndexedDB
         await updateInvoiceInIndexedDB(invoiceNumber, true);
     
-        // Update state to reflect the change
         setUserData(prevUserData => ({
           ...prevUserData,
           invoices: prevUserData.invoices.map(inv =>
@@ -148,7 +146,7 @@ const Home = () => {
     
         // Check if online
         if (navigator.onLine) {
-          // Execute the update invoice mutation
+      
           await updateInvoice({
             variables: { invoiceNumber, paidStatus: true },
           });
@@ -156,7 +154,7 @@ const Home = () => {
           setModalMessage(`Invoice marked as paid.`);
           setShowMessageModal(true);
         } else {
-          // Add to offline mutation queue
+        
           await addOfflineMutation({
             mutation: 'UPDATE_INVOICE',
             variables: { invoiceNumber, paidStatus: true },
@@ -167,7 +165,6 @@ const Home = () => {
       } catch (error) {
         console.error('Error marking invoice as paid:', error);
     
-        // Handle offline mutation
         await addOfflineMutation({
           mutation: 'UPDATE_INVOICE',
           variables: { invoiceNumber, paidStatus: true },

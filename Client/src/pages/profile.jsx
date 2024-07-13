@@ -32,7 +32,7 @@ const Profile = () => {
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
   const [company, setCompany] = useState('');
-  const [logoUrl, setLogoUrl] = useState(temporaryImage);
+  const [logoUrl, setLogoUrl] = useState(temporaryImage); // Initialize with default image
   const [logo, setLogo] = useState(null);
   const [renamedFile, setRenamedFile] = useState(null);
   const [offlineMode, setOfflineMode] = useState(!navigator.onLine);
@@ -98,7 +98,7 @@ const Profile = () => {
             setZip(zip);
             setUserData(userDataFromDB);
             setCompany(company);
-            setLogoUrl(profilePicture || temporaryImage);
+            setLogoUrl(profilePicture || temporaryImage); // Set profile picture URL from DB or default image
           } else {
             console.error('No offline data found.');
           }
@@ -152,8 +152,7 @@ const Profile = () => {
         setCity(offlineUserData.city);
         setState(offlineUserData.state);
         setZip(offlineUserData.zip);
-        setLogoUrl(picturePath || temporaryImage);
-
+        setLogoUrl(picturePath || temporaryImage); // Update profile picture URL
         await storeUserData({
           ...offlineUserData,
           profilePicture: picturePath,
@@ -178,7 +177,7 @@ const Profile = () => {
     const file = e.target.files[0];
     const blobUrl = URL.createObjectURL(file);
     setLogo(file);
-    setLogoUrl(blobUrl);
+    setLogoUrl(blobUrl); // Update preview with the selected file
     const filename = `${userId}_profile_picture.jpg`;
     const renamedFile = new File([file], filename, { type: file.type });
     setRenamedFile(renamedFile);
