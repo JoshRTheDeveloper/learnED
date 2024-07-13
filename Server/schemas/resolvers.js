@@ -1,6 +1,6 @@
 const { signToken, AuthenticationError, UserInputError } = require('../utils/auth');
 const { User, Invoice } = require('../models');
-const { sendInvoiceEmail } = require('../utils/mailjet');
+const  sendInvoiceEmail = require('../utils/mailjet');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
 
@@ -298,7 +298,7 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
         console.error('Error sending invoice email:', error.message);
         throw new Error('Failed to send invoice email.');
       }
-
+      
       return {
         ...savedInvoice.toObject(),
         invoiceAmount: parseFloat(savedInvoice.invoiceAmount.toString()),

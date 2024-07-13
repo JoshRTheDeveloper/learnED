@@ -61,7 +61,7 @@ const CreateInvoices = () => {
     city: city + (state ? `, ${state}` : '') + (zip ? ` ${zip}` : ''),
     profilePicture: profilePicture,
   };
-
+console.log (profilePicture)
   const handleFormSubmit = async (event) => {
     event.preventDefault();
 
