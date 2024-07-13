@@ -303,8 +303,24 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
   },
 
   updateInvoice: async (parent, args) => {
-    const { _id, ...updateData } = args;
-    return await Invoice.findByIdAndUpdate(_id, updateData, { new: true }).populate('user');
+    const { invoiceNumber, ...updateData } = args;
+    
+    try {
+      const updatedInvoice = await Invoice.findOneAndUpdate(
+        { invoiceNumber },
+        updateData,
+        { new: true }
+      ).populate('user');
+      
+      if (!updatedInvoice) {
+        throw new Error(`Invoice with invoiceNumber ${invoiceNumber} not found`);
+      }
+      
+      return updatedInvoice;
+    } catch (error) {
+      console.error('Error updating invoice:', error);
+      throw new Error('Failed to update invoice');
+    }
   },
 
   deleteInvoice: async (parent, { invoiceNumber }) => {

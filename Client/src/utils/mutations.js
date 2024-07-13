@@ -211,14 +211,13 @@ export const CREATE_INVOICE = gql`
   }
 `;
 
-
 export const UPDATE_INVOICE = gql`
   mutation updateInvoice(
-    $id: ID!,
+    $invoiceNumber: String!,
     $paidStatus: Boolean!
   ) {
     updateInvoice(
-      _id: $id,
+      invoiceNumber: $invoiceNumber,
       paidStatus: $paidStatus
     ) {
       _id

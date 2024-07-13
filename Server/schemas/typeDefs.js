@@ -86,7 +86,7 @@ type Mutation {
     userID: ID!
     invoice_details: String!
   ): Invoice!
-  updateInvoice(_id: ID!, paidStatus: Boolean!): Invoice!
+  updateInvoice(invoiceNumber: String!, paidStatus: Boolean!): Invoice!
   deleteInvoice(invoiceNumber: String!): DeleteInvoicePayload!
 }
 

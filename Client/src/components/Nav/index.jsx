@@ -117,7 +117,10 @@ function Nav() {
               case 'UPDATE_INVOICE':
                 result = await client.mutate({
                   mutation: UPDATE_INVOICE,
-                  variables: { id: variables.id, paidStatus: variables.paidStatus },
+                  variables: {
+                    invoiceNumber: variables.invoiceNumber, 
+                    paidStatus: variables.paidStatus,
+                  },
                 });
                 console.log('Successfully executed updateInvoice mutation:', result);
                 break;
