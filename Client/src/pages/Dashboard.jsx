@@ -89,13 +89,11 @@ const Home = () => {
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
       console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
   
-  
       setUserData(prevUserData => ({
         ...prevUserData,
         invoices: prevUserData.invoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
       }));
   
-     
       const { data } = await deleteInvoice({
         variables: { invoiceNumber },
       });
@@ -119,24 +117,21 @@ const Home = () => {
   };
 
   const [updateInvoice] = useMutation(UPDATE_INVOICE); 
-  // {
-  //   onCompleted: async () => {
-  //     try {
-  //       await updateInvoiceInIndexedDB(selectedInvoice.invoiceNumber, true);
-  //       setModalMessage(`Invoice with invoiceNumber ${selectedInvoice.invoiceNumber} marked as paid.`);
-  //       setShowMessageModal(true);
-  //     } catch (error) {
-  //       console.error('Error updating invoice locally:', error);
-  //     }
-  //   },
-  //   onError: (error) => {
-  //     console.error('Error marking invoice as paid:', error);
-  //   },
-  // });
 
   const handleMarkAsPaid = async (invoiceNumber) => {
     try {
       await updateInvoiceInIndexedDB(invoiceNumber, true);
+      
+      // Update the state to reflect the change
+      setUserData(prevUserData => ({
+        ...prevUserData,
+        invoices: prevUserData.invoices.map(invoice =>
+          invoice.invoiceNumber === invoiceNumber ? { ...invoice, paidStatus: true } : invoice
+        )
+      }));
+      
+      setModalMessage(`Invoice marked as paid.`);
+      setShowMessageModal(true);
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
       await addOfflineMutation({
