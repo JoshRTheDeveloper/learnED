@@ -120,37 +120,43 @@ const Home = () => {
 
   const handleMarkAsPaid = async (invoiceNumber) => {
     try {
+      // Find the invoice by invoiceNumber to get its ID
+      const invoice = userData.invoices.find(inv => inv.invoiceNumber === invoiceNumber);
+      if (!invoice) {
+        throw new Error(`Invoice with number ${invoiceNumber} not found`);
+      }
+  
+      const { _id } = invoice;
+  
+      // Update invoice in IndexedDB
       await updateInvoiceInIndexedDB(invoiceNumber, true);
-      
-    
+  
+      // Update state to reflect the change
       setUserData(prevUserData => ({
         ...prevUserData,
         invoices: prevUserData.invoices.map(invoice =>
           invoice.invoiceNumber === invoiceNumber ? { ...invoice, paidStatus: true } : invoice
         )
       }));
-
- 
-    const invoice = userData.invoices.find(invoice => invoice.invoiceNumber === invoiceNumber);
-    const invoiceId = invoice?._id;
-
-    
-    await updateInvoice({
-      variables: { id: invoiceId, paidStatus: true },
-    });
-
+  
+      // Execute the update invoice mutation
+      await updateInvoice({
+        variables: { id: _id, paidStatus: true },
+      });
+  
       setModalMessage(`Invoice marked as paid.`);
       setShowMessageModal(true);
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
       await addOfflineMutation({
         mutation: 'UPDATE_INVOICE',
-        variables: { invoiceNumber, paidStatus: true },
+        variables: { id: invoice._id, paidStatus: true },
       });
       setModalMessage(`Mark as paid added to offline queue.`);
       setShowMessageModal(true);
     }
   };
+  
 
   if (loading || queryLoading) {
     return <p>Loading user data...</p>;
