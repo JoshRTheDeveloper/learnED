@@ -12,19 +12,24 @@ const LoginModal = ({ isOpen, onClose }) => {
   const handleFormSubmit = async (event) => {
     event.preventDefault();
     try {
-      const mutationResponse = await loginUser({
+      const { data } = await loginUser({
         variables: {
           email: formState.email,
           password: formState.password,
         },
       });
 
-      const token = mutationResponse.data.login.token;
-      Auth.login(token);
+      if (data && data.login) {
+        const token = data.login.token;
+        Auth.login(token);
 
-      setFormState({ email: '', password: '' });
-      setSubmitted(true);
-      onClose();
+        setFormState({ email: '', password: '' });
+        setSubmitted(true);
+        onClose();
+      } else {
+        console.error('Login mutation did not return expected data structure:', data);
+        setSubmitted(false);
+      }
     } catch (err) {
       console.error('Error occurred during login:', err);
       setSubmitted(false);
