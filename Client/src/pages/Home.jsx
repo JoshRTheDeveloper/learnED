@@ -1,14 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Parallax, ParallaxLayer } from "@react-spring/parallax";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Parallax, ParallaxLayer } from '@react-spring/parallax';
+import Auth from '../utils/auth'
 import SignupModal from '../components/signup-modal/modal';
 import './home.css';
 
 
 const Home = () => {
- 
-
- 
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (Auth.loggedIn()) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
+
   const toggleSignupModal = () => {
     setIsSignupModalOpen(!isSignupModalOpen);
   };
