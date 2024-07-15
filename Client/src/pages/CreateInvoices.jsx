@@ -5,7 +5,7 @@ import Sidebar from '../components/sidebar/sidebar';
 import { addInvoiceToIndexedDB, getUserData, addOfflineMutation } from '../utils/indexedDB';
 import MessageModal from '../components/message-modal/message-modal';
 import { CREATE_INVOICE } from '../utils/mutations';
-import { v4 as uuidv4 } from 'uuid'; 
+import { v4 as uuidv4 } from 'uuid';
 import './CreateInvoices.css';
 
 const CreateInvoices = () => {
@@ -41,6 +41,9 @@ const CreateInvoices = () => {
         const { email, streetAddress, city, state, zip, profilePicture } = localUserData;
         let profilePictureURL = '';
 
+        // Log the profile picture to inspect its type and content
+        console.log('Profile Picture:', profilePicture);
+
         // Check if the profilePicture is a Blob
         if (profilePicture instanceof Blob) {
           profilePictureURL = URL.createObjectURL(profilePicture);
@@ -57,7 +60,6 @@ const CreateInvoices = () => {
         setUserData(localUserData);
       }
     };
-console.log (profilePictureURL)
     fetchUserDataFromIndexedDB();
   }, []);
 
