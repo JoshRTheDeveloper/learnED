@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import jwtDecode from 'jwt-decode';
 import Sidebar from '../components/sidebar/sidebar';
 import { addInvoiceToIndexedDB, getUserData, addOfflineMutation } from '../utils/indexedDB';
@@ -39,25 +39,16 @@ const CreateInvoices = () => {
       const localUserData = await getUserData();
       if (localUserData) {
         const { email, streetAddress, city, state, zip, profilePicture } = localUserData;
-
-        if (profilePicture instanceof Blob) {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            setProfilePicture(reader.result);
-          };
-          reader.readAsDataURL(profilePicture);
-        } else {
-          setProfilePicture(profilePicture);
-        }
-
         setEmail(email);
         setStreetAddress(streetAddress);
         setCity(city);
         setState(state);
         setZip(zip);
+        setProfilePicture(profilePicture);
         setUserData(localUserData);
       }
     };
+
     fetchUserDataFromIndexedDB();
   }, []);
 
@@ -70,7 +61,7 @@ const CreateInvoices = () => {
     city: city + (state ? `, ${state}` : '') + (zip ? ` ${zip}` : ''),
     profilePicture: profilePicture,
   };
-
+console.log (profilePicture)
   const handleFormSubmit = async (event) => {
     event.preventDefault();
 
@@ -101,6 +92,7 @@ const CreateInvoices = () => {
         const createdInvoice = data.createInvoice;
         await addInvoiceToIndexedDB(createdInvoice);
       } else {
+      
         variables._id = uuidv4();
         await addInvoiceToIndexedDB(variables);
         await addOfflineMutation({ mutation: 'CREATE_INVOICE', variables });
@@ -120,7 +112,7 @@ const CreateInvoices = () => {
 
     } catch (error) {
       console.error('Error saving invoice:', error);
-      // Handle error state or notify user
+  
     }
   };
 
@@ -147,7 +139,7 @@ const CreateInvoices = () => {
               <div className='section1'>
                 <div className='split'>
                   <div>
-                    {profilePicture && <img src={profilePicture} className='profile-picture1' alt="Profile" />}
+                  {navigator.onLine && profilePicture && <img src={profilePicture} className='profile-picture1' alt="Profile" />}
                   </div>
                 </div>
                 <div className='split2'>
