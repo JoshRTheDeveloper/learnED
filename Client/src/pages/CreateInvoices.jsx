@@ -44,6 +44,8 @@ const CreateInvoices = () => {
         // Check if the profilePicture is a Blob
         if (profilePicture instanceof Blob) {
           profilePictureURL = URL.createObjectURL(profilePicture);
+        } else {
+          profilePictureURL = profilePicture; // use the URL if not a Blob
         }
 
         setEmail(email);
@@ -121,7 +123,6 @@ const CreateInvoices = () => {
       // Handle error state or notify user
     }
   };
-
 
   return (
     <>
