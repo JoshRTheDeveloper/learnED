@@ -2,41 +2,29 @@ import React, { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import Auth from "../../utils/auth";
 import { LOGIN_USER } from '../../utils/mutations';
-import { getLoginCredentials } from '../../utils/indexedDB';
 import './login-modal.css';
 
 const LoginModal = ({ isOpen, onClose }) => {
   const [formState, setFormState] = useState({ email: '', password: '' });
   const [loginUser, { error }] = useMutation(LOGIN_USER);
   const [submitted, setSubmitted] = useState(false);
-  
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
     try {
-      const { email, password } = await getLoginCredentials();
-      
-      if (email && password) {
-        if (formState.email === email && formState.password === password) {
-          const mutationResponse = await loginUser({
-            variables: {
-              email: formState.email,
-              password: formState.password,
-            },
-          });
-  
-          const token = mutationResponse.data.loginUser.token;
-          Auth.login(token);
-  
-          setFormState({ email: '', password: '' });
-          setSubmitted(true);
-        } else {
-          setSubmitted(false);
-          console.error('Invalid credentials');
-        }
-      } else {
-        console.error('No login credentials found in IndexedDB');
-      }
+      const mutationResponse = await loginUser({
+        variables: {
+          email: formState.email,
+          password: formState.password,
+        },
+      });
+
+      const token = mutationResponse.data.login.token;
+      Auth.login(token);
+
+      setFormState({ email: '', password: '' });
+      setSubmitted(true);
+      onClose();
     } catch (err) {
       console.error('Error occurred during login:', err);
       setSubmitted(false);
