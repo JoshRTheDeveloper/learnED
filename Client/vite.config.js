@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import autoprefixer from 'autoprefixer';
 
 export default defineConfig({
   plugins: [
@@ -114,28 +113,8 @@ export default defineConfig({
     assetsInclude: ['**/*.svg', '**/*.png', '**/*.jpg', '**/*.gif', '**/*.json', '**/*.xml', '**/*.webmanifest'],
     outDir: 'dist',
   },
-  optimizeDeps: {
-    include: ['bootstrap'] // Ensure Bootstrap is included in optimized dependencies
-  },
-  css: {
-    postcss: {
-      plugins: [
-        autoprefixer // Include autoprefixer plugin directly here
-      ],
-    },
-  },
-  head: {
-    scripts: [
-      {
-        src: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js',
-        type: 'module',
-      },
-    ],
-    links: [
-      {
-        rel: 'stylesheet',
-        href: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css',
-      },
-    ],
-  },
+  test: {
+    globals: true,
+    environment: 'happy-dom'
+  }
 });
