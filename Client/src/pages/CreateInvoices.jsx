@@ -57,7 +57,7 @@ const CreateInvoices = () => {
         setUserData(localUserData);
       }
     };
-
+console.log (profilePictureURL)
     fetchUserDataFromIndexedDB();
   }, []);
 
