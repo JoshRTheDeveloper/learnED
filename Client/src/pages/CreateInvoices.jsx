@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client';
 import jwtDecode from 'jwt-decode';
 import Sidebar from '../components/sidebar/sidebar';
 import { addInvoiceToIndexedDB, getUserData, addOfflineMutation } from '../utils/indexedDB';
@@ -39,12 +39,19 @@ const CreateInvoices = () => {
       const localUserData = await getUserData();
       if (localUserData) {
         const { email, streetAddress, city, state, zip, profilePicture } = localUserData;
+        let profilePictureURL = '';
+
+        // Check if the profilePicture is a Blob
+        if (profilePicture instanceof Blob) {
+          profilePictureURL = URL.createObjectURL(profilePicture);
+        }
+
         setEmail(email);
         setStreetAddress(streetAddress);
         setCity(city);
         setState(state);
         setZip(zip);
-        setProfilePicture(profilePicture);
+        setProfilePicture(profilePictureURL); // Use the URL
         setUserData(localUserData);
       }
     };
@@ -61,7 +68,7 @@ const CreateInvoices = () => {
     city: city + (state ? `, ${state}` : '') + (zip ? ` ${zip}` : ''),
     profilePicture: profilePicture,
   };
-console.log (profilePicture)
+
   const handleFormSubmit = async (event) => {
     event.preventDefault();
 
@@ -92,7 +99,6 @@ console.log (profilePicture)
         const createdInvoice = data.createInvoice;
         await addInvoiceToIndexedDB(createdInvoice);
       } else {
-      
         variables._id = uuidv4();
         await addInvoiceToIndexedDB(variables);
         await addOfflineMutation({ mutation: 'CREATE_INVOICE', variables });
@@ -115,6 +121,7 @@ console.log (profilePicture)
       // Handle error state or notify user
     }
   };
+
 
   return (
     <>
