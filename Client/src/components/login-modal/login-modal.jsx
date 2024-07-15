@@ -19,8 +19,8 @@ const LoginModal = ({ isOpen, onClose }) => {
         },
       });
 
-      if (data && data.login) {
-        const token = data.login.token;
+      if (data && data.loginUser) {
+        const token = data.loginUser.token;
         Auth.login(token);
 
         setFormState({ email: '', password: '' });
@@ -44,6 +44,7 @@ const LoginModal = ({ isOpen, onClose }) => {
       [name]: updatedValue,
     });
   };
+
 
   return (
     <div className={`modal ${isOpen ? 'open' : ''}`} id="LoginModal">
