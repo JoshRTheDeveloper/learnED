@@ -85,6 +85,7 @@ console.log (profilePicture)
       invoice_details: invoiceDetails,
       profilePicture: profilePicture,
     };
+    console.log('Profile Picture:', profilePicture);
 
     try {
       if (navigator.onLine) {
