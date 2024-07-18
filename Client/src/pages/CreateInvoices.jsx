@@ -39,6 +39,7 @@ const CreateInvoices = () => {
       const localUserData = await getUserData();
       if (localUserData) {
         const { email, streetAddress, city, state, zip, profilePicture } = localUserData;
+        console.log('fetch for create:', profilePicture)
         setEmail(email);
         setStreetAddress(streetAddress);
         setCity(city);
