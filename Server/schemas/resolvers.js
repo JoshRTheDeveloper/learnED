@@ -239,7 +239,7 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
   createInvoice: async (_, args) => {
     try {
       console.log('Starting createInvoice resolver...');
-      
+  
       // Validate args.userID
       if (!args.userID) {
         throw new Error('User ID is required to create an invoice.');
@@ -254,8 +254,12 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
   
       console.log('Valid User ID format.');
   
+      // Validate and convert invoiceAmount
       let invoiceAmountDecimal;
       try {
+        if (isNaN(args.invoiceAmount)) {
+          throw new Error('Invoice amount must be a number.');
+        }
         invoiceAmountDecimal = mongoose.Types.Decimal128.fromString(args.invoiceAmount.toString());
       } catch (error) {
         throw new Error('Invalid invoice amount format.');
@@ -263,6 +267,7 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
   
       console.log('Invoice amount converted to Decimal128:', invoiceAmountDecimal.toString());
   
+      // Create invoice
       const invoice = new Invoice({
         ...args,
         invoiceAmount: invoiceAmountDecimal,
@@ -271,6 +276,7 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
   
       console.log('Invoice object created:', invoice);
   
+      // Save invoice
       let savedInvoice;
       try {
         savedInvoice = await invoice.save();
@@ -280,6 +286,7 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
         throw new Error('Failed to save invoice.');
       }
   
+      // Update user
       let user;
       try {
         user = await User.findByIdAndUpdate(
@@ -289,7 +296,7 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
         );
   
         console.log('User updated with invoice:', user);
-        
+  
         if (!user) {
           throw new Error('User not found.');
         }
@@ -298,6 +305,7 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
         throw new Error('Failed to update user with the new invoice.');
       }
   
+      // Send invoice email
       try {
         await sendInvoiceEmail(savedInvoice);
         console.log('Invoice email sent successfully.');
@@ -306,6 +314,7 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
         throw new Error('Failed to send invoice email.');
       }
   
+      // Format and return the invoice
       const formattedInvoice = {
         ...savedInvoice.toObject(),
         invoiceAmount: parseFloat(savedInvoice.invoiceAmount.toString()),
@@ -319,7 +328,6 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
       throw new Error(`Failed to create invoice: ${error.message}`);
     }
   },
-  
 
   updateInvoice: async (parent, args) => {
     const { invoiceNumber, ...updateData } = args;

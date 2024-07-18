@@ -5,7 +5,7 @@ import Sidebar from '../components/sidebar/sidebar';
 import { addInvoiceToIndexedDB, getUserData, addOfflineMutation } from '../utils/indexedDB';
 import MessageModal from '../components/message-modal/message-modal';
 import { CREATE_INVOICE } from '../utils/mutations';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid'; 
 import './CreateInvoices.css';
 
 const CreateInvoices = () => {
@@ -27,7 +27,6 @@ const CreateInvoices = () => {
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [savedLocally, setSavedLocally] = useState(false);
-  const [errorSavingInvoice, setErrorSavingInvoice] = useState(null);
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -37,20 +36,17 @@ const CreateInvoices = () => {
 
   useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
-      try {
-        const localUserData = await getUserData();
-        if (localUserData) {
-          const { email, streetAddress, city, state, zip, profilePicture } = localUserData;
-          setEmail(email);
-          setStreetAddress(streetAddress);
-          setCity(city);
-          setState(state);
-          setZip(zip);
-          setProfilePicture(profilePicture);
-          setUserData(localUserData);
-        }
-      } catch (error) {
-        console.error('Error fetching user data from IndexedDB:', error);
+      const localUserData = await getUserData();
+      if (localUserData) {
+        const { email, streetAddress, city, state, zip, profilePicture } = localUserData;
+        console.log('fetch for create:', profilePicture)
+        setEmail(email);
+        setStreetAddress(streetAddress);
+        setCity(city);
+        setState(state);
+        setZip(zip);
+        setProfilePicture(profilePicture);
+        setUserData(localUserData);
       }
     };
 
@@ -66,68 +62,57 @@ const CreateInvoices = () => {
     city: city + (state ? `, ${state}` : '') + (zip ? ` ${zip}` : ''),
     profilePicture: profilePicture,
   };
+console.log (profilePicture)
+const handleFormSubmit = async (event) => {
+  event.preventDefault();
 
-  const handleFormSubmit = async (event) => {
-    event.preventDefault();
+  const invoiceAmountFloat = parseFloat(invoiceAmount);
+  const dueDateISO = new Date(dueDate).toISOString();
 
-    // Validate inputs before submission
-    if (!validateInputs()) {
-      return;
-    }
+  const variables = {
+    invoiceAmount: invoiceAmountFloat,
+    paidStatus: paidStatus,
+    invoiceNumber: invoiceNumber,
+    companyName: user.name,
+    companyStreetAddress: user.streetAddress,
+    companyCityAddress: user.city,
+    companyEmail: user.email,
+    clientName: clientName,
+    clientStreetAddress: clientAddress,
+    clientCityAddress: clientCity,
+    clientEmail: clientEmail,
+    dueDate: dueDateISO,
+    userID: userId,
+    invoice_details: invoiceDetails,
+    profilePicture: profilePicture,
+  };
 
-    const invoiceAmountFloat = parseFloat(invoiceAmount);
-    const dueDateISO = new Date(dueDate).toISOString();
+  console.log('Profile Picture:', profilePicture);
+  console.log('Variables for mutation:', variables);
 
-    const variables = {
-      invoiceAmount: invoiceAmountFloat,
-      paidStatus: paidStatus,
-      invoiceNumber: invoiceNumber,
-      companyName: user.name,
-      companyStreetAddress: user.streetAddress,
-      companyCityAddress: user.city,
-      companyEmail: user.email,
-      clientName: clientName,
-      clientStreetAddress: clientAddress,
-      clientCityAddress: clientCity,
-      clientEmail: clientEmail,
-      dueDate: dueDateISO,
-      userID: userId,
-      invoice_details: invoiceDetails,
-      profilePicture: profilePicture,
-    };
-
-    try {
-      if (navigator.onLine) {
-        const { data } = await createInvoiceMutation({ variables });
+  try {
+    if (navigator.onLine) {
+      console.log('Online - attempting to create invoice...');
+      const { data } = await createInvoiceMutation({ variables });
+      if (data?.createInvoice) {
         const createdInvoice = data.createInvoice;
+        console.log('Invoice created successfully:', createdInvoice);
         await addInvoiceToIndexedDB(createdInvoice);
+        console.log('Invoice added to IndexedDB.');
       } else {
-        // Save locally and sync later when online
-        variables._id = uuidv4();
-        await addInvoiceToIndexedDB(variables);
-        await addOfflineMutation({ mutation: 'CREATE_INVOICE', variables });
+        throw new Error('No invoice data returned from mutation.');
       }
-
-      // Reset form fields and state
-      setSavedLocally(true);
-      resetFormFields();
-
-    } catch (error) {
-      console.error('Error saving invoice:', error);
-      setErrorSavingInvoice('Failed to save invoice. Please try again.');
-    }
-  };
-
-  const validateInputs = () => {
-    if (!invoiceNumber || !dueDate || !invoiceAmount || !clientEmail || !clientName || !clientAddress || !clientCity) {
-      setErrorSavingInvoice('Please fill in all required fields.');
-      return false;
+    } else {
+      console.log('Offline - saving invoice locally...');
+      variables._id = uuidv4();
+      await addInvoiceToIndexedDB(variables);
+      console.log('Invoice saved locally in IndexedDB.');
+      await addOfflineMutation({ mutation: 'CREATE_INVOICE', variables });
+      console.log('Offline mutation recorded.');
     }
 
-    return true;
-  };
-
-  const resetFormFields = () => {
+    // Reset form fields and state
+    setSavedLocally(true);
     setInvoiceAmount('');
     setPaidStatus(false);
     setInvoiceNumber('');
@@ -137,8 +122,11 @@ const CreateInvoices = () => {
     setClientCity('');
     setInvoiceDetails('');
     setDueDate('');
-    setErrorSavingInvoice(null);
-  };
+  } catch (error) {
+    console.error('Error saving invoice:', error.message || error);
+    alert(`Error: ${error.message || error}`);
+  }
+};
 
   return (
     <>
@@ -163,7 +151,7 @@ const CreateInvoices = () => {
               <div className='section1'>
                 <div className='split'>
                   <div>
-                    {navigator.onLine && profilePicture && <img src={profilePicture} className='profile-picture1' alt="Profile" />}
+                  {navigator.onLine && profilePicture && <img src={profilePicture} className='profile-picture1' alt="Profile" />}
                   </div>
                 </div>
                 <div className='split2'>
@@ -227,7 +215,6 @@ const CreateInvoices = () => {
                 <div className='invoice-button'>
                   <button type="submit" id="send-invoice-button">Save Invoice</button>
                 </div>
-                {errorSavingInvoice && <div className="error-message">{errorSavingInvoice}</div>}
               </div>
             </form>
           </div>
