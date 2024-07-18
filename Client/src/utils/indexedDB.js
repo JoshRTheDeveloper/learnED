@@ -8,7 +8,6 @@ db.version(6).stores({
   loginCredentials: '++id, email, encryptedPassword, iv, key',
   auth: '++id, token, userData',
   profilePictures: '++id, userId, profilePictureBlob',
-  profileFiles: 'userId,file',
   offlineMutations: '++id, mutation', 
 });
 
@@ -123,7 +122,6 @@ export const getLoginCredentials = async () => {
 export const storeProfilePicture = async (userId, profilePictureBlob) => {
   try {
     const existingRecord = await db.profilePictures.get(1);
-
     if (existingRecord) {
       await db.profilePictures.update(1, { userId, profilePictureBlob });
     } else {
@@ -342,10 +340,6 @@ export const addInvoiceToIndexedDB = async (invoice) => {
   }
 };
 
-
-
-
-
 export const deleteInvoiceByNumberFromIndexedDB = async (invoiceNumber) => {
   try {
     await db.transaction('rw', db.invoices, async () => {
@@ -388,23 +382,6 @@ export const clearIndexedDB = async () => {
   }
 };
 
-export const storeProfileFile = async (userId, file) => {
-  try {
-    await db.profileFiles.put({ userId, file });
-  } catch (error) {
-    console.error('Failed to store profile file in IndexedDB:', error);
-  }
-};
-
-export const getProfileFile = async (userId) => {
-  try {
-    const result = await db.profileFiles.get(userId);
-    return result ? result.file : null;
-  } catch (error) {
-    console.error('Failed to get profile file from IndexedDB:', error);
-    return null;
-  }
-};
 
 export const addOfflineMutation = async (mutation) => {
   try {
