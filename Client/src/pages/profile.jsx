@@ -118,8 +118,7 @@ const Profile = () => {
             setUserData(userDataFromDB);
             setCompany(company);
             setLogoUrl(profilePicture || temporaryImage); 
-            setBlobUrl(blobUrl)
-            console.log('bloblurl:', blobUrl)
+         
           } else {
             console.error('No offline data found.');
           }
