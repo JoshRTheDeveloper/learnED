@@ -95,6 +95,7 @@ const handleFormSubmit = async (event) => {
     if (navigator.onLine) {
       console.log('Online - attempting to create invoice...');
       const { data } = await createInvoiceMutation({ variables });
+      console.log(variables)
       if (data?.createInvoice) {
         const createdInvoice = data.createInvoice;
         console.log('Invoice created successfully:', createdInvoice);
