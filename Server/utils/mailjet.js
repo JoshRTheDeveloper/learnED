@@ -1,7 +1,8 @@
 require('dotenv').config();
 const mailjet = require('node-mailjet').apiConnect(process.env.MAILJET_API_KEY, process.env.MAILJET_SECRET_KEY);
 
-const sendInvoiceEmail = async (invoiceDetails) => {
+const sendInvoiceEmail = async (invoiceDetails, user) => {
+  console.log(invoiceDetails)
   const request = mailjet
     .post('send', { version: 'v3.1' })
     .request({
@@ -9,7 +10,7 @@ const sendInvoiceEmail = async (invoiceDetails) => {
         {
           From: {
             Email: 'invoicinator3000@gmail.com',  
-            Name: invoiceDetails.companyName,  
+            Name: user.company,  // Assuming `user.company` contains the company's name
           },
           To: [
             {
@@ -17,8 +18,8 @@ const sendInvoiceEmail = async (invoiceDetails) => {
               Name: invoiceDetails.clientName,
             },
           ],
-          Subject: `Invoice ${invoiceDetails.invoiceNumber} from ${invoiceDetails.companyName}`,
-          TextPart: `Dear ${invoiceDetails.clientName}, here are the details of your invoice: ${invoiceDetails.invoiceDetails}. The total amount due is $${invoiceDetails.invoiceAmount}.`,
+          Subject: `Invoice ${invoiceDetails.invoiceNumber} from ${user.company}`,
+          TextPart: `Dear ${invoiceDetails.clientName}, here are the details of your invoice: ${invoiceDetails.invoice_details}. The total amount due is $${invoiceDetails.invoiceAmount}.`,
           HTMLPart: `
             <div style="font-family: Arial, sans-serif; color: #333;">
             <img src="${invoiceDetails.profilePicture}" alt="Company Logo" style="width: 150px; height: 150px; margin-bottom: 20px;">
@@ -34,7 +35,7 @@ const sendInvoiceEmail = async (invoiceDetails) => {
               <p><strong>Due Date:</strong> ${invoiceDetails.dueDate}</p>
               <p>Thank you for your business!</p>
               <p style="margin-top: 20px; font-size: 12px; color: #555;">
-                If you have any questions about this invoice, please contact us at ${invoiceDetails.companyEmail}.
+                If you have any questions about this invoice, please contact us at ${user.email}.
               </p>
             </div>
           `,
@@ -51,4 +52,3 @@ const sendInvoiceEmail = async (invoiceDetails) => {
 };
 
 module.exports = sendInvoiceEmail;
-
