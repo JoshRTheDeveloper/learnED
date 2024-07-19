@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import jwtDecode from 'jwt-decode';
 import Sidebar from '../components/sidebar/sidebar';
-import { addInvoiceToIndexedDB, getUserData, addOfflineMutation } from '../utils/indexedDB';
+import { addInvoiceToIndexedDB, getUserData, addOfflineMutation, getProfilePicture } from '../utils/indexedDB';
 import MessageModal from '../components/message-modal/message-modal';
 import { CREATE_INVOICE } from '../utils/mutations';
 import { v4 as uuidv4 } from 'uuid'; 
@@ -45,12 +45,28 @@ const CreateInvoices = () => {
         setCity(city);
         setState(state);
         setZip(zip);
-        setProfilePicture(profilePicture);
         setUserData(localUserData);
       }
     };
 
     fetchUserDataFromIndexedDB();
+  }, []);
+
+  useEffect(() => {
+    const fetchProfilePicture = async () => {
+      try {
+        const profilePictureBlob = await getProfilePicture();
+        if (profilePictureBlob) {
+       
+          setProfilePicture(profilePictureBlob);
+          
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile picture from IndexedDB:', error);
+      }
+    };
+
+    fetchProfilePicture();
   }, []);
 
   const name = `${userData?.company || ''} ${userData?.lastName || ''}`;
@@ -158,7 +174,7 @@ const handleFormSubmit = async (event) => {
               <div className='section1'>
                 <div className='split'>
                   <div>
-                  {navigator.onLine && profilePicture && <img src={profilePicture} className='profile-picture1' alt="Profile" />}
+                  { profilePicture && <img src={profilePicture} className='profile-picture1' alt="Profile" />}
                   </div>
                 </div>
                 <div className='split2'>
