@@ -282,8 +282,8 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
         savedInvoice = await invoice.save();
         console.log('Invoice saved:', savedInvoice);
       } catch (error) {
-        console.error('Error saving invoice:', error.message);
-        throw new Error('Failed to save invoice.');
+        console.error('Error saving invoice1:', error.message);
+        throw new Error('Failed to save invoice1.');
       }
   
       // Update user

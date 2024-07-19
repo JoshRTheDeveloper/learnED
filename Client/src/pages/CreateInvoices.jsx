@@ -112,7 +112,6 @@ const handleFormSubmit = async (event) => {
       console.log('Offline mutation recorded.');
     }
 
-    // Reset form fields and state
     setSavedLocally(true);
     setInvoiceAmount('');
     setPaidStatus(false);
