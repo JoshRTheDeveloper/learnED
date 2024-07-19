@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mailjet = require('node-mailjet').apiConnect(process.env.MAILJET_API_KEY, process.env.MAILJET_SECRET_KEY);
 
-const sendInvoiceEmail = async (invoiceDetails, user) => {
+const sendInvoiceEmail = async (invoiceDetails) => {
   console.log(invoiceDetails)
   const request = mailjet
     .post('send', { version: 'v3.1' })
@@ -10,7 +10,7 @@ const sendInvoiceEmail = async (invoiceDetails, user) => {
         {
           From: {
             Email: 'invoicinator3000@gmail.com',  
-            Name: user.company,  // Assuming `user.company` contains the company's name
+            Name: invoiceDetails.companyName,  
           },
           To: [
             {
@@ -18,11 +18,11 @@ const sendInvoiceEmail = async (invoiceDetails, user) => {
               Name: invoiceDetails.clientName,
             },
           ],
-          Subject: `Invoice ${invoiceDetails.invoiceNumber} from ${user.company}`,
-          TextPart: `Dear ${invoiceDetails.clientName}, here are the details of your invoice: ${invoiceDetails.invoice_details}. The total amount due is $${invoiceDetails.invoiceAmount}.`,
+          Subject: `Invoice ${invoiceDetails.invoiceNumber} from ${invoiceDetails.companyName}`,
+          TextPart: `Dear ${invoiceDetails.clientName}, here are the details of your invoice: ${invoiceDetails.invoiceDetails}. The total amount due is $${invoiceDetails.invoiceAmount}.`,
           HTMLPart: `
             <div style="font-family: Arial, sans-serif; color: #333;">
-            <img src="${invoiceDetails.profilePicture}" alt="Company Logo" style="width: 150px; height: 150px; margin-bottom: 20px;">
+            
               <h3 style="color: #0000;">Invoice ${invoiceDetails.invoiceNumber}</h3>
               <p>Dear ${invoiceDetails.clientName},</p>
               <p>Here are the details of your invoice:</p>
@@ -35,7 +35,7 @@ const sendInvoiceEmail = async (invoiceDetails, user) => {
               <p><strong>Due Date:</strong> ${invoiceDetails.dueDate}</p>
               <p>Thank you for your business!</p>
               <p style="margin-top: 20px; font-size: 12px; color: #555;">
-                If you have any questions about this invoice, please contact us at ${user.email}.
+                If you have any questions about this invoice, please contact us at ${invoiceDetails.companyEmail}.
               </p>
             </div>
           `,
@@ -52,3 +52,4 @@ const sendInvoiceEmail = async (invoiceDetails, user) => {
 };
 
 module.exports = sendInvoiceEmail;
+
