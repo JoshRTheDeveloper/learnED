@@ -22,7 +22,7 @@ const sendInvoiceEmail = async (invoiceDetails) => {
           TextPart: `Dear ${invoiceDetails.clientName}, here are the details of your invoice: ${invoiceDetails.invoiceDetails}. The total amount due is $${invoiceDetails.invoiceAmount}.`,
           HTMLPart: `
             <div style="font-family: Arial, sans-serif; color: #333;">
-            
+           
               <h3 style="color: #0000;">Invoice ${invoiceDetails.invoiceNumber}</h3>
               <p>Dear ${invoiceDetails.clientName},</p>
               <p>Here are the details of your invoice:</p>
