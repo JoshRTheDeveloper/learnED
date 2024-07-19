@@ -39,7 +39,7 @@ const CreateInvoices = () => {
   const { data: userDataFromQuery } = useQuery(GET_USER, {
     variables: { userId }
   });
-  console.log (userDataFromQuery)
+  console.log (userDataFromQuery.profilePicture)
 
   useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
