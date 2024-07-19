@@ -50,7 +50,7 @@ const CreateInvoices = () => {
     }
   });
 
-  console.log(profilePictureUrl)
+  console.log('profilepicutreUrl', profilePictureUrl)
 
   useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
@@ -119,7 +119,7 @@ const handleFormSubmit = async (event) => {
     dueDate: dueDateISO,
     userID: userId,
     invoice_details: invoiceDetails,
-    profilePicture: profilePicture,
+    profilePicture: profilePictureUrl,
   };
 
   console.log('Profile Picture:', profilePicture);
