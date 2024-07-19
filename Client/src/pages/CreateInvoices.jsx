@@ -37,9 +37,20 @@ const CreateInvoices = () => {
 
 
   const { data: userDataFromQuery } = useQuery(GET_USER, {
-    variables: { userId }
+    variables: { userId },
+    onCompleted: (data) => {
+      if (data && data.getUser) {
+        const { profilePicture } = data.getUser;
+  
+        setProfilePictureUrl(profilePicture); // Update state with profile picture URL
+      }
+    },
+    onError: (error) => {
+      console.error('Error fetching user data:', error);
+    }
   });
-  console.log (userDataFromQuery)
+
+  console.log(profilePictureUrl)
 
   useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
