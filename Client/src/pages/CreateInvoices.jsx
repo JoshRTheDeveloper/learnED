@@ -63,6 +63,7 @@ const CreateInvoices = () => {
     profilePicture: profilePicture,
   };
 console.log (profilePicture)
+
 const handleFormSubmit = async (event) => {
   event.preventDefault();
 
@@ -124,9 +125,15 @@ const handleFormSubmit = async (event) => {
     setDueDate('');
   } catch (error) {
     console.error('Error saving invoice:', error.message || error);
+    if (error.networkError) {
+      console.error('Network error details:', error.networkError.result);
+    } else if (error.graphQLErrors) {
+      console.error('GraphQL error details:', error.graphQLErrors);
+    }
     alert(`Error: ${error.message || error}`);
   }
 };
+
 
   return (
     <>
