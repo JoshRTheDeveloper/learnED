@@ -266,7 +266,7 @@ const Profile = () => {
       <div className='profile'>
         <div className='profile-Id'>
           <div>
-         <img src={logoUrl} alt='Uploaded Logo' className='logo-preview' />
+         <img src={blobUrl} alt='Uploaded Logo' className='logo-preview' />
           </div>
           <h2 id='profile-h2'>Edit Profile</h2>
           <div className='columns-2'>
