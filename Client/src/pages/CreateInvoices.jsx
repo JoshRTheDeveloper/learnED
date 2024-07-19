@@ -5,6 +5,7 @@ import Sidebar from '../components/sidebar/sidebar';
 import { addInvoiceToIndexedDB, getUserData, addOfflineMutation, getProfilePicture } from '../utils/indexedDB';
 import MessageModal from '../components/message-modal/message-modal';
 import { CREATE_INVOICE } from '../utils/mutations';
+import { GET_USER } from '../utils/queries';
 import { v4 as uuidv4 } from 'uuid'; 
 import './CreateInvoices.css';
 
@@ -16,7 +17,7 @@ const CreateInvoices = () => {
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
-
+  const [profilePictureUrl, setProfilePictureUrl] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientAddress, setClientAddress] = useState('');
@@ -33,6 +34,12 @@ const CreateInvoices = () => {
   const userId = decodedToken.data._id;
 
   const [createInvoiceMutation] = useMutation(CREATE_INVOICE);
+
+
+  const { data: userDataFromQuery } = useQuery(GET_USER, {
+    variables: { userId }
+  });
+  console.log (userDataFromQuery)
 
   useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
