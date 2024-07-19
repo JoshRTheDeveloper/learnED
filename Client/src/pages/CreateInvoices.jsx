@@ -85,6 +85,7 @@ const handleFormSubmit = async (event) => {
     dueDate: dueDateISO,
     userID: userId,
     invoice_details: invoiceDetails,
+    profilePicture: profilePicture,
   };
 
   console.log('Profile Picture:', profilePicture);

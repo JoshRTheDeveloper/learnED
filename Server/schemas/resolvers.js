@@ -286,7 +286,7 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
         throw new Error('Failed to save invoice.');
       }
   
-      // Retrieve and update user
+      // Update user
       let user;
       try {
         user = await User.findByIdAndUpdate(
@@ -307,7 +307,7 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
   
       // Send invoice email
       try {
-        await sendInvoiceEmail(savedInvoice, user);
+        await sendInvoiceEmail(savedInvoice);
         console.log('Invoice email sent successfully.');
       } catch (error) {
         console.error('Error sending invoice email:', error.message);
@@ -328,7 +328,6 @@ getInvoicesByNumber: async (_, { userId, invoiceNumber }, context) => {
       throw new Error(`Failed to create invoice: ${error.message}`);
     }
   },
-  
 
   updateInvoice: async (parent, args) => {
     const { invoiceNumber, ...updateData } = args;
