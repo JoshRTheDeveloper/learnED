@@ -7,7 +7,17 @@ import LoginModal from '../login-modal/login-modal';
 import { useNavigate } from "react-router-dom";
 import { useApolloClient } from '@apollo/client';
 import { clearOfflineMutation, getOfflineMutations } from '../../utils/indexedDB'; 
-import { CREATE_INVOICE, DELETE_INVOICE, UPDATE_INVOICE } from '../../utils/mutations';
+import {   
+  CREATE_INVOICE,
+  DELETE_INVOICE,
+  UPDATE_INVOICE,
+  CHANGE_COMPANY,
+  CHANGE_PROFILE_PICTURE,
+  CHANGE_STREET_ADDRESS,
+  CHANGE_EMAIL,
+  CHANGE_CITY,
+  CHANGE_STATE,
+  CHANGE_ZIP } from '../../utils/mutations';
 import './index.css';
 
 function Nav() {
@@ -114,17 +124,72 @@ function Nav() {
               console.log('Successfully executed deleteInvoice mutation:', result);
               break;
   
-              case 'UPDATE_INVOICE':
-                result = await client.mutate({
-                  mutation: UPDATE_INVOICE,
-                  variables: {
-                    invoiceNumber: variables.invoiceNumber, 
-                    paidStatus: variables.paidStatus,
-                  },
-                });
-                console.log('Successfully executed updateInvoice mutation:', result);
-                break;
-            
+            case 'UPDATE_INVOICE':
+              result = await client.mutate({
+                mutation: UPDATE_INVOICE,
+                variables: {
+                  invoiceNumber: variables.invoiceNumber, 
+                  paidStatus: variables.paidStatus,
+                },
+              });
+              console.log('Successfully executed updateInvoice mutation:', result);
+              break;
+  
+            case 'CHANGE_COMPANY':
+              result = await client.mutate({
+                mutation: CHANGE_COMPANY,
+                variables,
+              });
+              console.log('Successfully executed changeCompany mutation:', result);
+              break;
+  
+            case 'CHANGE_PROFILE_PICTURE':
+              result = await client.mutate({
+                mutation: CHANGE_PROFILE_PICTURE,
+                variables,
+              });
+              console.log('Successfully executed changeProfilePicture mutation:', result);
+              break;
+  
+            case 'CHANGE_STREET_ADDRESS':
+              result = await client.mutate({
+                mutation: CHANGE_STREET_ADDRESS,
+                variables,
+              });
+              console.log('Successfully executed changeStreetAddress mutation:', result);
+              break;
+  
+            case 'CHANGE_EMAIL':
+              result = await client.mutate({
+                mutation: CHANGE_EMAIL,
+                variables,
+              });
+              console.log('Successfully executed changeEmail mutation:', result);
+              break;
+  
+            case 'CHANGE_CITY':
+              result = await client.mutate({
+                mutation: CHANGE_CITY,
+                variables,
+              });
+              console.log('Successfully executed changeCity mutation:', result);
+              break;
+  
+            case 'CHANGE_STATE':
+              result = await client.mutate({
+                mutation: CHANGE_STATE,
+                variables,
+              });
+              console.log('Successfully executed changeState mutation:', result);
+              break;
+  
+            case 'CHANGE_ZIP':
+              result = await client.mutate({
+                mutation: CHANGE_ZIP,
+                variables,
+              });
+              console.log('Successfully executed changeZip mutation:', result);
+              break;
   
             default:
               console.warn('Unknown mutation type:', mutationType);

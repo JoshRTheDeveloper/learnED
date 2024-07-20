@@ -11,7 +11,7 @@ import {
   storeProfilePicture,
   getProfilePicture,
   getUserData,
-
+  addOfflineMutation,
 } from '../utils/indexedDB';
 import {
   CHANGE_COMPANY,
@@ -31,7 +31,7 @@ const Profile = () => {
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
   const [company, setCompany] = useState('');
-  const [logoUrl, setLogoUrl] = useState(temporaryImage); 
+  const [logoUrl, setLogoUrl] = useState(temporaryImage);
   const [blobUrl, setBlobUrl] = useState(temporaryImage);
   const [logo, setLogo] = useState(null);
   const [renamedFile, setRenamedFile] = useState(null);
@@ -46,7 +46,6 @@ const Profile = () => {
     variables: { userId: userId || '' },
     skip: !navigator.onLine || !initialLoad,
   });
-
 
   const [changeCompanyMutation] = useMutation(CHANGE_COMPANY);
   const [changeProfilePictureMutation] = useMutation(CHANGE_PROFILE_PICTURE);
@@ -83,9 +82,7 @@ const Profile = () => {
       try {
         const profilePictureBlob = await getProfilePicture();
         if (profilePictureBlob) {
-       
           setBlobUrl(profilePictureBlob);
-          
         }
       } catch (error) {
         console.error('Failed to fetch profile picture from IndexedDB:', error);
@@ -101,9 +98,8 @@ const Profile = () => {
         try {
           let userDataFromDB;
 
-          if (navigator.onLine && !loading && data && data.getUser ) {
+          if (navigator.onLine && !loading && data && data.getUser) {
             userDataFromDB = data.getUser;
-            
           } else {
             userDataFromDB = await getUserData(userId);
           }
@@ -117,8 +113,7 @@ const Profile = () => {
             setZip(zip);
             setUserData(userDataFromDB);
             setCompany(company);
-            setLogoUrl(profilePicture || temporaryImage); 
-         
+            setLogoUrl(profilePicture || temporaryImage);
           } else {
             console.error('No offline data found.');
           }
@@ -134,8 +129,6 @@ const Profile = () => {
     fetchData();
   }, [loading, data, userId, initialLoad]);
 
-
- 
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handleStreetAddressChange = (e) => setStreetAddress(e.target.value);
   const handleCityChange = (e) => setCity(e.target.value);
@@ -149,15 +142,14 @@ const Profile = () => {
       const blobUrl = URL.createObjectURL(file);
       setLogo(file);
       setLogoUrl(blobUrl);
-      setBlobUrl(blobUrl)
-  
+      setBlobUrl(blobUrl);
+
       const filename = `${userId}_profile_picture.jpg`;
       const renamedFile = new File([file], filename, { type: file.type });
       setRenamedFile(renamedFile);
-  
+
       await storeProfilePicture(userId, blobUrl);
       console.log("Profile picture stored successfully.");
-  
     } catch (error) {
       console.error("An error occurred while storing the profile picture or file:", error);
     }
@@ -189,7 +181,7 @@ const Profile = () => {
         if (logo) {
           const uploadedPicturePath = await uploadProfilePicture(renamedFile);
           picturePath = uploadedPicturePath;
-          console.log (uploadedPicturePath)
+          console.log(uploadedPicturePath);
         }
 
         await Promise.all([
@@ -237,10 +229,18 @@ const Profile = () => {
 
         await storeUserData(offlineUserData);
 
+        await Promise.all([
+          addOfflineMutation({ mutation: CHANGE_COMPANY, variables: { userId, company } }),
+          addOfflineMutation({ mutation: CHANGE_STREET_ADDRESS, variables: { userId, streetAddress } }),
+          addOfflineMutation({ mutation: CHANGE_EMAIL, variables: { userId, email } }),
+          addOfflineMutation({ mutation: CHANGE_CITY, variables: { userId, city } }),
+          addOfflineMutation({ mutation: CHANGE_STATE, variables: { userId, state } }),
+          addOfflineMutation({ mutation: CHANGE_ZIP, variables: { userId, zip } }),
+          addOfflineMutation({ mutation: CHANGE_PROFILE_PICTURE, variables: { userId, profilePicture: picturePath } }),
+        ]);
 
         if (logo) {
-          await storeProfilePicture(userId, logoUrl); 
-
+          await storeProfilePicture(userId, logoUrl);
         }
       }
 
@@ -253,7 +253,7 @@ const Profile = () => {
       setLogo(null);
       setRenamedFile(null);
       setLogoUrl(picturePath);
-      setBlobUrl(blobUrl)
+      setBlobUrl(blobUrl);
     } catch (error) {
       console.error('Error updating profile:', error);
     }
@@ -265,7 +265,7 @@ const Profile = () => {
       <div className='profile'>
         <div className='profile-Id'>
           <div>
-         <img src={blobUrl} alt='Uploaded Logo' className='logo-preview' />
+            <img src={blobUrl} alt='Uploaded Logo' className='logo-preview' />
           </div>
           <h2 id='profile-h2'>Edit Profile</h2>
           <div className='columns-2'>
