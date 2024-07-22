@@ -228,14 +228,15 @@ const Profile = () => {
         };
 
         await storeUserData(offlineUserData);
+       
         await Promise.all([
-          addOfflineMutation({ mutation: CHANGE_COMPANY, variables: { company },}),
-          addOfflineMutation({ mutation: CHANGE_STREET_ADDRESS, variables: { userId, streetAddress } }),
-          addOfflineMutation({ mutation: CHANGE_EMAIL, variables: { userId, email } }),
-          addOfflineMutation({ mutation: CHANGE_CITY, variables: { userId, city } }),
-          addOfflineMutation({ mutation: CHANGE_STATE, variables: { userId, state } }),
-          addOfflineMutation({ mutation: CHANGE_ZIP, variables: { userId, zip } }),
-          addOfflineMutation({ mutation: CHANGE_PROFILE_PICTURE, variables: { userId, profilePicture: picturePath } }),
+          addOfflineMutation({ mutation: 'CHANGE_COMPANY', variables: { userId, company },}),
+          addOfflineMutation({ mutation: 'CHANGE_STREET_ADDRESS', variables: { userId, streetAddress } }),
+          addOfflineMutation({ mutation: 'CHANGE_EMAIL', variables: { userId, email } }),
+          addOfflineMutation({ mutation: 'CHANGE_CITY', variables: { userId, city } }),
+          addOfflineMutation({ mutation: 'CHANGE_STATE', variables: { userId, state } }),
+          addOfflineMutation({ mutation: 'CHANGE_ZIP', variables: { userId, zip } }),
+          addOfflineMutation({ mutation: 'CHANGE_PROFILE_PICTURE', variables: { userId, profilePicture: picturePath } }),
         ]);
 
         if (logo) {
