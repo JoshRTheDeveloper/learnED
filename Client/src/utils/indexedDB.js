@@ -383,10 +383,10 @@ export const clearIndexedDB = async () => {
 };
 
 
-export const addOfflineMutation = async (mutation) => {
+export const addOfflineMutation = async (mutation, variables) => {
   try {
     console.log(`Adding offline mutation:`, { mutation, variables });
-    await db.offlineMutations.add(mutation);
+    await db.offlineMutations.add(mutation, variables);
   } catch (error) {
     console.error('Failed to add offline mutation to IndexedDB:', error);
   }
