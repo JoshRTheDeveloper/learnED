@@ -37,6 +37,7 @@ const Profile = () => {
   const [renamedFile, setRenamedFile] = useState(null);
   const [offlineMode, setOfflineMode] = useState(!navigator.onLine);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [imageSrc, setImageSrc] = useState('');
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -62,8 +63,10 @@ const Profile = () => {
 
       if (isOnline) {
         await syncOfflineData();
+        setImageSrc(logoUrl);
         refetch();
       } else {
+        setImageSrc(blobUrl);
         console.error('Went offline.');
       }
     };
@@ -265,7 +268,7 @@ const Profile = () => {
       <div className='profile'>
         <div className='profile-Id'>
           <div>
-            <img src={blobUrl} alt='Uploaded Logo' className='logo-preview' />
+            <img src={imageSrc} alt='Uploaded Logo' className='logo-preview' />
           </div>
           <h2 id='profile-h2'>Edit Profile</h2>
           <div className='columns-2'>
