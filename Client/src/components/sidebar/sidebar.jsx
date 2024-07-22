@@ -22,19 +22,19 @@ const Sidebar = () => {
 
   const fetchUserDataFromIndexedDB = async () => {
     const userData = await getUserData(userId);
-    const profilePicBlob = await getProfilePicture(userId); // Fetch the blob
-  
+    const profilePicBlob = await getProfilePicture(userId); 
+  console.log (profilePicBlob)
     if (userData) {
       setUserFirstName(userData.firstName);
       setUserLastName(userData.lastName);
       if (profilePicBlob) {
         const profilePicUrl = URL.createObjectURL(profilePicBlob);
-        setProfilePicture(profilePicUrl); // Set the object URL
+        setProfilePicture(profilePicUrl); 
       } else {
-        setProfilePicture(''); // Handle case where there's no profile picture
+        setProfilePicture(''); 
       }
     }
-    console.log(profilePicBlob);
+    // console.log(profilePicBlob);
   };
 
 
@@ -68,7 +68,7 @@ const Sidebar = () => {
       fetchUserDataFromIndexedDB();
     }
   }, [userDataFromDB, userId]);
-console.log('profilepicture:',profilePicture)
+// console.log('profilepicture:',profilePicture)
 
   return (
     <div className='content'>

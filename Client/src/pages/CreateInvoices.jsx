@@ -28,7 +28,7 @@ const CreateInvoices = () => {
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [savedLocally, setSavedLocally] = useState(false);
-  const [offlineProfilePicutre, setOfflinePic] = useState(false);
+  const [offlinePicture, setOfflinePic] = useState(false);
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -56,20 +56,21 @@ const CreateInvoices = () => {
   useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
       const localUserData = await getUserData();
+      const offlinePicture = await getProfilePicture(userId); 
       if (localUserData) {
         const { email, streetAddress, city, state, zip, profilePicture } = localUserData;
-        console.log('fetch for create:', profilePicture)
+     
         setEmail(email);
         setStreetAddress(streetAddress);
         setCity(city);
         setState(state);
         setZip(zip);
         setUserData(localUserData);
-        if (profilePicture) {
-          const profilePicture = url.createObjectUrl(profilePicture)
-          setOfflinePic(profilePicture)
+        if (offlinePicture) {
+           const profilePicture = URL.createObjectURL(offlinePicture)
+           setOfflinePic(profilePicture)
+           console.log('offline', profilePicture)
         }
-
       }
     };
 
@@ -198,7 +199,7 @@ const handleFormSubmit = async (event) => {
               <div className='section1'>
                 <div className='split'>
                   <div>
-                  { profilePicture && <img src={profilePictureUrl} className='profile-picture1' alt="Profile" />}
+                   <img src={navigator.onLine ? profilePictureUrl : profilePicture} className='profile-picture1' alt="Profile" />
                   </div>
                 </div>
                 <div className='split2'>
