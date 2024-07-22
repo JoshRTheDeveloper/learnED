@@ -3,6 +3,7 @@ import Auth from "../../utils/auth";
 import { Link } from "react-router-dom";
 import Logo from "../../assets/Logo.svg";
 import SignupModal from '../signup-modal/modal';
+import jwtDecode from 'jwt-decode';
 import LoginModal from '../login-modal/login-modal';
 import { useNavigate } from "react-router-dom";
 import { useApolloClient, useQuery } from '@apollo/client';
