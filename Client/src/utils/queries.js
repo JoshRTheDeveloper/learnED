@@ -89,6 +89,7 @@ export const GET_INVOICES = gql`
         _id
       }
       invoice_details
+      profilePicture  
     }
   }
 `;
@@ -114,6 +115,7 @@ export const GET_INVOICE = gql`
         _id
       }
       invoice_details
+      profilePicture  # Add this line
     }
   }
 `;
@@ -139,6 +141,7 @@ export const GET_USER_INVOICES = gql`
         _id
       }
       invoice_details
+      profilePicture  # Add this line
     }
   }
 `;

@@ -171,7 +171,8 @@ export const CREATE_INVOICE = gql`
     $clientEmail: String!, 
     $dueDate: String!, 
     $userID: ID!, 
-    $invoice_details: String!
+    $invoice_details: String!,
+    $profilePicture: String   # Add this line
   ) {
     createInvoice(
       invoiceAmount: $invoiceAmount, 
@@ -187,7 +188,8 @@ export const CREATE_INVOICE = gql`
       clientEmail: $clientEmail, 
       dueDate: $dueDate, 
       userID: $userID, 
-      invoice_details: $invoice_details
+      invoice_details: $invoice_details,
+      profilePicture: $profilePicture   # Add this line
     ) {
       _id
       invoiceAmount
@@ -207,9 +209,11 @@ export const CREATE_INVOICE = gql`
         _id
       }
       invoice_details
+      profilePicture  # Add this line
     }
   }
 `;
+
 
 export const UPDATE_INVOICE = gql`
   mutation updateInvoice(
