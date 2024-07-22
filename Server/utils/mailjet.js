@@ -2,7 +2,7 @@ require('dotenv').config();
 const mailjet = require('node-mailjet').apiConnect(process.env.MAILJET_API_KEY, process.env.MAILJET_SECRET_KEY);
 
 const sendInvoiceEmail = async (invoiceDetails) => {
-  console.log(invoiceDetails)
+  console.log('Profile Picture URL:', invoiceDetails.profilePicture);
   const request = mailjet
     .post('send', { version: 'v3.1' })
     .request({
