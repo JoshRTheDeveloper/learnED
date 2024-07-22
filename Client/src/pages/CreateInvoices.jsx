@@ -28,7 +28,9 @@ const CreateInvoices = () => {
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [savedLocally, setSavedLocally] = useState(false);
-  const [offlinePicture, setOfflinePic] = useState(false);
+  const [offlinePicture, setOfflinePic] = useState('');
+
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -36,13 +38,12 @@ const CreateInvoices = () => {
 
   const [createInvoiceMutation] = useMutation(CREATE_INVOICE);
 
-
-  const { data: userDataFromQuery } = useQuery(GET_USER, {
+  const { data: userDataFromQuery, refetch } = useQuery(GET_USER, {
     variables: { userId },
+    skip: !isOnline,
     onCompleted: (data) => {
       if (data && data.getUser) {
         const { profilePicture } = data.getUser;
-  
         setProfilePictureUrl(profilePicture); 
       }
     },
@@ -54,9 +55,22 @@ const CreateInvoices = () => {
   console.log('profilepicutreUrl', profilePictureUrl)
 
   useEffect(() => {
+    const handleOnlineStatus = () => {
+      setIsOnline(true);
+      refetch();
+    };
+
+    window.addEventListener('online', handleOnlineStatus);
+
+    return () => {
+      window.removeEventListener('online', handleOnlineStatus);
+    };
+  }, [refetch]);
+
+  useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
       const localUserData = await getUserData();
-      const offlinePicture = await getProfilePicture(userId); 
+      const offlinePicture = await getProfilePicture(userId);
       if (localUserData) {
         const { email, streetAddress, city, state, zip, profilePicture } = localUserData;
      
@@ -67,32 +81,15 @@ const CreateInvoices = () => {
         setZip(zip);
         setUserData(localUserData);
         if (offlinePicture) {
-           const profilePicture = URL.createObjectURL(offlinePicture)
-           setOfflinePic(profilePicture)
-           console.log('offline', profilePicture)
+          const profilePictureUrl = URL.createObjectURL(offlinePicture);
+          setOfflinePic(profilePictureUrl);
+          console.log('offline', profilePictureUrl);
         }
       }
     };
 
     fetchUserDataFromIndexedDB();
-  }, []);
-
-  useEffect(() => {
-    const fetchProfilePicture = async () => {
-      try {
-        const profilePictureBlob = await getProfilePicture();
-        if (profilePictureBlob) {
-       
-          setProfilePicture(profilePictureBlob);
-          
-        }
-      } catch (error) {
-        console.error('Failed to fetch profile picture from IndexedDB:', error);
-      }
-    };
-
-    fetchProfilePicture();
-  }, []);
+  }, [userId]);
 
   const name = `${userData?.company || ''} ${userData?.lastName || ''}`;
 
@@ -104,77 +101,74 @@ const CreateInvoices = () => {
     profilePicture: profilePicture,
   };
 
+  const handleFormSubmit = async (event) => {
+    event.preventDefault();
 
-const handleFormSubmit = async (event) => {
-  event.preventDefault();
+    const invoiceAmountFloat = parseFloat(invoiceAmount);
+    const dueDateISO = new Date(dueDate).toISOString();
 
-  const invoiceAmountFloat = parseFloat(invoiceAmount);
-  const dueDateISO = new Date(dueDate).toISOString();
+    const variables = {
+      invoiceAmount: invoiceAmountFloat,
+      paidStatus: paidStatus,
+      invoiceNumber: invoiceNumber,
+      companyName: user.name,
+      companyStreetAddress: user.streetAddress,
+      companyCityAddress: user.city,
+      companyEmail: user.email,
+      clientName: clientName,
+      clientStreetAddress: clientAddress,
+      clientCityAddress: clientCity,
+      clientEmail: clientEmail,
+      dueDate: dueDateISO,
+      userID: userId,
+      invoice_details: invoiceDetails,
+      profilePicture: profilePictureUrl,
+    };
 
-  const variables = {
-    invoiceAmount: invoiceAmountFloat,
-    paidStatus: paidStatus,
-    invoiceNumber: invoiceNumber,
-    companyName: user.name,
-    companyStreetAddress: user.streetAddress,
-    companyCityAddress: user.city,
-    companyEmail: user.email,
-    clientName: clientName,
-    clientStreetAddress: clientAddress,
-    clientCityAddress: clientCity,
-    clientEmail: clientEmail,
-    dueDate: dueDateISO,
-    userID: userId,
-    invoice_details: invoiceDetails,
-    profilePicture: profilePictureUrl,
-  };
+    console.log('Profile Picture:', profilePicture);
+    console.log('Variables for mutation:', variables);
 
-  console.log('Profile Picture:', profilePicture);
-  console.log('Variables for mutation:', variables);
-
-  try {
-    if (navigator.onLine) {
-      console.log('Online - attempting to create invoice...');
-      const { data } = await createInvoiceMutation({ variables });
-      console.log(variables)
-      if (data?.createInvoice) {
-        const createdInvoice = data.createInvoice;
-        console.log('Invoice created successfully:', createdInvoice);
-        await addInvoiceToIndexedDB(createdInvoice);
-        console.log('Invoice added to IndexedDB.');
+    try {
+      if (navigator.onLine) {
+        console.log('Online - attempting to create invoice...');
+        const { data } = await createInvoiceMutation({ variables });
+        if (data?.createInvoice) {
+          const createdInvoice = data.createInvoice;
+          console.log('Invoice created successfully:', createdInvoice);
+          await addInvoiceToIndexedDB(createdInvoice);
+          console.log('Invoice added to IndexedDB.');
+        } else {
+          throw new Error('No invoice data returned from mutation.');
+        }
       } else {
-        throw new Error('No invoice data returned from mutation.');
+        console.log('Offline - saving invoice locally...');
+        variables._id = uuidv4();
+        await addInvoiceToIndexedDB(variables);
+        console.log('Invoice saved locally in IndexedDB.');
+        await addOfflineMutation({ mutation: 'CREATE_INVOICE', variables });
+        console.log('Offline mutation recorded.');
       }
-    } else {
-      console.log('Offline - saving invoice locally...');
-      variables._id = uuidv4();
-      await addInvoiceToIndexedDB(variables);
-      console.log('Invoice saved locally in IndexedDB.');
-      await addOfflineMutation({ mutation: 'CREATE_INVOICE', variables });
-      console.log('Offline mutation recorded.');
-    }
 
-    setSavedLocally(true);
-    setInvoiceAmount('');
-    setPaidStatus(false);
-    setInvoiceNumber('');
-    setClientEmail('');
-    setClientName('');
-    setClientAddress('');
-    setClientCity('');
-    setInvoiceDetails('');
-    setDueDate('');
-  } catch (error) {
-    console.error('Error saving invoice:', error.message || error);
-    if (error.networkError) {
-      console.error('Network error details:', error.networkError.result);
-    } else if (error.graphQLErrors) {
-      console.error('GraphQL error details:', error.graphQLErrors);
+      setSavedLocally(true);
+      setInvoiceAmount('');
+      setPaidStatus(false);
+      setInvoiceNumber('');
+      setClientEmail('');
+      setClientName('');
+      setClientAddress('');
+      setClientCity('');
+      setInvoiceDetails('');
+      setDueDate('');
+    } catch (error) {
+      console.error('Error saving invoice:', error.message || error);
+      if (error.networkError) {
+        console.error('Network error details:', error.networkError.result);
+      } else if (error.graphQLErrors) {
+        console.error('GraphQL error details:', error.graphQLErrors);
+      }
+      alert(`Error: ${error.message || error}`);
     }
-    alert(`Error: ${error.message || error}`);
-  }
-};
-
+  };
 
   return (
     <>
