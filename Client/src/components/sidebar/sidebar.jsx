@@ -30,6 +30,7 @@ const Sidebar = () => {
       if (profilePicBlob) {
         const profilePicUrl = URL.createObjectURL(profilePicBlob);
         setProfilePicture(profilePicUrl); 
+     
       } else {
         setProfilePicture(''); 
       }

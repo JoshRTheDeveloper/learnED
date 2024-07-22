@@ -199,7 +199,7 @@ const handleFormSubmit = async (event) => {
               <div className='section1'>
                 <div className='split'>
                   <div>
-                   <img src={navigator.onLine ? profilePictureUrl : profilePicture} className='profile-picture1' alt="Profile" />
+                   <img src={navigator.onLine ? profilePictureUrl : offlinePicture} className='profile-picture1' alt="Profile" />
                   </div>
                 </div>
                 <div className='split2'>
