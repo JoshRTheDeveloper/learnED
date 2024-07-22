@@ -37,7 +37,6 @@ const Profile = () => {
   const [renamedFile, setRenamedFile] = useState(null);
   const [offlineMode, setOfflineMode] = useState(!navigator.onLine);
   const [initialLoad, setInitialLoad] = useState(true);
-  const [imageSrc, setImageSrc] = useState('');
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -83,7 +82,8 @@ const Profile = () => {
       try {
         const profilePictureBlob = await getProfilePicture();
         if (profilePictureBlob) {
-          setBlobUrl(profilePictureBlob);
+          const url = URL.createObjectURL(profilePictureBlob);
+          setBlobUrl(url);
         }
       } catch (error) {
         console.error('Failed to fetch profile picture from IndexedDB:', error);
@@ -92,6 +92,14 @@ const Profile = () => {
 
     fetchProfilePicture();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [blobUrl]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -140,17 +148,16 @@ const Profile = () => {
   const handleLogoChange = async (e) => {
     try {
       const file = e.target.files[0];
-      const blobUrl = URL.createObjectURL(file);
-      setLogo(file);
-      setLogoUrl(blobUrl);
-      setBlobUrl(blobUrl);
+      if (file) {
+        // Create a URL for display purposes (temporary)
+        const blobUrl = URL.createObjectURL(file);
+        setLogo(file);
+        setLogoUrl(blobUrl);
 
-      const filename = `${userId}_profile_picture.jpg`;
-      const renamedFile = new File([file], filename, { type: file.type });
-      setRenamedFile(renamedFile);
-
-      await storeProfilePicture(userId, blobUrl);
-      console.log("Profile picture stored successfully.");
+        // Store the file directly in IndexedDB
+        await storeProfilePicture(userId, file);
+        console.log("Profile picture stored successfully.");
+      }
     } catch (error) {
       console.error("An error occurred while storing the profile picture or file:", error);
     }
@@ -180,7 +187,7 @@ const Profile = () => {
       let picturePath = logoUrl;
       if (navigator.onLine) {
         if (logo) {
-          const uploadedPicturePath = await uploadProfilePicture(renamedFile);
+          const uploadedPicturePath = await uploadProfilePicture(logo);
           picturePath = uploadedPicturePath;
           console.log(uploadedPicturePath);
         }
@@ -229,9 +236,9 @@ const Profile = () => {
         };
 
         await storeUserData(offlineUserData);
-       
+
         await Promise.all([
-          addOfflineMutation({ mutation: 'CHANGE_COMPANY', variables: { userId, company },}),
+          addOfflineMutation({ mutation: 'CHANGE_COMPANY', variables: { userId, company }, }),
           addOfflineMutation({ mutation: 'CHANGE_STREET_ADDRESS', variables: { userId, streetAddress } }),
           addOfflineMutation({ mutation: 'CHANGE_EMAIL', variables: { userId, email } }),
           addOfflineMutation({ mutation: 'CHANGE_CITY', variables: { userId, city } }),
@@ -241,7 +248,7 @@ const Profile = () => {
         ]);
 
         if (logo) {
-          await storeProfilePicture(userId, logoUrl);
+          await storeProfilePicture(userId, logo);
         }
       }
 
@@ -260,15 +267,13 @@ const Profile = () => {
     }
   };
 
-
-
   return (
     <div>
       <Sidebar />
       <div className='profile'>
         <div className='profile-Id'>
           <div>
-            <img src={navigator.onLine ? logoUrl : logo} alt='Uploaded Logo' className='logo-preview' />
+            <img src={navigator.onLine ? logoUrl : blobUrl} alt='Uploaded Logo' className='logo-preview' />
           </div>
           <h2 id='profile-h2'>Edit Profile</h2>
           <div className='columns-2'>
