@@ -187,7 +187,6 @@ const Profile = () => {
 
     try {
       let picturePath = logoUrl;
-      let url = fileUrl
       if (navigator.onLine) {
         if (logo) {
           const uploadedPicturePath = await uploadProfilePicture(logo);
