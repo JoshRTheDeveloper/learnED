@@ -10,6 +10,7 @@ const Sidebar = () => {
   const [userFirstName, setUserFirstName] = useState('');
   const [userLastName, setUserLastName] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
+  const [profilePictureUrl, setProfilePictureUrl] = useState('');
 
   const profile = Auth.getProfile();
   const userId = profile?.data?._id || '';
@@ -17,7 +18,27 @@ const Sidebar = () => {
   const { data: userDataFromDB, error: errorFromDB, refetch } = useQuery(GET_USER, {
     variables: { userId },
     skip: !userId,
+    
   });
+console.log(userDataFromDB.getUser.profilePicture)
+
+useEffect(() => {
+  const fetchProfilePicture = async () => {
+    try {
+      const profilePictureUrl = userDataFromDB.getUser.profilePicture;
+      console.log(profilePictureUrl)
+   
+     
+        setProfilePictureUrl(profilePictureUrl);
+        
+      
+    } catch (error) {
+      console.error('Failed to fetch profile picture from IndexedDB:', error);
+    }
+  };
+
+  fetchProfilePicture();
+}, []);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -41,12 +62,13 @@ const Sidebar = () => {
     fetchUserData();
   }, [userId, userDataFromDB]);
 
+ 
   return (
     <div className='content'>
       <div className='sidebar'>
         <div className='profile-picture-div'>
           {profilePicture && typeof profilePicture === 'string' ? (
-            <img src={profilePicture} className='profile-picture2' alt='Profile' />
+            <img src={navigator.onLine ? profilePictureUrl : profilePicture} className='profile-picture2' alt='Profile' />
           ) : (
             <span>Loading profile picture...</span>
           )}

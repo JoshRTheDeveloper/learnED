@@ -42,7 +42,7 @@ const CreateInvoices = () => {
       if (data && data.getUser) {
         const { profilePicture } = data.getUser;
   
-        setProfilePictureUrl(profilePicture); // Update state with profile picture URL
+        setProfilePictureUrl(profilePicture); 
       }
     },
     onError: (error) => {
@@ -192,7 +192,7 @@ const handleFormSubmit = async (event) => {
               <div className='section1'>
                 <div className='split'>
                   <div>
-                  { profilePicture && <img src={profilePicture} className='profile-picture1' alt="Profile" />}
+                  { profilePicture && <img src={profilePictureUrl} className='profile-picture1' alt="Profile" />}
                   </div>
                 </div>
                 <div className='split2'>
