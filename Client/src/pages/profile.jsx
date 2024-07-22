@@ -260,13 +260,15 @@ const Profile = () => {
     }
   };
 
+
+
   return (
     <div>
       <Sidebar />
       <div className='profile'>
         <div className='profile-Id'>
           <div>
-            <img src={navigator.onLine ? logoUrl : blobUrl} alt='Uploaded Logo' className='logo-preview' />
+            <img src={navigator.onLine ? logoUrl : logo} alt='Uploaded Logo' className='logo-preview' />
           </div>
           <h2 id='profile-h2'>Edit Profile</h2>
           <div className='columns-2'>
