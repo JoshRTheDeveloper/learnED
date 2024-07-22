@@ -3,13 +3,11 @@ import Auth from "../../utils/auth";
 import { Link } from "react-router-dom";
 import Logo from "../../assets/Logo.svg";
 import SignupModal from '../signup-modal/modal';
-import jwtDecode from 'jwt-decode';
 import LoginModal from '../login-modal/login-modal';
 import { useNavigate } from "react-router-dom";
-import { useApolloClient, useQuery } from '@apollo/client';
-import { clearOfflineMutation, getOfflineMutations, storeUserData } from '../../utils/indexedDB'; 
-import { GET_USER } from '../../utils/queries'; 
-import {
+import { useApolloClient } from '@apollo/client';
+import { clearOfflineMutation, getOfflineMutations } from '../../utils/indexedDB'; 
+import {   
   CREATE_INVOICE,
   DELETE_INVOICE,
   UPDATE_INVOICE,
@@ -19,26 +17,16 @@ import {
   CHANGE_EMAIL,
   CHANGE_CITY,
   CHANGE_STATE,
-  CHANGE_ZIP
-} from '../../utils/mutations';
+  CHANGE_ZIP } from '../../utils/mutations';
 import './index.css';
 
 function Nav() {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); 
   const [firstName, setFirstName] = useState("");
   const [onlineStatus, setOnlineStatus] = useState(navigator.onLine ? 'Online' : 'Offline');
   const navigate = useNavigate();
   const client = useApolloClient();
-
-  // Fetch user data with GET_USER query
-  const token = localStorage.getItem('authToken');
-  const decodedToken = jwtDecode(token);
-  const userId = decodedToken.data._id;
-  const { data: userData } = useQuery(GET_USER, {
-    variables: { userId: userId || '' },
-    skip: !navigator.onLine // Skip if offline
-  });
 
   useEffect(() => {
     if (Auth.loggedIn()) {
@@ -50,7 +38,6 @@ function Nav() {
       setOnlineStatus(isOnline ? 'Online' : 'Offline');
       if (isOnline) {
         executeStoredMutations();
-        syncUserData();
       }
     };
 
@@ -98,51 +85,28 @@ function Nav() {
     }
   };
 
-  const syncUserData = async () => {
-    try {
-      if (userData) {
-        const { company, email, streetAddress, city, state, zip, profilePicture } = userData.getUser;
-
-        await storeUserData({
-          userId,
-          email,
-          streetAddress,
-          city,
-          state,
-          zip,
-          company,
-          profilePicture,
-        });
-
-        console.log('User data synced to IndexedDB');
-      }
-    } catch (error) {
-      console.error('Error syncing user data to IndexedDB:', error);
-    }
-  };
-
   const executeStoredMutations = async () => {
     try {
       const storedMutations = await getOfflineMutations();
       console.log('Stored mutations:', storedMutations);
-
+  
       if (!Array.isArray(storedMutations) || storedMutations.length === 0) {
         console.log('No offline mutations found');
         return;
       }
-
+  
       for (const mutation of storedMutations) {
         try {
           const { mutation: mutationType, variables, id } = mutation;
-
+  
           if (!mutationType || !variables || !id) {
             console.warn('Malformed mutation object:', mutation);
             continue; 
           }
-
+  
           let result;
           console.log(`Executing mutation type: ${mutationType} with variables:`, variables);
-
+  
           switch (mutationType) {
             case 'CREATE_INVOICE':
               result = await client.mutate({
@@ -151,7 +115,7 @@ function Nav() {
               });
               console.log('Successfully executed createInvoice mutation:', result);
               break;
-
+  
             case 'DELETE_INVOICE':
               result = await client.mutate({
                 mutation: DELETE_INVOICE,
@@ -159,7 +123,7 @@ function Nav() {
               });
               console.log('Successfully executed deleteInvoice mutation:', result);
               break;
-
+  
             case 'UPDATE_INVOICE':
               result = await client.mutate({
                 mutation: UPDATE_INVOICE,
@@ -170,7 +134,7 @@ function Nav() {
               });
               console.log('Successfully executed updateInvoice mutation:', result);
               break;
-
+  
             case 'CHANGE_COMPANY':
               result = await client.mutate({
                 mutation: CHANGE_COMPANY,
@@ -178,7 +142,7 @@ function Nav() {
               });
               console.log('Successfully executed changeCompany mutation:', result);
               break;
-
+  
             case 'CHANGE_PROFILE_PICTURE':
               result = await client.mutate({
                 mutation: CHANGE_PROFILE_PICTURE,
@@ -186,7 +150,7 @@ function Nav() {
               });
               console.log('Successfully executed changeProfilePicture mutation:', result);
               break;
-
+  
             case 'CHANGE_STREET_ADDRESS':
               result = await client.mutate({
                 mutation: CHANGE_STREET_ADDRESS,
@@ -194,7 +158,7 @@ function Nav() {
               });
               console.log('Successfully executed changeStreetAddress mutation:', result);
               break;
-
+  
             case 'CHANGE_EMAIL':
               result = await client.mutate({
                 mutation: CHANGE_EMAIL,
@@ -202,7 +166,7 @@ function Nav() {
               });
               console.log('Successfully executed changeEmail mutation:', result);
               break;
-
+  
             case 'CHANGE_CITY':
               result = await client.mutate({
                 mutation: CHANGE_CITY,
@@ -210,7 +174,7 @@ function Nav() {
               });
               console.log('Successfully executed changeCity mutation:', result);
               break;
-
+  
             case 'CHANGE_STATE':
               result = await client.mutate({
                 mutation: CHANGE_STATE,
@@ -218,7 +182,7 @@ function Nav() {
               });
               console.log('Successfully executed changeState mutation:', result);
               break;
-
+  
             case 'CHANGE_ZIP':
               result = await client.mutate({
                 mutation: CHANGE_ZIP,
@@ -226,12 +190,12 @@ function Nav() {
               });
               console.log('Successfully executed changeZip mutation:', result);
               break;
-
+  
             default:
               console.warn('Unknown mutation type:', mutationType);
               continue;
           }
-
+  
           await clearOfflineMutation(id);
           console.log(`Cleared mutation with id ${id} from offline storage`);
         } catch (error) {
@@ -244,6 +208,9 @@ function Nav() {
       console.error('Failed to get offline mutations:', error);
     }
   };
+  
+  
+  
 
   if (Auth.loggedIn()) {
     return (
