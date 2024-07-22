@@ -185,12 +185,7 @@ const Profile = () => {
 
     try {
       let picturePath = logoUrl;
-      if (navigator.onLine) {
-        if (logo) {
-          const uploadedPicturePath = await uploadProfilePicture(logo);
-          picturePath = uploadedPicturePath;
-          console.log(uploadedPicturePath);
-        }
+     
 
         await Promise.all([
           changeCompanyMutation({ variables: { userId, company } }),
