@@ -138,10 +138,7 @@ function Nav() {
             case 'CHANGE_COMPANY':
               result = await client.mutate({
                 mutation: CHANGE_COMPANY,
-                variables: {
-                  userId : variables.userId,
-                  company: variables.company,
-                }
+                variables,
               });
               console.log('Successfully executed changeCompany mutation:', result);
               break;
