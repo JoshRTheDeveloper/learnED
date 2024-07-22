@@ -28,6 +28,7 @@ const CreateInvoices = () => {
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [savedLocally, setSavedLocally] = useState(false);
+  const [offlineProfilePicutre, setOfflinePic] = useState(false);
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -64,6 +65,11 @@ const CreateInvoices = () => {
         setState(state);
         setZip(zip);
         setUserData(localUserData);
+        if (profilePicture) {
+          const profilePicture = url.createObjectUrl(profilePicture)
+          setOfflinePic(profilePicture)
+        }
+
       }
     };
 
