@@ -228,9 +228,12 @@ const Profile = () => {
         };
 
         await storeUserData(offlineUserData);
-
+        await addOfflineMutation({
+          mutation: 'DELETE_INVOICE',
+          variables: { invoiceNumber },
+        });
         await Promise.all([
-          addOfflineMutation({ mutation: CHANGE_COMPANY, variables: { userId, company } }),
+          addOfflineMutation({ mutation: CHANGE_COMPANY, variables: { company },}),
           addOfflineMutation({ mutation: CHANGE_STREET_ADDRESS, variables: { userId, streetAddress } }),
           addOfflineMutation({ mutation: CHANGE_EMAIL, variables: { userId, email } }),
           addOfflineMutation({ mutation: CHANGE_CITY, variables: { userId, city } }),
