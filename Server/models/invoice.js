@@ -83,6 +83,10 @@ const invoiceSchema = new Schema({
     type: String,
     required: true,
   },
+  profilePicture: {  
+    type: String,
+    trim: true,
+  },
 }, {
   timestamps: false,
   collection: 'invoices',

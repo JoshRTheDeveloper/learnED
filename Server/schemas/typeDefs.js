@@ -37,6 +37,7 @@ type Invoice {
   dueDate: String!
   user: User!
   invoice_details: String!
+  profilePicture: String,
 }
 
 type DeleteInvoicePayload {
@@ -85,6 +86,7 @@ type Mutation {
     dueDate: String!
     userID: ID!
     invoice_details: String!
+    profilePicture: String
   ): Invoice!
   updateInvoice(invoiceNumber: String!, paidStatus: Boolean!): Invoice!
   deleteInvoice(invoiceNumber: String!): DeleteInvoicePayload!
