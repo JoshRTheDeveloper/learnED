@@ -37,6 +37,7 @@ const Profile = () => {
   const [renamedFile, setRenamedFile] = useState(null);
   const [offlineMode, setOfflineMode] = useState(!navigator.onLine);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [url, setUrl] = useState('')
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -153,6 +154,7 @@ const Profile = () => {
         const blobUrl = URL.createObjectURL(file);
         setLogo(file);
         setLogoUrl(blobUrl);
+        setUrl(file)
 
         // Store the file directly in IndexedDB
         await storeProfilePicture(userId, file);
@@ -185,7 +187,13 @@ const Profile = () => {
 
     try {
       let picturePath = logoUrl;
-     
+      let url = fileUrl
+      if (navigator.onLine) {
+        if (logo) {
+          const uploadedPicturePath = await uploadProfilePicture(logo);
+          picturePath = uploadedPicturePath;
+          console.log(uploadedPicturePath);
+        }
 
         await Promise.all([
           changeCompanyMutation({ variables: { userId, company } }),
@@ -194,7 +202,7 @@ const Profile = () => {
           changeCityMutation({ variables: { userId, city } }),
           changeStateMutation({ variables: { userId, state } }),
           changeZipMutation({ variables: { userId, zip } }),
-          changeProfilePictureMutation({ variables: { userId, profilePicture: picturePath } }),
+          changeProfilePictureMutation({ variables: { userId, profilePicture: url } }),
         ]);
 
         setUserData({
