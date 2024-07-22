@@ -18,56 +18,54 @@ const Sidebar = () => {
   const { data: userDataFromDB, error: errorFromDB, refetch } = useQuery(GET_USER, {
     variables: { userId },
     skip: !userId,
-    
   });
-console.log(userDataFromDB.getUser.profilePicture)
 
-useEffect(() => {
-  const fetchProfilePicture = async () => {
-    try {
-      const profilePictureUrl = userDataFromDB.getUser.profilePicture;
-      console.log(profilePictureUrl)
-   
-     
-        setProfilePictureUrl(profilePictureUrl);
-        
-      
-    } catch (error) {
-      console.error('Failed to fetch profile picture from IndexedDB:', error);
+  const fetchUserDataFromIndexedDB = async () => {
+    const userData = await getUserData(userId);
+    const profilePicData = await getProfilePicture(userId);
+
+    if (userData) {
+      setUserFirstName(userData.firstName);
+      setUserLastName(userData.lastName);
+      setProfilePicture(profilePicData || '');
     }
   };
 
-  fetchProfilePicture();
-}, []);
+  useEffect(() => {
+    if (userId) {
+      refetch();
+    }
+  }, [userId]);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      let userData, profilePicData;
-
-      if (userDataFromDB && userDataFromDB.user) {
-        userData = userDataFromDB.user;
-        profilePicData = userData.profilePictureUrl; 
+    const fetchProfilePicture = () => {
+      if (userDataFromDB && userDataFromDB.getUser) {
+        const profilePictureUrl = userDataFromDB.getUser.profilePicture;
+        setProfilePictureUrl(profilePictureUrl);
       } else {
-        userData = await getUserData(userId);
-        profilePicData = await getProfilePicture(userId); 
-      }
-
-      if (userData) {
-        setUserFirstName(userData.firstName);
-        setUserLastName(userData.lastName);
-        setProfilePicture(profilePicData || '');
+        fetchUserDataFromIndexedDB();
       }
     };
 
-    fetchUserData();
-  }, [userId, userDataFromDB]);
+    fetchProfilePicture();
+  }, [userDataFromDB]);
 
- 
+  useEffect(() => {
+    if (userDataFromDB && userDataFromDB.getUser) {
+      const { firstName, lastName, profilePicture } = userDataFromDB.getUser;
+      setUserFirstName(firstName);
+      setUserLastName(lastName);
+      setProfilePictureUrl(profilePicture);
+    } else if (userId) {
+      fetchUserDataFromIndexedDB();
+    }
+  }, [userDataFromDB, userId]);
+
   return (
     <div className='content'>
       <div className='sidebar'>
         <div className='profile-picture-div'>
-          {profilePicture && typeof profilePicture === 'string' ? (
+          {profilePictureUrl ? (
             <img src={navigator.onLine ? profilePictureUrl : profilePicture} className='profile-picture2' alt='Profile' />
           ) : (
             <span>Loading profile picture...</span>
