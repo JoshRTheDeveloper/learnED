@@ -22,14 +22,21 @@ const Sidebar = () => {
 
   const fetchUserDataFromIndexedDB = async () => {
     const userData = await getUserData(userId);
-    const profilePicData = await getProfilePicture(userId);
-
+    const profilePicBlob = await getProfilePicture(userId); // Fetch the blob
+  
     if (userData) {
       setUserFirstName(userData.firstName);
       setUserLastName(userData.lastName);
-      setProfilePicture(profilePicData || '');
+      if (profilePicBlob) {
+        const profilePicUrl = URL.createObjectURL(profilePicBlob);
+        setProfilePicture(profilePicUrl); // Set the object URL
+      } else {
+        setProfilePicture(''); // Handle case where there's no profile picture
+      }
     }
+    console.log(profilePicBlob);
   };
+
 
   useEffect(() => {
     if (userId) {
@@ -56,10 +63,12 @@ const Sidebar = () => {
       setUserFirstName(firstName);
       setUserLastName(lastName);
       setProfilePictureUrl(profilePicture);
+      fetchUserDataFromIndexedDB();
     } else if (userId) {
       fetchUserDataFromIndexedDB();
     }
   }, [userDataFromDB, userId]);
+console.log('profilepicture:',profilePicture)
 
   return (
     <div className='content'>
@@ -71,7 +80,7 @@ const Sidebar = () => {
             <span>Loading profile picture...</span>
           )}
         </div>
-        {userFirstName && userLastName && <h2>Welcome, {userFirstName} {userLastName}!</h2>}
+        {userFirstName && userLastName && <h2>Welcome, {userFirstName}!</h2>}
         <ul>
           <li>
             <Link to='/dashboard'>Dashboard</Link>
