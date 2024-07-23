@@ -12,7 +12,6 @@ import {
   DELETE_INVOICE,
   UPDATE_INVOICE,
   CHANGE_COMPANY,
-  CHANGE_PROFILE_PICTURE,
   CHANGE_STREET_ADDRESS,
   CHANGE_EMAIL,
   CHANGE_CITY,
@@ -141,14 +140,6 @@ function Nav() {
                 variables,
               });
               console.log('Successfully executed changeCompany mutation:', result);
-              break;
-  
-            case 'CHANGE_PROFILE_PICTURE':
-              result = await client.mutate({
-                mutation: CHANGE_PROFILE_PICTURE,
-                variables,
-              });
-              console.log('Successfully executed changeProfilePicture mutation:', result);
               break;
   
             case 'CHANGE_STREET_ADDRESS':

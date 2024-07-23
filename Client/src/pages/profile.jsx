@@ -12,6 +12,8 @@ import {
   getProfilePicture,
   getUserData,
   addOfflineMutation,
+  getOfflineMutations,
+  clearOfflineMutation
 } from '../utils/indexedDB';
 import {
   CHANGE_COMPANY,
@@ -162,6 +164,25 @@ const Profile = () => {
       }
     } catch (error) {
       console.error("An error occurred while storing the profile picture or file:", error);
+    }
+  };
+
+  const syncOfflineData = async () => {
+    try {
+      const offlineMutations = await getOfflineMutations();
+      for (const { mutation, variables } of offlineMutations) {
+        if (mutation === 'CHANGE_PROFILE_PICTURE') {
+          const profilePictureBlob = await getProfilePictureBlob(userId);
+          if (profilePictureBlob) {
+            const uploadedPicturePath = await uploadProfilePicture(profilePictureBlob);
+            variables.profilePicture = uploadedPicturePath;
+          }
+        }
+        await executeMutation(mutation, variables);
+      }
+      clearOfflineMutation(mutation);
+    } catch (error) {
+      console.error('Error syncing offline data:', error);
     }
   };
 
