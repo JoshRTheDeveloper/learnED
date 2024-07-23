@@ -247,7 +247,7 @@ const Profile = () => {
           addOfflineMutation({ mutation: 'CHANGE_CITY', variables: { userId, city } }),
           addOfflineMutation({ mutation: 'CHANGE_STATE', variables: { userId, state } }),
           addOfflineMutation({ mutation: 'CHANGE_ZIP', variables: { userId, zip } }),
-          addOfflineMutation({ mutation: 'CHANGE_PROFILE_PICTURE', variables: { userId, profilePicture: fileUrl } }),
+          addOfflineMutation({ mutation: 'CHANGE_PROFILE_PICTURE', variables: { userId, profilePicture: picturePath } }),
         ]);
 
         if (logo) {
