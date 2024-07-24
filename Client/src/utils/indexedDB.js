@@ -401,6 +401,19 @@ export const getOfflineMutations = async () => {
   }
 };
 
+export const getOfflineMutation = async (mutationType = null) => {
+  try {
+    if (mutationType) {
+      return await db.offlineMutations.where('mutation').equals(mutationType).toArray();
+    } else {
+      return await db.offlineMutations.toArray();
+    }
+  } catch (error) {
+    console.error('Failed to get offline mutations from IndexedDB:', error);
+    return [];
+  }
+};
+
 export const clearOfflineMutation = async (id) => {
   try {
     await db.offlineMutations.delete(id);

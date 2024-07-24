@@ -12,6 +12,7 @@ import {
   DELETE_INVOICE,
   UPDATE_INVOICE,
   CHANGE_COMPANY,
+  CHANGE_PROFILE_PICTURE,
   CHANGE_STREET_ADDRESS,
   CHANGE_EMAIL,
   CHANGE_CITY,
@@ -112,7 +113,7 @@ function Nav() {
                 mutation: CREATE_INVOICE,
                 variables,
               });
-              console.log('Successfully executed createInvoice mutation:', result);
+     
               break;
   
             case 'DELETE_INVOICE':
@@ -120,7 +121,7 @@ function Nav() {
                 mutation: DELETE_INVOICE,
                 variables,
               });
-              console.log('Successfully executed deleteInvoice mutation:', result);
+    
               break;
   
             case 'UPDATE_INVOICE':
@@ -131,7 +132,7 @@ function Nav() {
                   paidStatus: variables.paidStatus,
                 },
               });
-              console.log('Successfully executed updateInvoice mutation:', result);
+      
               break;
   
             case 'CHANGE_COMPANY':
@@ -139,15 +140,23 @@ function Nav() {
                 mutation: CHANGE_COMPANY,
                 variables,
               });
-              console.log('Successfully executed changeCompany mutation:', result);
+          
               break;
+  
+            // case 'CHANGE_PROFILE_PICTURE':
+            //   result = await client.mutate({
+            //     mutation: CHANGE_PROFILE_PICTURE,
+            //     variables,
+            //   });
+            //   console.log('Successfully executed changeProfilePicture mutation:', result);
+            //   break;
   
             case 'CHANGE_STREET_ADDRESS':
               result = await client.mutate({
                 mutation: CHANGE_STREET_ADDRESS,
                 variables,
               });
-              console.log('Successfully executed changeStreetAddress mutation:', result);
+ 
               break;
   
             case 'CHANGE_EMAIL':
@@ -155,7 +164,7 @@ function Nav() {
                 mutation: CHANGE_EMAIL,
                 variables,
               });
-              console.log('Successfully executed changeEmail mutation:', result);
+    
               break;
   
             case 'CHANGE_CITY':
@@ -163,7 +172,7 @@ function Nav() {
                 mutation: CHANGE_CITY,
                 variables,
               });
-              console.log('Successfully executed changeCity mutation:', result);
+         
               break;
   
             case 'CHANGE_STATE':
@@ -171,7 +180,7 @@ function Nav() {
                 mutation: CHANGE_STATE,
                 variables,
               });
-              console.log('Successfully executed changeState mutation:', result);
+          
               break;
   
             case 'CHANGE_ZIP':
@@ -179,7 +188,7 @@ function Nav() {
                 mutation: CHANGE_ZIP,
                 variables,
               });
-              console.log('Successfully executed changeZip mutation:', result);
+          
               break;
   
             default:
@@ -188,11 +197,10 @@ function Nav() {
           }
   
           await clearOfflineMutation(id);
-          console.log(`Cleared mutation with id ${id} from offline storage`);
+
         } catch (error) {
           console.error(`Error executing stored ${mutation.mutation} mutation:`, error);
-          console.log('GraphQL Error Details:', error?.graphQLErrors);
-          console.log('Network Error Details:', error?.networkError);
+      
         }
       }
     } catch (error) {

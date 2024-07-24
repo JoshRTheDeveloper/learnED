@@ -23,7 +23,7 @@ const Sidebar = () => {
   const fetchUserDataFromIndexedDB = async () => {
     const userData = await getUserData(userId);
     const profilePicBlob = await getProfilePicture(userId); 
-  console.log (profilePicBlob)
+
     if (userData) {
       setUserFirstName(userData.firstName);
       setUserLastName(userData.lastName);
@@ -81,7 +81,7 @@ const Sidebar = () => {
             <span>Loading profile picture...</span>
           )}
         </div>
-        {userFirstName && userLastName && <h2>Welcome, {userFirstName}!</h2>}
+   
         <ul>
           <li>
             <Link to='/dashboard'>Dashboard</Link>

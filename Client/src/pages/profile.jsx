@@ -6,6 +6,7 @@ import Sidebar from '../components/sidebar/sidebar';
 import temporaryImage from '../assets/noLogo.svg';
 import axios from 'axios';
 import { GET_USER } from '../utils/queries';
+import { useApolloClient } from '@apollo/client';
 import {
   storeUserData,
   storeProfilePicture,
@@ -13,7 +14,9 @@ import {
   getUserData,
   addOfflineMutation,
   getOfflineMutations,
-  clearOfflineMutation
+  clearOfflineMutation,
+  getOfflineMutation
+
 } from '../utils/indexedDB';
 import {
   CHANGE_COMPANY,
@@ -40,6 +43,7 @@ const Profile = () => {
   const [offlineMode, setOfflineMode] = useState(!navigator.onLine);
   const [initialLoad, setInitialLoad] = useState(true);
   const [url, setUrl] = useState('')
+  const client = useApolloClient();
 
   const token = localStorage.getItem('authToken');
   const decodedToken = jwtDecode(token);
@@ -131,7 +135,7 @@ const Profile = () => {
           }
 
           setInitialLoad(false);
-          console.log('Fetched data from IndexedDB:', userDataFromDB);
+         
         } catch (error) {
           console.error('Error fetching data:', error);
         }
@@ -167,22 +171,81 @@ const Profile = () => {
     }
   };
 
+
+
+  
+
+
   const syncOfflineData = async () => {
     try {
-      const offlineMutations = await getOfflineMutations();
+      const offlineMutations = await getOfflineMutation('CHANGE_PROFILE_PICTURE');
+      console.log(offlineMutations)
       for (const { mutation, variables } of offlineMutations) {
+        console.log('Processing mutation:', mutation);
+      console.log('Initial variables:', variables);
         if (mutation === 'CHANGE_PROFILE_PICTURE') {
-          const profilePictureBlob = await getProfilePictureBlob(userId);
+          const profilePictureBlob = await getProfilePicture(userId);
+          console.log (profilePictureBlob)
           if (profilePictureBlob) {
             const uploadedPicturePath = await uploadProfilePicture(profilePictureBlob);
+            console.log('Uploaded picture path:', uploadedPicturePath);
             variables.profilePicture = uploadedPicturePath;
           }
         }
-        await executeMutation(mutation, variables);
+console.log (mutation, variables, '--mutations')
+      await executeMutation(offlineMutations);
       }
-      clearOfflineMutation(mutation);
+
+      clearOfflineMutation();
     } catch (error) {
       console.error('Error syncing offline data:', error);
+    }
+  };
+
+
+  const executeMutation = async (mutations) => {
+    try {
+      console.log('Stored mutations:', mutations);
+  
+      if (!Array.isArray(mutations) || mutations.length === 0) {
+        console.log('No offline mutations found');
+        return;
+      }
+  
+      for (const mutation of mutations) {
+        try {
+          const { mutation: mutationType, variables, id } = mutation;
+  
+          if (!mutationType || !variables || !id) {
+            console.warn('Malformed mutation object:', mutation);
+            continue; 
+          }
+  
+          let result;
+          console.log(`Executing mutation type: ${mutationType} with variables:`, variables);
+  
+          switch (mutationType) {
+            case 'CHANGE_PROFILE_PICTURE':
+              result = await client.mutate({
+                mutation: CHANGE_PROFILE_PICTURE,
+                variables,
+              });
+              console.log('Successfully executed changeProfilePicture mutation:', result);
+              break;
+  
+            default:
+              console.warn('Unknown mutation type:', mutationType);
+              continue;
+          }
+  
+          // If the mutation is successfully executed, clear it from the offline storage
+          await clearOfflineMutations(id);
+        } catch (error) {
+          console.error(`Error executing stored ${mutation.mutation} mutation:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to get offline mutations:', error);
     }
   };
 
@@ -268,7 +331,7 @@ const Profile = () => {
           addOfflineMutation({ mutation: 'CHANGE_CITY', variables: { userId, city } }),
           addOfflineMutation({ mutation: 'CHANGE_STATE', variables: { userId, state } }),
           addOfflineMutation({ mutation: 'CHANGE_ZIP', variables: { userId, zip } }),
-          addOfflineMutation({ mutation: 'CHANGE_PROFILE_PICTURE', variables: { userId, profilePicture: picturePath } }),
+          addOfflineMutation({ mutation: 'CHANGE_PROFILE_PICTURE', variables: { userId, profilePicture: url } }),
         ]);
 
         if (logo) {
@@ -348,8 +411,12 @@ const Profile = () => {
             </div>
             <div className='fields'>
               <label className='labels'>Logo:</label>
-              <input className='inputs1' type="file" accept="image/*" onChange={handleLogoChange} />
-            </div>
+                  {offlineMode ? (
+                  <p className='parOffline'> Logo upload is not available offline.</p>
+                  ) : (
+                    <input className='inputs1' type="file" accept="image/*" onChange={handleLogoChange} />
+                  )}
+</div>
             <button className='submit-button' type="submit">Submit</button>
           </form>
         </div>
