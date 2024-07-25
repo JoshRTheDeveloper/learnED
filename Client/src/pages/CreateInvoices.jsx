@@ -65,11 +65,11 @@ const CreateInvoices = () => {
         const localUserData = await getUserData(userId);
         const offlinePicture = await getProfilePicture(userId);
   console.log(localUserData)
-        if (localUserData ) {
-          
+        if (localUserData && localUserData.getUser) {
+          const { getUser } = localUserData;
           
   
-          const { email = '', streetAddress = '', city = '', state = '', zip = '', company = '' } = localUserData;
+          const { email = '', streetAddress = '', city = '', state = '', zip = '', company = '' } = getUser;
    
           setEmail(email);
           setStreetAddress(streetAddress);
