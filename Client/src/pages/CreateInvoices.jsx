@@ -64,12 +64,13 @@ const CreateInvoices = () => {
       try {
         const localUserData = await getUserData(userId);
         const offlinePicture = await getProfilePicture(userId);
+        console.log('profiel', offlinePicture)
   console.log(localUserData)
-        if (localUserData && localUserData.getUser) {
-          const { getUser } = localUserData;
+        if (localUserData || localUserData.getUser) {
+          
           
   
-          const { email = '', streetAddress = '', city = '', state = '', zip = '', company = '' } = getUser;
+          const { email = '', streetAddress = '', city = '', state = '', zip = '', company = '' } =  localUserData.getUser || localUserData;
    
           setEmail(email);
           setStreetAddress(streetAddress);
@@ -78,16 +79,15 @@ const CreateInvoices = () => {
           setZip(zip);
           setUserData(localUserData);
           setUserName(company);
-  
+          console.log('profiel', offlinePicture)
           if (offlinePicture) {
             const profilePicture = URL.createObjectURL(offlinePicture);
             setOfflinePic(profilePicture);
-       
+    
           } else {
             console.warn('No offline picture found');
           }
-        } else {
-          console.warn('No user data found in IndexedDB');
+        
         }
       } catch (error) {
         console.error('Error fetching data from IndexedDB:', error);
