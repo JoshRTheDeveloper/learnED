@@ -16,6 +16,7 @@ const CreateInvoices = () => {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
+  const [userName, setUserName] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
   const [profilePictureUrl, setProfilePictureUrl] = useState('');
   const [clientEmail, setClientEmail] = useState('');
@@ -41,9 +42,14 @@ const CreateInvoices = () => {
     variables: { userId },
     onCompleted: (data) => {
       if (data && data.getUser) {
-        const { profilePicture } = data.getUser;
-  
+        const { email, profilePicture, streetAddress, city, zip, company } = data.getUser; 
+        setEmail(email);
+        setStreetAddress(streetAddress);
+        setCity(city);
+        setState(state);
+        setZip(zip);
         setProfilePictureUrl(profilePicture); 
+        setUserName(company)
       }
     },
     onError: (error) => {
@@ -55,50 +61,48 @@ const CreateInvoices = () => {
 
   useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
-      const localUserData = await getUserData();
-      const offlinePicture = await getProfilePicture(userId); 
-      if (localUserData) {
-        const { email, streetAddress, city, state, zip, profilePicture } = localUserData;
-     
-        setEmail(email);
-        setStreetAddress(streetAddress);
-        setCity(city);
-        setState(state);
-        setZip(zip);
-        setUserData(localUserData);
-        if (offlinePicture) {
-           const profilePicture = URL.createObjectURL(offlinePicture)
-           setOfflinePic(profilePicture)
-           console.log('offline', profilePicture)
-        }
-      }
-    };
-
-    fetchUserDataFromIndexedDB();
-  }, []);
-
-  useEffect(() => {
-    const fetchProfilePicture = async () => {
       try {
-        const profilePictureBlob = await getProfilePicture();
-        if (profilePictureBlob) {
-       
-          setProfilePicture(profilePictureBlob);
+        const localUserData = await getUserData(userId);
+        const offlinePicture = await getProfilePicture(userId);
+  console.log(localUserData)
+        if (localUserData ) {
           
+          
+  
+          const { email = '', streetAddress = '', city = '', state = '', zip = '', company = '' } = localUserData;
+   
+          setEmail(email);
+          setStreetAddress(streetAddress);
+          setCity(city);
+          setState(state);
+          setZip(zip);
+          setUserData(localUserData);
+          setUserName(company);
+  
+          if (offlinePicture) {
+            const profilePicture = URL.createObjectURL(offlinePicture);
+            setOfflinePic(profilePicture);
+       
+          } else {
+            console.warn('No offline picture found');
+          }
+        } else {
+          console.warn('No user data found in IndexedDB');
         }
       } catch (error) {
-        console.error('Failed to fetch profile picture from IndexedDB:', error);
+        console.error('Error fetching data from IndexedDB:', error);
       }
     };
-
-    fetchProfilePicture();
-  }, []);
+  
+    fetchUserDataFromIndexedDB();
+  }, [userId]);
+  
 
   const name = `${userData?.company || ''} ${userData?.lastName || ''}`;
 
   const user = {
     email: email,
-    name: name,
+    name: userName,
     streetAddress: streetAddress,
     city: city + (state ? `, ${state}` : '') + (zip ? ` ${zip}` : ''),
     profilePicture: profilePicture,

@@ -51,7 +51,6 @@ const Profile = () => {
 
   const { loading, data, refetch } = useQuery(GET_USER, {
     variables: { userId: userId || '' },
-    skip: !navigator.onLine || !initialLoad,
   });
 
   const [changeCompanyMutation] = useMutation(CHANGE_COMPANY);
@@ -110,40 +109,44 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (initialLoad) {
-        try {
-          let userDataFromDB;
-
-          if (navigator.onLine && !loading && data && data.getUser) {
-            userDataFromDB = data.getUser;
-          } else {
-            userDataFromDB = await getUserData(userId);
-          }
-
-          if (userDataFromDB) {
-            const { company, email, streetAddress, city, state, zip, profilePicture } = userDataFromDB;
-            setEmail(email);
-            setStreetAddress(streetAddress);
-            setCity(city);
-            setState(state);
-            setZip(zip);
-            setUserData(userDataFromDB);
-            setCompany(company);
-            setLogoUrl(profilePicture || temporaryImage);
-          } else {
-            console.error('No offline data found.');
-          }
-
-          setInitialLoad(false);
-         
-        } catch (error) {
-          console.error('Error fetching data:', error);
+      try {
+        let userDataFromOnline = null;
+        let userDataFromDB = null;
+  
+        // Check if data is available online
+        if (navigator.onLine) {
+          userDataFromOnline = data.getUser;
+          
+        } else {
+          // Fetch data from IndexedDB if offline or data is not available online
+          userDataFromDB = await getUserData(userId);
+          console.log(userDataFromDB)
         }
+  
+        // Determine which data source to use
+        const userData = userDataFromOnline || userDataFromDB.getUser || userDataFromDB;
+
+        if (userData) {
+          const { company, email, streetAddress, city, state, zip, profilePicture } = userData;
+          setEmail(email);
+          setStreetAddress(streetAddress);
+          setCity(city);
+          setState(state);
+          setZip(zip);
+          setUserData(userData);
+          setCompany(company);
+          setLogoUrl(profilePicture || temporaryImage);
+        } else {
+          console.warn('No user data found');
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
       }
     };
-
+  
     fetchData();
-  }, [loading, data, userId, initialLoad]);
+  }, [loading, data, userId]);
+  
 
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handleStreetAddressChange = (e) => setStreetAddress(e.target.value);

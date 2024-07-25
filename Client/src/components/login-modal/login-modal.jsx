@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
-import { useMutation } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client';
 import Auth from "../../utils/auth";
 import { LOGIN_USER } from '../../utils/mutations';
+import { GET_USER } from '../../utils/queries';
 import './login-modal.css';
+import { getUserData, storeUserData } from '../../utils/indexedDB'; // Ensure the correct path to storeUserData
 
 const LoginModal = ({ isOpen, onClose }) => {
   const [formState, setFormState] = useState({ email: '', password: '' });
   const [loginUser, { error }] = useMutation(LOGIN_USER);
   const [submitted, setSubmitted] = useState(false);
-
+  const { data: userData, refetch } = useQuery(GET_USER, {
+    skip: true, // Skip the query until we're ready to fetch the user data
+  });
+  
   const handleFormSubmit = async (event) => {
     event.preventDefault();
     try {
@@ -18,13 +23,25 @@ const LoginModal = ({ isOpen, onClose }) => {
           password: formState.password,
         },
       });
-
+  
       if (data && data.loginUser) {
         const token = data.loginUser.token;
         Auth.login(token);
-
+  
         setFormState({ email: '', password: '' });
         setSubmitted(true);
+  
+        // Fetch user data after successful login
+        const userId = data.loginUser.user._id;
+        const { data: userFullData } = await refetch({ userId });
+  
+        // Store user data in IndexedDB
+        await storeUserData(userFullData);
+        
+        // Retrieve and log user data from IndexedDB
+        const userDataFromDB = await getUserData(userId);
+        console.log('User data from IndexedDB:', userDataFromDB);
+  
         onClose();
       } else {
         console.error('Login mutation did not return expected data structure:', data);
@@ -44,7 +61,6 @@ const LoginModal = ({ isOpen, onClose }) => {
       [name]: updatedValue,
     });
   };
-
 
   return (
     <div className={`modal ${isOpen ? 'open' : ''}`} id="LoginModal">
