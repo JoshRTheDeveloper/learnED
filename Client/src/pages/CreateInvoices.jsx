@@ -57,15 +57,14 @@ const CreateInvoices = () => {
     }
   });
 
-  console.log('profilepicutreUrl', profilePictureUrl)
+
 
   useEffect(() => {
     const fetchUserDataFromIndexedDB = async () => {
       try {
         const localUserData = await getUserData(userId);
         const offlinePicture = await getProfilePicture(userId);
-        console.log('profiel', offlinePicture)
-  console.log(localUserData)
+     
         if (localUserData || localUserData.getUser) {
           
           
@@ -79,7 +78,7 @@ const CreateInvoices = () => {
           setZip(zip);
           setUserData(localUserData);
           setUserName(company);
-          console.log('profiel', offlinePicture)
+       
           if (offlinePicture) {
             const profilePicture = URL.createObjectURL(offlinePicture);
             setOfflinePic(profilePicture);
@@ -133,29 +132,28 @@ const handleFormSubmit = async (event) => {
     profilePicture: profilePictureUrl,
   };
 
-  console.log('Profile Picture:', profilePicture);
-  console.log('Variables for mutation:', variables);
+
 
   try {
     if (navigator.onLine) {
-      console.log('Online - attempting to create invoice...');
+     
       const { data } = await createInvoiceMutation({ variables });
-      console.log(variables)
+    
       if (data?.createInvoice) {
         const createdInvoice = data.createInvoice;
-        console.log('Invoice created successfully:', createdInvoice);
+
         await addInvoiceToIndexedDB(createdInvoice);
-        console.log('Invoice added to IndexedDB.');
+       
       } else {
         throw new Error('No invoice data returned from mutation.');
       }
     } else {
-      console.log('Offline - saving invoice locally...');
+   
       variables._id = uuidv4();
       await addInvoiceToIndexedDB(variables);
-      console.log('Invoice saved locally in IndexedDB.');
+     
       await addOfflineMutation({ mutation: 'CREATE_INVOICE', variables });
-      console.log('Offline mutation recorded.');
+     
     }
 
     setSavedLocally(true);

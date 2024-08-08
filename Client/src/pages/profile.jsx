@@ -113,17 +113,17 @@ const Profile = () => {
         let userDataFromOnline = null;
         let userDataFromDB = null;
   
-        // Check if data is available online
+
         if (navigator.onLine) {
           userDataFromOnline = data.getUser;
           
         } else {
-          // Fetch data from IndexedDB if offline or data is not available online
+ 
           userDataFromDB = await getUserData(userId);
-          console.log(userDataFromDB)
+        
         }
   
-        // Determine which data source to use
+
         const userData = userDataFromOnline || userDataFromDB.getUser || userDataFromDB;
 
         if (userData) {
@@ -159,15 +159,15 @@ const Profile = () => {
     try {
       const file = e.target.files[0];
       if (file) {
-        // Create a URL for display purposes (temporary)
+   
         const blobUrl = URL.createObjectURL(file);
         setLogo(file);
         setLogoUrl(blobUrl);
         setUrl(file)
 
-        // Store the file directly in IndexedDB
+    
         await storeProfilePicture(userId, file);
-        console.log("Profile picture stored successfully.");
+     
       }
     } catch (error) {
       console.error("An error occurred while storing the profile picture or file:", error);
@@ -182,20 +182,19 @@ const Profile = () => {
   const syncOfflineData = async () => {
     try {
       const offlineMutations = await getOfflineMutation('CHANGE_PROFILE_PICTURE');
-      console.log(offlineMutations)
+
       for (const { mutation, variables } of offlineMutations) {
-        console.log('Processing mutation:', mutation);
-      console.log('Initial variables:', variables);
+  
         if (mutation === 'CHANGE_PROFILE_PICTURE') {
           const profilePictureBlob = await getProfilePicture(userId);
-          console.log (profilePictureBlob)
+
           if (profilePictureBlob) {
             const uploadedPicturePath = await uploadProfilePicture(profilePictureBlob);
-            console.log('Uploaded picture path:', uploadedPicturePath);
+          
             variables.profilePicture = uploadedPicturePath;
           }
         }
-console.log (mutation, variables, '--mutations')
+
       await executeMutation(offlineMutations);
       }
 
@@ -208,10 +207,10 @@ console.log (mutation, variables, '--mutations')
 
   const executeMutation = async (mutations) => {
     try {
-      console.log('Stored mutations:', mutations);
+
   
       if (!Array.isArray(mutations) || mutations.length === 0) {
-        console.log('No offline mutations found');
+    
         return;
       }
   
@@ -225,7 +224,7 @@ console.log (mutation, variables, '--mutations')
           }
   
           let result;
-          console.log(`Executing mutation type: ${mutationType} with variables:`, variables);
+   
   
           switch (mutationType) {
             case 'CHANGE_PROFILE_PICTURE':
@@ -233,7 +232,7 @@ console.log (mutation, variables, '--mutations')
                 mutation: CHANGE_PROFILE_PICTURE,
                 variables,
               });
-              console.log('Successfully executed changeProfilePicture mutation:', result);
+      
               break;
   
             default:
@@ -241,7 +240,7 @@ console.log (mutation, variables, '--mutations')
               continue;
           }
   
-          // If the mutation is successfully executed, clear it from the offline storage
+
           await clearOfflineMutations(id);
         } catch (error) {
           console.error(`Error executing stored ${mutation.mutation} mutation:`, error);
@@ -279,7 +278,7 @@ console.log (mutation, variables, '--mutations')
         if (logo) {
           const uploadedPicturePath = await uploadProfilePicture(logo);
           picturePath = uploadedPicturePath;
-          console.log(uploadedPicturePath);
+  
         }
 
         await Promise.all([

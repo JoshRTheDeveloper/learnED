@@ -13,9 +13,9 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'uploads', // Folder name in Cloudinary
-    format: async (req, file) => 'jpeg', // supports promises as well
-    public_id: (req, file) => file.originalname.split('.')[0], // Extract the file name without extension
+    folder: 'uploads', 
+    format: async (req, file) => 'jpeg', 
+    public_id: (req, file) => file.originalname.split('.')[0],
   },
 });
 

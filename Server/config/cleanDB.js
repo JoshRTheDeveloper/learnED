@@ -9,7 +9,7 @@ const cleanDB = async (modelName, collectionName) => {
      else {
       console.error(`Unknown model: ${modelName}`);
     }
-    console.log(`${collectionName} collection cleaned`);
+   
   } catch (error) {
     console.error(`Error cleaning ${collectionName} collection:`, error);
   }

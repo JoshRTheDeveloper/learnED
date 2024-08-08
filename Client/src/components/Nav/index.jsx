@@ -88,10 +88,10 @@ function Nav() {
   const executeStoredMutations = async () => {
     try {
       const storedMutations = await getOfflineMutations();
-      console.log('Stored mutations:', storedMutations);
+  
   
       if (!Array.isArray(storedMutations) || storedMutations.length === 0) {
-        console.log('No offline mutations found');
+   
         return;
       }
   
@@ -105,7 +105,7 @@ function Nav() {
           }
   
           let result;
-          console.log(`Executing mutation type: ${mutationType} with variables:`, variables);
+
   
           switch (mutationType) {
             case 'CREATE_INVOICE':
@@ -143,13 +143,6 @@ function Nav() {
           
               break;
   
-            // case 'CHANGE_PROFILE_PICTURE':
-            //   result = await client.mutate({
-            //     mutation: CHANGE_PROFILE_PICTURE,
-            //     variables,
-            //   });
-            //   console.log('Successfully executed changeProfilePicture mutation:', result);
-            //   break;
   
             case 'CHANGE_STREET_ADDRESS':
               result = await client.mutate({

@@ -84,26 +84,26 @@ const Home = () => {
 
   const handleDeleteInvoice = async (invoiceNumber) => {
     try {
-      console.log(`Attempting to delete invoice with number: ${invoiceNumber}`);
+
   
       await deleteInvoiceByNumberFromIndexedDB(invoiceNumber);
-      console.log(`Successfully deleted invoice from IndexedDB: ${invoiceNumber}`);
+
   
       setUserData(prevUserData => ({
         ...prevUserData,
         invoices: prevUserData.invoices.filter(invoice => invoice.invoiceNumber !== invoiceNumber)
       }));
   
-      // Check if online
+
       if (navigator.onLine) {
         const { data } = await deleteInvoice({
           variables: { invoiceNumber },
         });
-        console.log(`Successfully deleted invoice from server:`, data);
+
         setModalMessage(`Invoice deleted`);
         setShowMessageModal(true);
       } else {
-        // Add to offline mutation queue
+    
         await addOfflineMutation({
           mutation: 'DELETE_INVOICE',
           variables: { invoiceNumber },
@@ -114,7 +114,7 @@ const Home = () => {
     } catch (error) {
       console.error('Error deleting invoice:', error);
   
-      // Add to offline mutation queue if not already added (for unexpected errors)
+    
       if (!navigator.onLine) {
         await addOfflineMutation({
           mutation: 'DELETE_INVOICE',
@@ -144,13 +144,13 @@ const Home = () => {
           )
         }));
     
-        // Check if online
+  
         if (navigator.onLine) {
       
           await updateInvoice({
             variables: { invoiceNumber, paidStatus: true },
           });
-          console.log(`Successfully marked invoice ${invoiceNumber} as paid.`);
+        
           setModalMessage(`Invoice marked as paid.`);
           setShowMessageModal(true);
         } else {

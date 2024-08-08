@@ -105,7 +105,7 @@ const Profile = () => {
           }
 
           setInitialLoad(false);
-          console.log('Fetched data from IndexedDB:', userDataFromDB);
+       
         } catch (error) {
           console.error('Error fetching data:', error);
         }

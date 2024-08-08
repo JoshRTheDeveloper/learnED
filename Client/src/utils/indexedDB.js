@@ -191,7 +191,7 @@ export const getUserPassword = async () => {
       const encryptedData = new Uint8Array(record.encryptedUserData);
 
       const decryptedUserData = await decryptData(encryptedData, key, iv);
-      return decryptedUserData.password; // Return only the decrypted password
+      return decryptedUserData.password; 
     } else {
       console.error('Missing data in IndexedDB record:', record);
     }
@@ -265,7 +265,7 @@ export const updateInvoiceInIndexedDB = async (invoiceNumber, paidStatus) => {
     invoice.iv = Array.from(updatedIV);
     await db.invoices.put(invoice);
 
-    console.log(`Invoice with invoice number ${invoiceNumber} updated successfully with paidStatus: ${paidStatus}.`);
+
   } catch (error) {
     console.error('Failed to update invoice in IndexedDB:', error);
     throw error;
@@ -297,12 +297,11 @@ export const getInvoicesFromIndexedDB = async () => {
 
 export const addInvoiceToIndexedDB = async (invoice) => {
   try {
-    // Ensure _id is converted to string or number
-    const invoiceId = String(invoice._id); // Convert _id to string if necessary
 
-    console.log('Attempting to add invoice to IndexedDB:', invoiceId);
+    const invoiceId = String(invoice._id); 
 
-    // Check if invoice with the same _id already exists in IndexedDB
+
+
     const existingInvoice = await db.invoices.where('_id').equals(invoiceId).first();
 
     if (existingInvoice) {
@@ -310,30 +309,29 @@ export const addInvoiceToIndexedDB = async (invoice) => {
       return;
     }
 
-    console.log('No existing invoice found with _id:', invoiceId);
 
-    // Encrypt the invoice data if needed
+
     const { key, iv } = await generateKeyAndIV();
     const exportedKey = await exportKey(key);
     const { encryptedData } = await encryptData(invoice, key, iv);
 
-    console.log('Invoice data encrypted successfully.');
 
-    // Prepare the invoice object to store in IndexedDB
+
+
     const encryptedInvoice = {
       ...invoice,
       encryptedData: Array.from(encryptedData),
       iv: Array.from(iv),
       key: Array.from(exportedKey),
-      _id: invoiceId, // Ensure _id is set correctly
+      _id: invoiceId, 
     };
 
-    console.log('Adding encrypted invoice to IndexedDB:', encryptedInvoice);
 
-    // Add the encrypted invoice to IndexedDB
+
+
     await db.invoices.add(encryptedInvoice);
 
-    console.log(`Invoice with _id ${invoiceId} added successfully to IndexedDB.`);
+
   } catch (error) {
     console.error('Failed to add invoice to IndexedDB:', error);
     throw error;
@@ -343,7 +341,7 @@ export const addInvoiceToIndexedDB = async (invoice) => {
 export const deleteInvoiceByNumberFromIndexedDB = async (invoiceNumber) => {
   try {
     await db.transaction('rw', db.invoices, async () => {
-      // Find the invoice by invoiceNumber and delete it
+
       const invoiceToDelete = await db.invoices.where('invoiceNumber').equals(invoiceNumber).first();
 
       if (!invoiceToDelete) {
@@ -355,7 +353,7 @@ export const deleteInvoiceByNumberFromIndexedDB = async (invoiceNumber) => {
       if (result === 0) {
         console.error(`Failed to delete invoice with invoiceNumber ${invoiceNumber} from IndexedDB.`);
       } else {
-        console.log(`Invoice with invoiceNumber ${invoiceNumber} deleted successfully from IndexedDB.`);
+        console.error(`Invoice with invoiceNumber ${invoiceNumber} deleted successfully from IndexedDB.`);
       }
     });
   } catch (error) {
@@ -385,7 +383,7 @@ export const clearIndexedDB = async () => {
 
 export const addOfflineMutation = async (mutation, variables) => {
   try {
-    console.log(`Adding offline mutation:`, { mutation, variables });
+
     await db.offlineMutations.add(mutation, variables);
   } catch (error) {
     console.error('Failed to add offline mutation to IndexedDB:', error);
@@ -417,7 +415,7 @@ export const getOfflineMutation = async (mutationType = null) => {
 export const clearOfflineMutation = async (id) => {
   try {
     await db.offlineMutations.delete(id);
-    console.log(`Offline mutation with id ${id} cleared successfully`);
+  
   } catch (error) {
     console.error(`Failed to clear offline mutation with id ${id}:`, error);
   }

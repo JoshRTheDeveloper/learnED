@@ -35,7 +35,7 @@ const Sidebar = () => {
         setProfilePicture(''); 
       }
     }
-    // console.log(profilePicBlob);
+
   };
 
 
@@ -69,7 +69,7 @@ const Sidebar = () => {
       fetchUserDataFromIndexedDB();
     }
   }, [userDataFromDB, userId]);
-// console.log('profilepicture:',profilePicture)
+
 
   return (
     <div className='content'>

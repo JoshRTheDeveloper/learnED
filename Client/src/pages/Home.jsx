@@ -84,17 +84,18 @@ const Home = () => {
             <p>Role: Developer</p>
             <div className='row-home'> 
             <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
-            <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
+            <a href="https://www.linkedin.com/in/josh-roth-aa2baaa1/" className=" app-button1"><b>Linked-In</b></a>
             </div>
           </div>
           
           <div className="column-home column-home-container column-home-space">
             
             <h3>Anothny Buffill</h3>
-            <p>Role: Developer</p>
+            <p>Role: Idea</p>
             <div className='row-home'> 
-            <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
-            <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
+            <a href="https://github.com/anthonybuffill" className=" app-button1"><b>Github</b></a>
+            <a href="https://www.linkedin.com/in/anthony-buffill-584569b1/" className=" app-button1"><b>Linked-In</b></a>
+            
             </div>
           </div>
         </div>
@@ -105,10 +106,10 @@ const Home = () => {
           
           <div className="column-home column-home-container column-home-space">
             <h3>Brian Doherty</h3>
-            <p>Role: Developer</p>
+            <p>Role: Idea</p>
             <div className='row-home'> 
-            <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
-            <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
+            <a href="https://github.com/BDoherty1" className=" app-button1"><b>Github</b></a>
+            <a href="mailto:bdoherty988@gmail.com" className="app-button1"><b>Email</b></a>
             </div>
           </div>
         </div>
@@ -119,19 +120,19 @@ const Home = () => {
         <div className="row-home">
           <div className="column-home column-home-container column-home-space">
             <h3>Michale Graham</h3>
-            <p>Role: Developer</p>
+            <p>Role: Idea</p>
             <div className='row-home'> 
-            <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
-            <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
+            <a href="https://github.com/MWG396" className=" app-button1"><b>Github</b></a>
+            <a href="linkedin.com/in/michael-william-graham-92466a2a4" className=" app-button1"><b>Linked-In</b></a>
             </div>
           </div>
 
           <div className="column-home column-home-container column-home-space">
             <h3>Luke Garnsey</h3>
-            <p>Role: Developer</p>
+            <p>Role: Idea</p>
             <div className='row-home'> 
-            <a href="https://github.com/JoshRTheDeveloper" className=" app-button1"><b>Github</b></a>
-            <a href="/login#signup" className=" app-button1"><b>Linked-In</b></a>
+            <a href="https://github.com/LukeGarnsey" className=" app-button1"><b>Github</b></a>
+            <a href="https://www.linkedin.com/in/luke-garnsey-89380a128/" className=" app-button1"><b>Linked-In</b></a>
             </div>
           </div>
         </div>

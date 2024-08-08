@@ -34,7 +34,7 @@ const Home = () => {
     variables: { userId: userId || '' },
     fetchPolicy: 'cache-first',
     onCompleted: async (data) => {
-      console.log('Query completed', data);
+     
       setUserData(data.getUser);
       setLoading(false);
       await Promise.all(data.getUser.invoices.map(invoice => addInvoiceToIndexedDB(invoice)));
@@ -166,7 +166,7 @@ const Home = () => {
   };
 
   useEffect(() => {
-    console.log('userData changed:', userData);
+
   }, [userData]);
 
   if (loading || queryLoading) {

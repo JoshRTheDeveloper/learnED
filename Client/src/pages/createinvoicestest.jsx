@@ -66,7 +66,7 @@ const CreateInvoices = () => {
   
 
   const name = `${userData?.company|| ''} ${userData?.lastName || ''}`;
-console.log('name:' + name)
+
   const user = {
     email: email,
     name: name,
@@ -99,18 +99,18 @@ console.log('name:' + name)
       profilePicture: profilePicture,
     };
   
-    console.log('Invoice variables:', variables); 
+
   
     try {
       if (navigator.onLine) {
         const response = await createInvoice({ variables });
         await axios.post('/send-invoice', variables);
-        console.log('Invoice sent to server:', variables);
+     
         await addInvoiceToIndexedDB(variables);
-        console.log('Invoice saved to IndexedDB:', variables);
+      
       } else {
         await addInvoiceToIndexedDB(variables);
-        console.log('Invoice saved to IndexedDB:', variables); 
+     
         alert('Invoice saved locally. It will be sent when you are back online.');
       }
   

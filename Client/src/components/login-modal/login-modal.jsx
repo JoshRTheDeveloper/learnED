@@ -4,14 +4,14 @@ import Auth from "../../utils/auth";
 import { LOGIN_USER } from '../../utils/mutations';
 import { GET_USER } from '../../utils/queries';
 import './login-modal.css';
-import { getUserData, storeProfilePicture, storeUserData } from '../../utils/indexedDB'; // Ensure the correct path to storeUserData
+import { getUserData, storeProfilePicture, storeUserData } from '../../utils/indexedDB'; 
 
 const LoginModal = ({ isOpen, onClose }) => {
   const [formState, setFormState] = useState({ email: '', password: '' });
   const [loginUser, { error }] = useMutation(LOGIN_USER);
   const [submitted, setSubmitted] = useState(false);
   const { data: userData, refetch } = useQuery(GET_USER, {
-    skip: true, // Skip the query until we're ready to fetch the user data
+    skip: true, 
   });
   
   const handleFormSubmit = async (event) => {
@@ -30,29 +30,27 @@ const LoginModal = ({ isOpen, onClose }) => {
   
         setFormState({ email: '', password: '' });
         setSubmitted(true);
-  
-        // Fetch user data after successful login
+
         const userId = data.loginUser.user._id;
         const { data: userFullData } = await refetch({ userId });
   
-        // Store user data in IndexedDB
+
         await storeUserData(userFullData);
-  
-        // Retrieve and log user data from IndexedDB
+
         const userDataFromDB = await getUserData(userId);
-        console.log('User data from IndexedDB:', userDataFromDB);
+
   
-        // Grab the profile picture URL from user data
+
         const profilePictureUrl = userFullData.getUser.profilePicture;
   
         if (profilePictureUrl) {
-          // Convert profile picture URL to Blob
+
           const response = await fetch(profilePictureUrl);
           const profilePictureBlob = await response.blob();
   
-          // Store the Blob in IndexedDB
+
           await storeProfilePicture(userId, profilePictureBlob);
-          console.log('Profile picture stored successfully.');
+  
         } else {
           console.warn('No profile picture found in user data.');
         }
