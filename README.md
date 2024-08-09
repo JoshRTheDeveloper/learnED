@@ -58,7 +58,8 @@ This project is licensed under the terms of the MIT .
 
 ## Screen Shots
 
-![Screen Shot 2024-02-13 at 9 22 16 PM](https://github.com/AnthonyBuffill/invoicinator/assets/153314977/a9f014b5-544a-4cd4-ba44-c4be3799804a)
+
+![Screen Shot 2024-02-13 at 9 22 16 PM](https://github.com/JoshRTheDeveloper/Invoicinator3000/blob/main/Client/public/assets/home.png)
 
 
 ![Screen Shot 2024-02-13 at 9 25 49 PM](https://github.com/AnthonyBuffill/invoicinator/assets/153314977/0e76e74a-8099-402f-9745-15263d38c394)
