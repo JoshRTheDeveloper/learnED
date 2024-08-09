@@ -210,41 +210,45 @@ const Home = () => {
             </div>
           </div>
 
-          {searchLoading ? (
-            <p>Loading search results...</p>
-          ) : searchError ? (
-            <p>Error: {searchError.message}</p>
-          ) : searchResult.length === 0 ? (
-            <p>No results found.</p>
-          ) : (
-            <div className='search-results'>
-              <h3>Search Results</h3>
-              <ul>
-                {searchResult.map(invoice => (
-                  <li key={invoice._id}>
-                    <div className='due-date-container'>
-                      <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
-                      <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
-                    </div>
-                    <div className='invoice-info'>
-                      <p>Client: {invoice.clientName}</p>
-                      {invoice.invoiceAmount && (
-                        <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
-                      )}
-                      <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
-                    </div>
-                    <div className='button-container'>
-                      <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
-                      <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
-                      {!invoice.paidStatus && (
-                        <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+                      {searchLoading ? (
+              <p>Loading search results...</p>
+            ) : searchError ? (
+              <p>Error: {searchError.message}</p>
+            ) : searchInvoiceNumber && (
+              <>
+                {searchResult.length === 0 ? (
+                  <p>No results found.</p>
+                ) : (
+                  <div className='search-results'>
+                    <h3>Search Results</h3>
+                    <ul>
+                      {searchResult.map(invoice => (
+                        <li key={invoice._id}>
+                          <div className='due-date-container'>
+                            <p className='invoice-number'>Invoice Number: {invoice.invoiceNumber}</p>
+                            <p className='due-date'> Due Date: {new Date(parseInt(invoice.dueDate)).toLocaleDateString()} </p>
+                          </div>
+                          <div className='invoice-info'>
+                            <p>Client: {invoice.clientName}</p>
+                            {invoice.invoiceAmount && (
+                              <p>Amount: ${parseFloat(invoice.invoiceAmount.toString()).toFixed(2)}</p>
+                            )}
+                            <p>Paid Status: {invoice.paidStatus ? 'Paid' : 'Not Paid'}</p>
+                          </div>
+                          <div className='button-container'>
+                            <button onClick={() => handleInvoiceClick(invoice)}>Info</button>
+                            <button onClick={() => handleDeleteInvoice(invoice.invoiceNumber)}>Delete</button>
+                            {!invoice.paidStatus && (
+                              <button onClick={() => handleMarkAsPaid(invoice.invoiceNumber)}>Mark as Paid</button>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            )}
 
           <div className="total">
             <div className="row">
@@ -317,7 +321,7 @@ const Home = () => {
       {isModalOpen && (
         <InvoiceModal
           invoice={selectedInvoice}
-          closeModal={closeModal}
+          onClose={closeModal}
           markAsPaid={handleMarkAsPaid}
         />
       )}

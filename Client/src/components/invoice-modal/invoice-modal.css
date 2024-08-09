@@ -88,3 +88,50 @@ margin-bottom: 5px;
 .small-font {
  font-size: 12px;
 }
+
+@media (max-width: 600px) {
+
+.modal-content-invoices {
+ width: 100% !important;
+}
+
+ .row-modal {
+ 
+  font-size: 10px;
+  padding-bottom: 5px !important;
+ 
+
+ }
+
+ .row-modal p {
+  padding-bottom: 5px !important;
+ }
+
+ .small-font {
+  font-size: 10px !important;
+ }
+
+ .heading-modal h3 {
+  font-size: 12px !important;
+ }
+
+.spacing-small {
+ height: unset;
+}
+
+.details-modal {
+ margin-left: 5%;
+ margin-right: 5%;
+}
+
+.strong-font {
+ font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+ font-weight: 900;
+ 
+}
+
+.search-results {
+ margin-left: 5%;
+}
+ 
+}
