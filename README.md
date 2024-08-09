@@ -62,10 +62,10 @@ This project is licensed under the terms of the MIT .
 ![Screen Shot 2024-02-13 at 9 22 16 PM](https://github.com/JoshRTheDeveloper/Invoicinator3000/blob/main/Client/public/assets/home.png)
 
 
-![Screen Shot 2024-02-13 at 9 22 16 PM](https://github.com/JoshRTheDeveloper/Invoicinator3000/blob/main/Client/public/assets/dashboard.png)
+![Screen Shot 2024-02-13 at 9 22 16 PM](https://github.com/JoshRTheDeveloper/Invoicinator3000/blob/main/Client/public/assets/Dashboard.png)
 
 
-![Screen Shot 2024-02-13 at 9 22 16 PM](https://github.com/JoshRTheDeveloper/Invoicinator3000/blob/main/Client/public/assets/info.png)
+![Screen Shot 2024-02-13 at 9 22 16 PM](https://github.com/JoshRTheDeveloper/Invoicinator3000/blob/main/Client/public/assets/Info.png)
 
 
 ![Screen Shot 2024-02-13 at 9 22 16 PM](https://github.com/JoshRTheDeveloper/Invoicinator3000/blob/main/Client/public/assets/profile.png)
