@@ -1,0 +1,21 @@
+.main-truck {
+ display: flex;
+ height: 100vh;
+ justify-content: center;
+ align-items: flex-end;
+ padding-bottom: 100px;
+}
+
+.div2 {
+ display: flex ;
+ flex-direction: row;
+ gap: 25vw;
+}
+
+.green {
+color: green;
+}
+
+.blue {
+ color: rgb(2, 232, 224);
+}

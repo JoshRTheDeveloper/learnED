@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Auth from "../../utils/auth";
 import { Link } from "react-router-dom";
-import Logo from "../../assets/Logo.svg";
+import Logo from "../../assets/learnedtext.svg";
 import SignupModal from '../signup-modal/modal';
 import LoginModal from '../login-modal/login-modal';
 import { useNavigate } from "react-router-dom";
