@@ -1,14 +1,21 @@
+
+
+
 .main-truck {
  display: flex;
  height: 100vh;
- justify-content: center;
- align-items: flex-end;
- padding-bottom: 100px;
+ justify-content: flex-end;
+ align-items: center;
+ padding-bottom: 5vh;
+flex-direction: column;
 }
 
 .div3-truck {
  display: flex ;
  flex-direction: row;
+ width: 70vw;
+ justify-content: space-around;
+
 }
 
 .green {
@@ -19,11 +26,28 @@ color: green;
  color: rgb(2, 232, 224);
 }
 
-.image-truck {
-height: 400px;
+.truckImg {
+height: 200px;
 }
 
-.start-engines button {
-background-color: transparent;
+.startImg {
+ height: 200px;
 }
+
+.gasImg {
+ height: 200px;
+}
+
+.button-title {
+font-size: 50px;
+}
+
+.transparent {
+ background-color: transparent;
+}
+
+.transparent:hover {
+ background-color: transparent !important;
+}
+
 

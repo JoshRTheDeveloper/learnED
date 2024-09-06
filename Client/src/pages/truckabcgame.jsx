@@ -2,16 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Monster from "../assets/monstertruck.png";
 import start from "../assets/startbutton.png";
+import gas from "../assets/gaspedal.png";
 import Auth from '../utils/auth';
 import './truckabcgame.css';
 
 const Truck = () => {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [showStartText, setShowStartText] = useState(true);
   const navigate = useNavigate();
 
-  // Refs for the audio elements
+
   const firstAudioRef = useRef(null);
   const secondAudioRef = useRef(null);
+
 
   useEffect(() => {
     if (Auth.loggedIn()) {
@@ -19,14 +22,16 @@ const Truck = () => {
     }
   }, [navigate]);
 
+
+
   useEffect(() => {
-    // Loop the second audio manually
+ 
     if (secondAudioRef.current) {
       secondAudioRef.current.addEventListener('ended', () => {
-        secondAudioRef.current.currentTime = 0; // Restart from the beginning
+        secondAudioRef.current.currentTime = 0; 
       });
     }
-    // Cleanup listener on unmount
+  
     return () => {
       if (secondAudioRef.current) {
         secondAudioRef.current.removeEventListener('ended', () => {});
@@ -34,33 +39,21 @@ const Truck = () => {
     };
   }, []);
 
-  // Function to play sound
+
   const playSound = () => {
-    if (firstAudioRef.current && secondAudioRef.current) {
       firstAudioRef.current.play();
-
-      // Stop the first audio after 2 seconds and play the second audio
-      setTimeout(() => {
-        if (firstAudioRef.current) {
-          firstAudioRef.current.pause();
-          firstAudioRef.current.currentTime = 0; // Reset to start
-        }
-        secondAudioRef.current.play();
-      }, 2000); // Timeout duration in milliseconds
-    }
+      setShowStartText(false);
   };
 
-  // Function to stop sound
-  const stopSound = () => {
-    if (firstAudioRef.current) {
-      firstAudioRef.current.pause();
-      firstAudioRef.current.currentTime = 0; // Reset to start
-    }
-    if (secondAudioRef.current) {
-      secondAudioRef.current.pause();
-      secondAudioRef.current.currentTime = 0; // Reset to start
-    }
-  };
+  const playRev = () => {
+   if (firstAudioRef.current && secondAudioRef.current) {
+    secondAudioRef.current.play();
+
+   }
+   
+ };
+
+
 
   const toggleSignupModal = () => {
     setIsSignupModalOpen(!isSignupModalOpen);
@@ -69,18 +62,42 @@ const Truck = () => {
   return (
     <>
       <div className='main-truck'>
+      <div className='div3-truck'>
+        
+        <div className='truck'>
+        {showStartText && <h1 className='button-title'>Start Your Engines!</h1>} 
+ 
+        </div>
+
+        <div className='truck'>
+        
+        </div>
+      
+        <div className='truck'>
+       
+        </div>
+
+    </div>
         <div className='div3-truck'>
-          <div className='start-engines'>
-           <button onClick={playSound}> <img className='image-truck' src={start} alt="Monster Truck" /></button>
-            <button onClick={playSound}>Start Your Engines</button>
-            <button onClick={stopSound}>Stop</button>
-          </div> 
-          <div className='truck'>
-            <img className='image-truck' src={Monster} alt="Monster Truck" />
-          </div>
-          <div className='truck'>
-            <img className='image-truck' src={Monster} alt="Monster Truck" />
-          </div>
+        
+            <div className='truck'>
+           
+              <button className='transparent' onClick={playSound}>
+        
+
+                 <img className='startImg' src={start} alt="Monster Truck" />
+              </button>
+            </div>
+
+            <div className='truck'>
+              <button className='transparent' onClick={playRev}> <img className='gasImg' src={gas} alt="Monster Truck" />
+              </button>
+            </div>
+          
+            <div className='truck'>
+              <img className='truckImg' src={Monster} alt="Monster Truck" />
+            </div>
+
         </div>
       </div>
 

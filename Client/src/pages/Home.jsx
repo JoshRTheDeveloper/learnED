@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import { Link } from "react-router-dom";
 import Auth from '../utils/auth'
 
 import './home.css';
@@ -29,7 +29,9 @@ const Home = () => {
     <div className='main'>
       <div className='div2'>
         <div className='blue'>
+          <Link to="/truck" className="navbar-brand">
           <h3>Abc Game</h3>
+              </Link>
         </div>
         <div className='green'>
           <h3>Abc Draw Game</h3>
