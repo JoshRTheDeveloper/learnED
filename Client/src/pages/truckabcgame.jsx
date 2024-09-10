@@ -9,12 +9,11 @@ import './truckabcgame.css';
 const Truck = () => {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [showStartText, setShowStartText] = useState(true);
+  const [isAnimating, setIsAnimating] = useState(true);
   const navigate = useNavigate();
-
 
   const firstAudioRef = useRef(null);
   const secondAudioRef = useRef(null);
-
 
   useEffect(() => {
     if (Auth.loggedIn()) {
@@ -22,10 +21,7 @@ const Truck = () => {
     }
   }, [navigate]);
 
-
-
   useEffect(() => {
- 
     if (secondAudioRef.current) {
       secondAudioRef.current.addEventListener('ended', () => {
         secondAudioRef.current.currentTime = 0; 
@@ -39,21 +35,19 @@ const Truck = () => {
     };
   }, []);
 
-
   const playSound = () => {
+    if (firstAudioRef.current) {
       firstAudioRef.current.play();
-      setShowStartText(false);
+    }
+    setShowStartText(false);
+    setIsAnimating(false); 
   };
 
   const playRev = () => {
-   if (firstAudioRef.current && secondAudioRef.current) {
-    secondAudioRef.current.play();
-
-   }
-   
- };
-
-
+    if (secondAudioRef.current) {
+      secondAudioRef.current.play();
+    }
+  };
 
   const toggleSignupModal = () => {
     setIsSignupModalOpen(!isSignupModalOpen);
@@ -62,46 +56,31 @@ const Truck = () => {
   return (
     <>
       <div className='main-truck'>
-      <div className='div3-truck'>
-        
-        <div className='truck'>
-        {showStartText && <h1 className='button-title'>Start Your Engines!</h1>} 
- 
+        <div className='message'>
+          <div className='truck'>
+            {showStartText && <h1 className='button-title'>Start Your Engines!</h1>}
+          </div>
         </div>
-
-        <div className='truck'>
-        
-        </div>
-      
-        <div className='truck'>
-       
-        </div>
-
-    </div>
         <div className='div3-truck'>
-        
-            <div className='truck'>
-           
-              <button className='transparent' onClick={playSound}>
-        
-
-                 <img className='startImg' src={start} alt="Monster Truck" />
-              </button>
-            </div>
-
-            <div className='truck'>
-              <button className='transparent' onClick={playRev}> <img className='gasImg' src={gas} alt="Monster Truck" />
-              </button>
-            </div>
-          
-            <div className='truck'>
-              <img className='truckImg' src={Monster} alt="Monster Truck" />
-            </div>
-
+          <div className='truck'>
+            <button className='transparent' onClick={playSound}>
+              <img
+                className={`startImg ${isAnimating ? '' : 'stopped'}`} 
+                src={start}
+                alt="Start Button"
+              />
+            </button>
+          </div>
+          <div className='truck'>
+            <button className='transparent' onClick={playRev}>
+              <img className='gasImg' src={gas} alt="Gas Pedal" />
+            </button>
+          </div>
+          <div className='truck'>
+            <img className='truckImg' src={Monster} alt="Monster Truck" />
+          </div>
         </div>
       </div>
-
-      {/* Audio elements */}
       <audio ref={firstAudioRef} src="../src/assets/engine-start.mp3" />
       <audio ref={secondAudioRef} src="../src/assets/rev.mp3" />
     </>
