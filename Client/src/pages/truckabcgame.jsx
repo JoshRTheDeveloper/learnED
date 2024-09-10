@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Monster from "../assets/monstertruck.png";
 import start from "../assets/startbutton.png";
 import gas from "../assets/gaspedal.png";
+import arrow from "../assets/arrow.png";
 import Auth from '../utils/auth';
 import './truckabcgame.css';
 
@@ -14,6 +15,7 @@ const Truck = () => {
 
   const firstAudioRef = useRef(null);
   const secondAudioRef = useRef(null);
+  const thirdAudioRef = useRef(null);
 
   useEffect(() => {
     if (Auth.loggedIn()) {
@@ -57,15 +59,28 @@ const Truck = () => {
     <>
       <div className='main-truck'>
         <div className='message'>
-          <div className='truck'>
+          <div>
             {showStartText && <h1 className='button-title'>Start Your Engines!</h1>}
+          </div>
+        </div>
+         <div className='div3-truck'>
+          <div className='truck'>
+          <div className='truck'>
+            <img   className={`arrowImg ${isAnimating ? '' : 'stopped'}`}   src={arrow} alt="Monster Truck" />
+          </div> 
+          </div>
+          <div className='truck'>
+            <button className='transparent' onClick={playRev}>
+            </button>
+          </div>
+          <div className='truck'>
           </div>
         </div>
         <div className='div3-truck'>
           <div className='truck'>
             <button className='transparent' onClick={playSound}>
               <img
-                className={`startImg ${isAnimating ? '' : 'stopped'}`} 
+                className='startImg'
                 src={start}
                 alt="Start Button"
               />
@@ -83,6 +98,7 @@ const Truck = () => {
       </div>
       <audio ref={firstAudioRef} src="../src/assets/engine-start.mp3" />
       <audio ref={secondAudioRef} src="../src/assets/rev.mp3" />
+      <audio ref={thirdAudioRef} src="../src/assets/start.mp3" />
     </>
   );
 };

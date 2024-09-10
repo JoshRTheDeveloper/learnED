@@ -36,6 +36,11 @@ top: 50%;
  }
 }
 
+.truck {
+ display: flex;
+ width: 200px;
+ justify-content: center;
+}
 
 .green {
 color: green;
@@ -49,19 +54,26 @@ color: green;
 height: 200px;
 }
 
-.startImg {
- height: 200px;
- animation: growShrink 3s infinite ease-in-out;
+.arrowImg {
+ height: 100px;
+ transform: rotate(180deg); 
+ animation: scaleAnimation 3s infinite ease-in-out;
 }
 
-@keyframes growShrink {
+@keyframes scaleAnimation {
  0%, 100% {
-   transform: scale(1);
+   transform: rotate(180deg) scale(1);
  }
  50% {
-   transform: scale(1.25); /* Adjust the scale value to control the grow/shrink effect */
+   transform: rotate(180deg) scale(1.25); 
  }
 }
+
+.startImg {
+ height: 200px;
+}
+
+
 
 .gasImg {
  height: 200px;
@@ -83,5 +95,6 @@ font-size: 50px;
  animation: none;
  display: none;
 }
+
 
 
